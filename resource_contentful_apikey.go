@@ -17,6 +17,10 @@ func resourceContentfulAPIKey() *schema.Resource {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
+			"access_token": &schema.Schema{
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"space_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -123,6 +127,10 @@ func setAPIKeyProperties(d *schema.ResourceData, apiKey *contentful.APIKey) erro
 	}
 
 	if err := d.Set("description", apiKey.Description); err != nil {
+		return err
+	}
+
+	if err := d.Set("access_token", apiKey.AccessToken); err != nil {
 		return err
 	}
 
