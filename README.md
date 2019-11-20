@@ -14,10 +14,16 @@ Terraform Provider for [Contentful's](https://www.contentful.com) Content Manage
 
 Create, update and delete Contentful resources such as:
 - [x] Spaces
-- [ ] Content Types
+- [x] Content Types
 - [x] API Keys
+- [ ] Personal access tokens
 - [x] Webhooks
-- [ ] Locales
+- [x] Locales
+- [ ] Assets
+- [ ] Entries
+- [ ] UI Extensions
+- [ ] Space memberships
+- [ ] Roles & Permissions
 
 # Getting started
 
