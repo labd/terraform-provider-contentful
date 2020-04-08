@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	contentful "github.com/tolgaakyuz/contentful-go"
+	contentful "github.com/labd/contentful-go"
 )
 
 func TestAccContentfulContentType_Basic(t *testing.T) {
@@ -15,17 +15,17 @@ func TestAccContentfulContentType_Basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckContentfulContentTypeDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccContentfulContentTypeConfig,
 				Check: resource.TestCheckResourceAttr(
 					"contentful_contenttype.mycontenttype", "name", "TF Acc Test CT 1"),
 			},
-			resource.TestStep{
+			{
 				Config: testAccContentfulContentTypeUpdateConfig,
 				Check: resource.TestCheckResourceAttr(
 					"contentful_contenttype.mycontenttype", "name", "TF Acc Test CT name change"),
 			},
-			resource.TestStep{
+			{
 				Config: testAccContentfulContentTypeLinkConfig,
 				Check: resource.TestCheckResourceAttr(
 					"contentful_contenttype.mylinked_contenttype", "name", "TF Acc Test Linked CT"),
@@ -38,19 +38,19 @@ func testAccCheckContentfulContentTypeExists(n string, contentType *contentful.C
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
-			return fmt.Errorf("Not found %s", n)
+			return fmt.Errorf("not found %s", n)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No content type ID is set")
+			return fmt.Errorf("no content type ID is set")
 		}
 
 		spaceID := rs.Primary.Attributes["space_id"]
 		if spaceID == "" {
-			return fmt.Errorf("No space_id is set")
+			return fmt.Errorf("no space_id is set")
 		}
 
-		client := testAccProvider.Meta().(*contentful.Contentful)
+		client := testAccProvider.Meta().(*contentful.Client)
 
 		ct, err := client.ContentTypes.Get(spaceID, rs.Primary.ID)
 		if err != nil {
@@ -71,17 +71,17 @@ func testAccCheckContentfulContentTypeDestroy(s *terraform.State) (err error) {
 
 		spaceID := rs.Primary.Attributes["space_id"]
 		if spaceID == "" {
-			return fmt.Errorf("No space_id is set")
+			return fmt.Errorf("no space_id is set")
 		}
 
-		client := testAccProvider.Meta().(*contentful.Contentful)
+		client := testAccProvider.Meta().(*contentful.Client)
 
 		_, err := client.ContentTypes.Get(spaceID, rs.Primary.ID)
 		if _, ok := err.(contentful.NotFoundError); ok {
 			return nil
 		}
 
-		return fmt.Errorf("Content Type still exists with id: %s", rs.Primary.ID)
+		return fmt.Errorf("content Type still exists with id: %s", rs.Primary.ID)
 	}
 
 	return nil

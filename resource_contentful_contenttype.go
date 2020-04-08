@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
-	contentful "github.com/tolgaakyuz/contentful-go"
+	contentful "github.com/labd/contentful-go"
 )
 
 func resourceContentfulContentType() *schema.Resource {
@@ -13,93 +13,93 @@ func resourceContentfulContentType() *schema.Resource {
 		Delete: resourceContentTypeDelete,
 
 		Schema: map[string]*schema.Schema{
-			"space_id": &schema.Schema{
+			"space_id": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"version": &schema.Schema{
+			"version": {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"description": &schema.Schema{
+			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"display_field": &schema.Schema{
+			"display_field": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"field": &schema.Schema{
+			"field": {
 				Type:     schema.TypeSet,
 				Required: true,
 				MinItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"id": &schema.Schema{
+						"id": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"name": &schema.Schema{
+						"name": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
 						//@TODO Add ValidateFunc to validate field type
-						"type": &schema.Schema{
+						"type": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"link_type": &schema.Schema{
+						"link_type": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"items": &schema.Schema{
+						"items": {
 							Type:     schema.TypeSet,
 							Optional: true,
 							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"type": &schema.Schema{
+									"type": {
 										Type:     schema.TypeString,
 										Required: true,
 									},
-									"validations": &schema.Schema{
+									"validations": {
 										Type:     schema.TypeList,
 										Optional: true,
 										Elem:     &schema.Schema{Type: schema.TypeString},
 									},
-									"link_type": &schema.Schema{
+									"link_type": {
 										Type:     schema.TypeString,
 										Required: true,
 									},
 								},
 							},
 						},
-						"required": &schema.Schema{
+						"required": {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  false,
 						},
-						"localized": &schema.Schema{
+						"localized": {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  false,
 						},
-						"disabled": &schema.Schema{
+						"disabled": {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  false,
 						},
-						"omitted": &schema.Schema{
+						"omitted": {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  false,
 						},
-						"validations": &schema.Schema{
+						"validations": {
 							Type:     schema.TypeList,
 							Optional: true,
 							Elem:     &schema.Schema{Type: schema.TypeString},
@@ -112,7 +112,7 @@ func resourceContentfulContentType() *schema.Resource {
 }
 
 func resourceContentTypeCreate(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Contentful)
+	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 
 	ct := &contentful.ContentType{
@@ -177,7 +177,7 @@ func resourceContentTypeCreate(d *schema.ResourceData, m interface{}) (err error
 }
 
 func resourceContentTypeRead(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Contentful)
+	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 
 	_, err = client.ContentTypes.Get(spaceID, d.Id())
@@ -189,7 +189,7 @@ func resourceContentTypeUpdate(d *schema.ResourceData, m interface{}) (err error
 	var existingFields []*contentful.Field
 	var deletedFields []*contentful.Field
 
-	client := m.(*contentful.Contentful)
+	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 
 	ct, err := client.ContentTypes.Get(spaceID, d.Id())
@@ -205,9 +205,9 @@ func resourceContentTypeUpdate(d *schema.ResourceData, m interface{}) (err error
 	}
 
 	if d.HasChange("field") {
-		old, new := d.GetChange("field")
+		old, nw := d.GetChange("field")
 
-		existingFields, deletedFields = checkFieldChanges(old.(*schema.Set), new.(*schema.Set))
+		existingFields, deletedFields = checkFieldChanges(old.(*schema.Set), nw.(*schema.Set))
 
 		ct.Fields = existingFields
 
@@ -245,7 +245,7 @@ func resourceContentTypeUpdate(d *schema.ResourceData, m interface{}) (err error
 }
 
 func resourceContentTypeDelete(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Contentful)
+	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 
 	ct, err := client.ContentTypes.Get(spaceID, d.Id())

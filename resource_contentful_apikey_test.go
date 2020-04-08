@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	contentful "github.com/tolgaakyuz/contentful-go"
+	contentful "github.com/labd/contentful-go"
 )
 
 func TestAccContentfulAPIKey_Basic(t *testing.T) {
@@ -63,7 +63,7 @@ func testAccCheckContentfulAPIKeyExists(n string, apiKey *contentful.APIKey) res
 			return fmt.Errorf("No api key ID is set")
 		}
 
-		client := testAccProvider.Meta().(*contentful.Contentful)
+		client := testAccProvider.Meta().(*contentful.Client)
 
 		contentfulAPIKey, err := client.APIKeys.Get(spaceID, apiKeyID)
 		if err != nil {
@@ -109,7 +109,7 @@ func testAccContentfulAPIKeyDestroy(s *terraform.State) error {
 			return fmt.Errorf("No apikey ID is set")
 		}
 
-		client := testAccProvider.Meta().(*contentful.Contentful)
+		client := testAccProvider.Meta().(*contentful.Client)
 
 		_, err := client.APIKeys.Get(spaceID, apiKeyID)
 		if _, ok := err.(contentful.NotFoundError); ok {

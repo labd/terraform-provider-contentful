@@ -1,11 +1,11 @@
 FROM golang:1.9
 
-WORKDIR /go/src/github.com/danihodovic/contentful-terraform
+WORKDIR /go/src/github.com/labd/terraform-contentful
 
 # http://stackoverflow.com/questions/39278756/cache-go-get-in-docker-build
-COPY ./install-dependencies.sh /go/src/github.com/danihodovic/contentful-terraform/
+COPY ./install-dependencies.sh /go/src/github.com/labd/terraform-contentful
 RUN ./install-dependencies.sh
 
-COPY . /go/src/github.com/danihodovic/contentful-terraform
+COPY . /go/src/github.com/labd/terraform-contentful
 
 CMD go test -v

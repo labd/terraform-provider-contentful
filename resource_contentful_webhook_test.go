@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	contentful "github.com/tolgaakyuz/contentful-go"
+	contentful "github.com/labd/contentful-go"
 )
 
 func TestAccContentfulWebhook_Basic(t *testing.T) {
@@ -17,24 +17,24 @@ func TestAccContentfulWebhook_Basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccContentfulWebhookDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccContentfulWebhookConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckContentfulWebhookExists("contentful_webhook.mywebhook", &webhook),
 					testAccCheckContentfulWebhookAttributes(&webhook, map[string]interface{}{
-						"name": "webhook-name",
-						"url":  "https://www.example.com/test",
+						"name":                     "webhook-name",
+						"url":                      "https://www.example.com/test",
 						"http_basic_auth_username": "username",
 					}),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccContentfulWebhookUpdateConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckContentfulWebhookExists("contentful_webhook.mywebhook", &webhook),
 					testAccCheckContentfulWebhookAttributes(&webhook, map[string]interface{}{
-						"name": "webhook-name-updated",
-						"url":  "https://www.example.com/test-updated",
+						"name":                     "webhook-name-updated",
+						"url":                      "https://www.example.com/test-updated",
 						"http_basic_auth_username": "username-updated",
 					}),
 				),
@@ -47,21 +47,21 @@ func testAccCheckContentfulWebhookExists(n string, webhook *contentful.Webhook) 
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
-			return fmt.Errorf("Not Found: %s", n)
+			return fmt.Errorf("not Found: %s", n)
 		}
 
 		// get space id from resource data
 		spaceID := rs.Primary.Attributes["space_id"]
 		if spaceID == "" {
-			return fmt.Errorf("No space_id is set")
+			return fmt.Errorf("no space_id is set")
 		}
 
 		// check webhook resource id
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No webhook ID is set")
+			return fmt.Errorf("no webhook ID is set")
 		}
 
-		client := testAccProvider.Meta().(*contentful.Contentful)
+		client := testAccProvider.Meta().(*contentful.Client)
 
 		contentfulWebhook, err := client.Webhooks.Get(spaceID, rs.Primary.ID)
 		if err != nil {
@@ -78,12 +78,12 @@ func testAccCheckContentfulWebhookAttributes(webhook *contentful.Webhook, attrs 
 	return func(s *terraform.State) error {
 		name := attrs["name"].(string)
 		if webhook.Name != name {
-			return fmt.Errorf("Webhook name does not match: %s, %s", webhook.Name, name)
+			return fmt.Errorf("webhook name does not match: %s, %s", webhook.Name, name)
 		}
 
 		url := attrs["url"].(string)
 		if webhook.URL != url {
-			return fmt.Errorf("Webhook url does not match: %s, %s", webhook.URL, url)
+			return fmt.Errorf("webhook url does not match: %s, %s", webhook.URL, url)
 		}
 
 		/* topics := attrs["topics"].([]string)
@@ -92,7 +92,7 @@ func testAccCheckContentfulWebhookAttributes(webhook *contentful.Webhook, attrs 
 
 		httpBasicAuthUsername := attrs["http_basic_auth_username"].(string)
 		if webhook.HTTPBasicUsername != httpBasicAuthUsername {
-			return fmt.Errorf("Webhook http_basic_auth_username does not match: %s, %s", webhook.HTTPBasicUsername, httpBasicAuthUsername)
+			return fmt.Errorf("webhook http_basic_auth_username does not match: %s, %s", webhook.HTTPBasicUsername, httpBasicAuthUsername)
 		}
 
 		return nil
@@ -108,23 +108,23 @@ func testAccContentfulWebhookDestroy(s *terraform.State) error {
 		// get space id from resource data
 		spaceID := rs.Primary.Attributes["space_id"]
 		if spaceID == "" {
-			return fmt.Errorf("No space_id is set")
+			return fmt.Errorf("no space_id is set")
 		}
 
 		// check webhook resource id
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No webhook ID is set")
+			return fmt.Errorf("no webhook ID is set")
 		}
 
 		// sdk client
-		client := testAccProvider.Meta().(*contentful.Contentful)
+		client := testAccProvider.Meta().(*contentful.Client)
 
 		_, err := client.Webhooks.Get(spaceID, rs.Primary.ID)
 		if _, ok := err.(contentful.NotFoundError); ok {
 			return nil
 		}
 
-		return fmt.Errorf("Webhook still exists with id: %s", rs.Primary.ID)
+		return fmt.Errorf("webhook still exists with id: %s", rs.Primary.ID)
 	}
 
 	return nil
