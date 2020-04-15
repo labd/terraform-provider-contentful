@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	contentful "github.com/labd/contentful-go"
@@ -13,20 +12,17 @@ import (
 func TestAccContentfulLocales_Basic(t *testing.T) {
 	var locale contentful.Locale
 
-	spaceName := fmt.Sprintf("space-name-%s", acctest.RandString(3))
-	name := fmt.Sprintf("locale-name-%s", acctest.RandString(3))
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccContentfulLocaleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccContentfulLocaleConfig(spaceName, name),
+				Config: testAccContentfulLocaleConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckContentfulLocaleExists("contentful_locale.mylocale", &locale),
 					testAccCheckContentfulLocaleAttributes(&locale, map[string]interface{}{
-						"name":          name,
+						"name":          "locale-name",
 						"code":          "de",
 						"fallback_code": "en-US",
 						"optional":      false,
@@ -36,11 +32,11 @@ func TestAccContentfulLocales_Basic(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccContentfulLocaleUpdateConfig(spaceName, name),
+				Config: testAccContentfulLocaleUpdateConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckContentfulLocaleExists("contentful_locale.mylocale", &locale),
 					testAccCheckContentfulLocaleAttributes(&locale, map[string]interface{}{
-						"name":          fmt.Sprintf("%s-updated", name),
+						"name":          "locale-name-updated",
 						"code":          "es",
 						"fallback_code": "en-US",
 						"optional":      true,
@@ -148,42 +144,28 @@ func testAccContentfulLocaleDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccContentfulLocaleConfig(spaceName, name string) string {
-	return fmt.Sprintf(`
-resource "contentful_space" "myspace" {
-  name = "%s"
-  default_locale = "en-US"
-}
-
+var testAccContentfulLocaleConfig = `
 resource "contentful_locale" "mylocale" {
-  space_id = "${contentful_space.myspace.id}"
+  space_id = "uhwvl4veejyj"
 
-  name = "%s"
+  name = "locale-name"
   code = "de"
   fallback_code = "en-US"
   optional = false
   cda = false
   cma = true
 }
-`, spaceName, name)
-}
+`
 
-func testAccContentfulLocaleUpdateConfig(spaceName, name string) string {
-	return fmt.Sprintf(`
-resource "contentful_space" "myspace" {
-  name = "%s"
-  default_locale = "en-US"
-}
-
+var testAccContentfulLocaleUpdateConfig = `
 resource "contentful_locale" "mylocale" {
-  space_id = "${contentful_space.myspace.id}"
+  space_id = "uhwvl4veejyj"
 
-  name = "%s-updated"
+  name = "locale-name-updated"
   code = "es"
   fallback_code = "en-US"
   optional = true
   cda = true
   cma = false
 }
-`, spaceName, name)
-}
+`
