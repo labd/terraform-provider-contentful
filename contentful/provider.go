@@ -32,6 +32,7 @@ func Provider() terraform.ResourceProvider {
 			"contentful_environment": resourceContentfulEnvironment(),
 			"contentful_entry":       resourceContentfulEntry(),
 			"contentful_asset":       resourceContentfulAsset(),
+			"contentful_upload":      resourceContentfulUpload(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
