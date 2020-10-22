@@ -101,7 +101,7 @@ func testAccContentfulUploadDestroy(s *terraform.State) error {
 var testAccContentfulUploadConfig = `
 resource "contentful_upload" "myupload" {
   space_id = "` + spaceID + `"
-  file_path =  "/home/kantoor/go/src/github.com/labd/terraform-contentful/local/upload_test.png"
+  file_path =  "/home/kantoor/go/src/github.com/labd/terraform-provider-contentful/local/upload_test.png"
   asset_id = "upload_test"
   locale = "en-US"
   title = "This is an asset"
