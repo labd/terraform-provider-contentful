@@ -14,10 +14,13 @@ description: |-
 
 ```terraform
 resource "contentful_contenttype" "example_contenttype" {
-  space_id = "space-id"
-  name          = "tf_linked"
-  description   = "content type description"
-  display_field = "asset_field"
+  space_id        = "space-id"
+  name            = "tf_linked"
+  description     = "content type description"
+  display_field   = "asset_field"
+  content_type_id = "exampleContentType"
+  env_id          = "environment-name"
+
   field {
     id   = "asset_field"
     name = "Asset Field"
@@ -51,12 +54,14 @@ resource "contentful_contenttype" "example_contenttype" {
 ### Required
 
 - **display_field** (String)
+- **env_id** (String)
 - **field** (Block List, Min: 1) (see [below for nested schema](#nestedblock--field))
 - **name** (String)
 - **space_id** (String)
 
 ### Optional
 
+- **content_type_id** (String)
 - **description** (String)
 - **id** (String) The ID of this resource.
 
