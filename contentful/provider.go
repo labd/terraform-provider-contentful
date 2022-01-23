@@ -1,13 +1,12 @@
 package contentful
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	contentful "github.com/labd/contentful-go"
 )
 
 // Provider returns the Terraform Provider as a scheme and makes resources reachable
-func Provider() terraform.ResourceProvider {
+func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"cma_token": {
