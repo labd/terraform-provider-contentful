@@ -122,22 +122,22 @@ resource "contentful_contenttype" "mycontenttype" {
   description = "Terraform Acc Test Content Type description change"
   display_field = "field1"
   field {
-	disabled  = false
-	id        = "field1"
-	localized = false
-	name      = "Field 1 name change"
-	omitted   = false
-	required  = true
-	type      = "Text"
+    disabled  = false
+    id        = "field1"
+    localized = false
+    name      = "Field 1 name change"
+    omitted   = false
+    required  = true
+    type      = "Text"
   }
   field {
-	disabled  = false
-	id        = "field3"
-	localized = false
-	name      = "Field 3 new field"
-	omitted   = false
-	required  = true
-	type      = "Integer"
+    disabled  = false
+    id        = "field3"
+    localized = false
+    name      = "Field 3 new field"
+    omitted   = false
+    required  = true
+    type      = "Integer"
   }	
 }
 `
@@ -149,22 +149,22 @@ resource "contentful_contenttype" "mycontenttype" {
   description = "Terraform Acc Test Content Type description change"
   display_field = "field1"
   field {
-	disabled  = false
-	id        = "field1"
-	localized = false
-	name      = "Field 1 name change"
-	omitted   = false
-	required  = true
-	type      = "Text"
+    disabled  = false
+    id        = "field1"
+    localized = false
+    name      = "Field 1 name change"
+    omitted   = false
+    required  = true
+    type      = "Text"
   }
   field {
-	disabled  = false
-	id        = "field3"
-	localized = false
-	name      = "Field 3 new field"
-	omitted   = false
-	required  = true
-	type      = "Integer"
+    disabled  = false
+    id        = "field3"
+    localized = false
+    name      = "Field 3 new field"
+    omitted   = false
+    required  = true
+    type      = "Integer"
   }	
 }
 
@@ -191,7 +191,7 @@ resource "contentful_contenttype" "mylinked_contenttype" {
     validations = [
 	  jsonencode({
 		linkContentType = [
-          contentful_contenttype.mycontenttype.id
+			contentful_contenttype.mycontenttype.id
 		]
 	  })
 	]

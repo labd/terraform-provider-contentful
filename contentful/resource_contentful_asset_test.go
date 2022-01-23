@@ -121,10 +121,10 @@ resource "contentful_asset" "myasset" {
       locale = "en-US"
       content = "Asset description"
     }
-    file = {
+    file {
       upload = "https://images.ctfassets.net/fo9twyrwpveg/2VQx7vz73aMEYi20MMgCk0/66e502115b1f1f973a944b4bd2cc536f/IC-1H_Modern_Stack_Website.svg"
-      fileName = "example.jpeg"
-      contentType = "image/jpeg"
+      file_name = "example.jpeg"
+      content_type = "image/jpeg"
     }
   }
   published = true
@@ -146,10 +146,10 @@ resource "contentful_asset" "myasset" {
       locale = "en-US"
       content = "Updated asset description"
     }
-    file = {
+    file {
       upload = "https://images.ctfassets.net/fo9twyrwpveg/2VQx7vz73aMEYi20MMgCk0/66e502115b1f1f973a944b4bd2cc536f/IC-1H_Modern_Stack_Website.svg"
-      fileName = "example.jpeg"
-      contentType = "image/jpeg"
+      file_name = "example.jpeg"
+      content_type = "image/jpeg"
     }
   }
   published = false

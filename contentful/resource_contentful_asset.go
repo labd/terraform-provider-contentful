@@ -1,6 +1,9 @@
 package contentful
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	contentful "github.com/labd/contentful-go"
 )
@@ -67,17 +70,18 @@ func resourceContentfulAsset() *schema.Resource {
 							},
 						},
 						"file": {
-							Type:     schema.TypeMap,
+							Type:     schema.TypeList,
 							Required: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"url": {
 										Type:     schema.TypeString,
-										Optional: true,
+										Computed: true,
 									},
 									"upload": {
 										Type:     schema.TypeString,
-										Optional: true,
+										Required: true,
 									},
 									"details": {
 										Type:     schema.TypeSet,
@@ -107,15 +111,15 @@ func resourceContentfulAsset() *schema.Resource {
 											},
 										},
 									},
-									"uploadFrom": {
+									"upload_from": {
 										Type:     schema.TypeString,
 										Computed: true,
 									},
-									"fileName": {
+									"file_name": {
 										Type:     schema.TypeString,
-										Computed: true,
+										Required: true,
 									},
-									"contentType": {
+									"content_type": {
 										Type:     schema.TypeString,
 										Required: true,
 									},
@@ -156,7 +160,13 @@ func resourceCreateAsset(d *schema.ResourceData, m interface{}) (err error) {
 		localizedDescription[field["locale"].(string)] = field["content"].(string)
 	}
 
-	file := fields["file"].(map[string]interface{})
+	files := fields["file"].([]interface{})
+
+	if len(files) == 0 {
+		return fmt.Errorf("file block not defined in asset")
+	}
+
+	file := files[0].(map[string]interface{})
 
 	asset := &contentful.Asset{
 		Sys: &contentful.Sys{
@@ -169,36 +179,38 @@ func resourceCreateAsset(d *schema.ResourceData, m interface{}) (err error) {
 			Description: localizedDescription,
 			File: map[string]*contentful.File{
 				d.Get("locale").(string): {
-					FileName:    file["fileName"].(string),
-					ContentType: file["contentType"].(string),
+					FileName:    file["file_name"].(string),
+					ContentType: file["content_type"].(string),
 				},
 			},
 		},
 	}
 
-	if url, ok := file["url"].(string); ok {
+	if url, ok := file["url"].(string); ok && url != "" {
 		asset.Fields.File[d.Get("locale").(string)].URL = url
 	}
 
-	if upload, ok := file["upload"].(string); ok {
+	if upload, ok := file["upload"].(string); ok && upload != "" {
 		asset.Fields.File[d.Get("locale").(string)].UploadURL = upload
 	}
 
-	if details, ok := file["fileDetails"].(*contentful.FileDetails); ok {
+	if details, ok := file["file_details"].(*contentful.FileDetails); ok {
 		asset.Fields.File[d.Get("locale").(string)].Details = details
 	}
 
-	if uploadFrom, ok := file["uploadFrom"].(string); ok {
-		asset.Fields.File[d.Get("locale").(string)].UploadFrom.Sys.ID = uploadFrom
+	if uploadFrom, ok := file["upload_from"].(string); ok && uploadFrom != "" {
+		asset.Fields.File[d.Get("locale").(string)].UploadFrom = &contentful.UploadFrom{
+			Sys: &contentful.Sys{
+				ID: uploadFrom,
+			},
+		}
 	}
 
-	err = client.Assets.Upsert(d.Get("space_id").(string), asset)
-	if err != nil {
+	if err = client.Assets.Upsert(d.Get("space_id").(string), asset); err != nil {
 		return err
 	}
 
-	err = client.Assets.Process(d.Get("space_id").(string), asset)
-	if err != nil {
+	if err = client.Assets.Process(d.Get("space_id").(string), asset); err != nil {
 		return err
 	}
 
@@ -208,8 +220,9 @@ func resourceCreateAsset(d *schema.ResourceData, m interface{}) (err error) {
 		return err
 	}
 
-	err = setAssetState(d, m)
-	if err != nil {
+	time.Sleep(1 * time.Second) // avoid race conditions with version mismatches
+
+	if err = setAssetState(d, m); err != nil {
 		return err
 	}
 
@@ -221,7 +234,7 @@ func resourceUpdateAsset(d *schema.ResourceData, m interface{}) (err error) {
 	spaceID := d.Get("space_id").(string)
 	assetID := d.Id()
 
-	asset, err := client.Assets.Get(spaceID, assetID)
+	_, err = client.Assets.Get(spaceID, assetID)
 	if err != nil {
 		return err
 	}
@@ -242,9 +255,15 @@ func resourceUpdateAsset(d *schema.ResourceData, m interface{}) (err error) {
 		localizedDescription[field["locale"].(string)] = field["content"].(string)
 	}
 
-	file := fields["file"].(map[string]interface{})
+	files := fields["file"].([]interface{})
 
-	asset = &contentful.Asset{
+	if len(files) == 0 {
+		return fmt.Errorf("file block not defined in asset")
+	}
+
+	file := files[0].(map[string]interface{})
+
+	asset := &contentful.Asset{
 		Sys: &contentful.Sys{
 			ID:      d.Get("asset_id").(string),
 			Version: d.Get("version").(int),
@@ -255,36 +274,38 @@ func resourceUpdateAsset(d *schema.ResourceData, m interface{}) (err error) {
 			Description: localizedDescription,
 			File: map[string]*contentful.File{
 				d.Get("locale").(string): {
-					FileName:    file["fileName"].(string),
-					ContentType: file["contentType"].(string),
+					FileName:    file["file_name"].(string),
+					ContentType: file["content_type"].(string),
 				},
 			},
 		},
 	}
 
-	if url, ok := file["url"].(string); ok {
+	if url, ok := file["url"].(string); ok && url != "" {
 		asset.Fields.File[d.Get("locale").(string)].URL = url
 	}
 
-	if upload, ok := file["upload"].(string); ok {
+	if upload, ok := file["upload"].(string); ok && upload != "" {
 		asset.Fields.File[d.Get("locale").(string)].UploadURL = upload
 	}
 
-	if details, ok := file["fileDetails"].(*contentful.FileDetails); ok {
+	if details, ok := file["file_details"].(*contentful.FileDetails); ok {
 		asset.Fields.File[d.Get("locale").(string)].Details = details
 	}
 
-	if uploadFrom, ok := file["uploadFrom"].(string); ok {
-		asset.Fields.File[d.Get("locale").(string)].UploadFrom.Sys.ID = uploadFrom
+	if uploadFrom, ok := file["upload_from"].(string); ok && uploadFrom != "" {
+		asset.Fields.File[d.Get("locale").(string)].UploadFrom = &contentful.UploadFrom{
+			Sys: &contentful.Sys{
+				ID: uploadFrom,
+			},
+		}
 	}
 
-	err = client.Assets.Upsert(d.Get("space_id").(string), asset)
-	if err != nil {
+	if err := client.Assets.Upsert(d.Get("space_id").(string), asset); err != nil {
 		return err
 	}
 
-	err = client.Assets.Process(d.Get("space_id").(string), asset)
-	if err != nil {
+	if err = client.Assets.Process(d.Get("space_id").(string), asset); err != nil {
 		return err
 	}
 
@@ -294,8 +315,7 @@ func resourceUpdateAsset(d *schema.ResourceData, m interface{}) (err error) {
 		return err
 	}
 
-	err = setAssetState(d, m)
-	if err != nil {
+	if err = setAssetState(d, m); err != nil {
 		return err
 	}
 
@@ -310,19 +330,26 @@ func setAssetState(d *schema.ResourceData, m interface{}) (err error) {
 	asset, _ := client.Assets.Get(spaceID, assetID)
 
 	if d.Get("published").(bool) && asset.Sys.PublishedAt == "" {
-		err = client.Assets.Publish(spaceID, asset)
+		if err = client.Assets.Publish(spaceID, asset); err != nil {
+			return err
+		}
 	} else if !d.Get("published").(bool) && asset.Sys.PublishedAt != "" {
-		err = client.Assets.Unpublish(spaceID, asset)
+		if err = client.Assets.Unpublish(spaceID, asset); err != nil {
+			return err
+		}
 	}
 
 	if d.Get("archived").(bool) && asset.Sys.ArchivedAt == "" {
-		err = client.Assets.Archive(spaceID, asset)
+		if err = client.Assets.Archive(spaceID, asset); err != nil {
+			return err
+		}
 	} else if !d.Get("archived").(bool) && asset.Sys.ArchivedAt != "" {
-		err = client.Assets.Unarchive(spaceID, asset)
+		if err = client.Assets.Unarchive(spaceID, asset); err != nil {
+			return err
+		}
 	}
 
 	err = setAssetProperties(d, asset)
-
 	return err
 }
 

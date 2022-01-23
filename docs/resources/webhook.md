@@ -17,7 +17,7 @@ resource "contentful_webhook" "example_webhook" {
   space_id = "space-id"
 
   name = "webhook-name"
-  url=  "https://www.example.com/test"
+  url =  "https://www.example.com/test"
   topics = [
     "Entry.create",
     "ContentType.create",
