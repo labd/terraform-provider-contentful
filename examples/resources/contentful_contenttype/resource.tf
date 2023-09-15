@@ -1,5 +1,5 @@
 resource "contentful_contenttype" "example_contenttype" {
-  space_id = "space-id"
+  space_id      = "space-id"
   name          = "tf_linked"
   description   = "content type description"
   display_field = "asset_field"

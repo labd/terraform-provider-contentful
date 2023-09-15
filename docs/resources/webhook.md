@@ -17,7 +17,7 @@ resource "contentful_webhook" "example_webhook" {
   space_id = "space-id"
 
   name = "webhook-name"
-  url =  "https://www.example.com/test"
+  url  = "https://www.example.com/test"
   topics = [
     "Entry.create",
     "ContentType.create",
@@ -36,20 +36,18 @@ resource "contentful_webhook" "example_webhook" {
 
 ### Required
 
-- **name** (String)
-- **space_id** (String)
-- **topics** (List of String)
-- **url** (String)
+- `name` (String)
+- `space_id` (String)
+- `topics` (List of String)
+- `url` (String)
 
 ### Optional
 
-- **headers** (Map of String)
-- **http_basic_auth_password** (String)
-- **http_basic_auth_username** (String)
-- **id** (String) The ID of this resource.
+- `headers` (Map of String)
+- `http_basic_auth_password` (String)
+- `http_basic_auth_username` (String)
 
 ### Read-Only
 
-- **version** (Number)
-
-
+- `id` (String) The ID of this resource.
+- `version` (Number)

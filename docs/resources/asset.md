@@ -15,26 +15,26 @@ description: |-
 ```terraform
 resource "contentful_asset" "example_asset" {
   asset_id = "test_asset"
-  locale = "en-US"
+  locale   = "en-US"
   space_id = "space-id"
 
   fields {
     title {
-      locale = "en-US"
+      locale  = "en-US"
       content = "asset title"
     }
     description {
-      locale = "en-US"
+      locale  = "en-US"
       content = "asset description"
     }
-    file {
-      upload = "https://images.ctfassets.net/fo9twyrwpveg/2VQx7vz73aMEYi20MMgCk0/66e502115b1f1f973a944b4bd2cc536f/IC-1H_Modern_Stack_Website.svg"
-      file_name = "example.jpeg"
-      content_type = "image/jpeg"
+    file = {
+      upload      = "https://images.ctfassets.net/fo9twyrwpveg/2VQx7vz73aMEYi20MMgCk0/66e502115b1f1f973a944b4bd2cc536f/IC-1H_Modern_Stack_Website.svg"
+      fileName    = "example.jpeg"
+      contentType = "image/jpeg"
     }
   }
   published = false
-  archived = false
+  archived  = false
 }
 ```
 
@@ -43,37 +43,71 @@ resource "contentful_asset" "example_asset" {
 
 ### Required
 
-- **archived** (Boolean)
-- **asset_id** (String)
-- **fields** (Block List, Min: 1) (see [below for nested schema](#nestedblock--fields))
-- **locale** (String)
-- **published** (Boolean)
-- **space_id** (String)
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `archived` (Boolean)
+- `asset_id` (String)
+- `fields` (Block List, Min: 1) (see [below for nested schema](#nestedblock--fields))
+- `locale` (String)
+- `published` (Boolean)
+- `space_id` (String)
 
 ### Read-Only
 
-- **version** (Number)
+- `id` (String) The ID of this resource.
+- `version` (Number)
 
 <a id="nestedblock--fields"></a>
 ### Nested Schema for `fields`
 
 Required:
 
-- **description** (Block List, Min: 1) (see [below for nested schema](#nestedblock--fields--description))
-- **file** (Map of String)
-- **title** (Block List, Min: 1) (see [below for nested schema](#nestedblock--fields--title))
+- `description` (Block List, Min: 1) (see [below for nested schema](#nestedblock--fields--description))
+- `file` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--fields--file))
+- `title` (Block List, Min: 1) (see [below for nested schema](#nestedblock--fields--title))
 
 <a id="nestedblock--fields--description"></a>
 ### Nested Schema for `fields.description`
 
 Required:
 
-- **content** (String)
-- **locale** (String)
+- `content` (String)
+- `locale` (String)
+
+
+<a id="nestedblock--fields--file"></a>
+### Nested Schema for `fields.file`
+
+Required:
+
+- `content_type` (String)
+- `file_name` (String)
+- `upload` (String)
+
+Optional:
+
+- `details` (Block Set) (see [below for nested schema](#nestedblock--fields--file--details))
+
+Read-Only:
+
+- `upload_from` (String)
+- `url` (String)
+
+<a id="nestedblock--fields--file--details"></a>
+### Nested Schema for `fields.file.details`
+
+Required:
+
+- `image` (Block Set, Min: 1) (see [below for nested schema](#nestedblock--fields--file--details--image))
+- `size` (Number)
+
+<a id="nestedblock--fields--file--details--image"></a>
+### Nested Schema for `fields.file.details.image`
+
+Required:
+
+- `height` (Number)
+- `width` (Number)
+
+
 
 
 <a id="nestedblock--fields--title"></a>
@@ -81,7 +115,5 @@ Required:
 
 Required:
 
-- **content** (String)
-- **locale** (String)
-
-
+- `content` (String)
+- `locale` (String)

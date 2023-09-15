@@ -16,7 +16,7 @@ description: |-
 resource "contentful_apikey" "myapikey" {
   space_id = "space-id"
 
-  name = "api-key-name"
+  name        = "api-key-name"
   description = "a-great-key"
 }
 ```
@@ -26,17 +26,15 @@ resource "contentful_apikey" "myapikey" {
 
 ### Required
 
-- **name** (String)
-- **space_id** (String)
+- `name` (String)
+- `space_id` (String)
 
 ### Optional
 
-- **description** (String)
-- **id** (String) The ID of this resource.
+- `description` (String)
 
 ### Read-Only
 
-- **access_token** (String)
-- **version** (Number)
-
-
+- `access_token` (String)
+- `id` (String) The ID of this resource.
+- `version` (Number)

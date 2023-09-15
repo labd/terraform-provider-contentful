@@ -14,7 +14,7 @@ description: |-
 
 ```terraform
 resource "contentful_contenttype" "example_contenttype" {
-  space_id = "space-id"
+  space_id      = "space-id"
   name          = "tf_linked"
   description   = "content type description"
   display_field = "asset_field"
@@ -50,49 +50,50 @@ resource "contentful_contenttype" "example_contenttype" {
 
 ### Required
 
-- **display_field** (String)
-- **field** (Block List, Min: 1) (see [below for nested schema](#nestedblock--field))
-- **name** (String)
-- **space_id** (String)
+- `display_field` (String)
+- `field` (Block List, Min: 1) (see [below for nested schema](#nestedblock--field))
+- `name` (String)
+- `space_id` (String)
 
 ### Optional
 
-- **description** (String)
-- **id** (String) The ID of this resource.
+- `description` (String)
 
 ### Read-Only
 
-- **version** (Number)
+- `id` (String) The ID of this resource.
+- `version` (Number)
 
 <a id="nestedblock--field"></a>
 ### Nested Schema for `field`
 
 Required:
 
-- **id** (String) The ID of this resource.
-- **name** (String)
-- **type** (String)
+- `name` (String)
+- `type` (String)
 
 Optional:
 
-- **disabled** (Boolean)
-- **items** (Block List, Max: 1) (see [below for nested schema](#nestedblock--field--items))
-- **link_type** (String)
-- **localized** (Boolean)
-- **omitted** (Boolean)
-- **required** (Boolean)
-- **validations** (List of String)
+- `disabled` (Boolean)
+- `items` (Block List, Max: 1) (see [below for nested schema](#nestedblock--field--items))
+- `link_type` (String)
+- `localized` (Boolean)
+- `omitted` (Boolean)
+- `required` (Boolean)
+- `validations` (List of String)
+
+Read-Only:
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--field--items"></a>
 ### Nested Schema for `field.items`
 
 Required:
 
-- **link_type** (String)
-- **type** (String)
+- `link_type` (String)
+- `type` (String)
 
 Optional:
 
-- **validations** (List of String)
-
-
+- `validations` (List of String)

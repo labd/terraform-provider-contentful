@@ -17,5 +17,5 @@ description: |-
 
 ### Required
 
-- **cma_token** (String) The Contentful Management API token
-- **organization_id** (String) The organization ID
+- `cma_token` (String) The Contentful Management API token
+- `organization_id` (String) The organization ID

@@ -16,12 +16,12 @@ description: |-
 resource "contentful_locale" "example_locale" {
   space_id = "spaced-id"
 
-  name = "locale-name"
-  code = "de"
+  name          = "locale-name"
+  code          = "de"
   fallback_code = "en-US"
-  optional = false
-  cda = false
-  cma = true
+  optional      = false
+  cda           = false
+  cma           = true
 }
 ```
 
@@ -30,20 +30,18 @@ resource "contentful_locale" "example_locale" {
 
 ### Required
 
-- **code** (String)
-- **name** (String)
-- **space_id** (String)
+- `code` (String)
+- `name` (String)
+- `space_id` (String)
 
 ### Optional
 
-- **cda** (Boolean)
-- **cma** (Boolean)
-- **fallback_code** (String)
-- **id** (String) The ID of this resource.
-- **optional** (Boolean)
+- `cda` (Boolean)
+- `cma` (Boolean)
+- `fallback_code` (String)
+- `optional` (Boolean)
 
 ### Read-Only
 
-- **version** (Number)
-
-
+- `id` (String) The ID of this resource.
+- `version` (Number)

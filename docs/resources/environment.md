@@ -15,7 +15,7 @@ description: |-
 ```terraform
 resource "contentful_environment" "example_environment" {
   space_id = "spaced-id"
-  name = "environment-name"
+  name     = "environment-name"
 }
 ```
 
@@ -24,15 +24,10 @@ resource "contentful_environment" "example_environment" {
 
 ### Required
 
-- **name** (String)
-- **space_id** (String)
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `name` (String)
+- `space_id` (String)
 
 ### Read-Only
 
-- **version** (Number)
-
-
+- `id` (String) The ID of this resource.
+- `version` (Number)
