@@ -1,16 +1,53 @@
 package contentful
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	contentful "github.com/labd/contentful-go"
+	"github.com/labd/contentful-go"
+	"strings"
 )
+
+func resourceContentfulLocaleParseImportId(id string) (string, string, string, error) {
+	parts := strings.SplitN(id, ":", 3)
+
+	if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
+		return "", "", "", fmt.Errorf("unexpected format of ID (%s), expected localeId:env:spaceId", id)
+	}
+
+	return parts[0], parts[1], parts[2], nil
+}
 
 func resourceContentfulLocale() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceCreateLocale,
-		Read:   resourceReadLocale,
-		Update: resourceUpdateLocale,
-		Delete: resourceDeleteLocale,
+		CreateContext: resourceCreateLocale,
+		ReadContext:   resourceReadLocale,
+		UpdateContext: resourceUpdateLocale,
+		DeleteContext: resourceDeleteLocale,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
+				id, environment, spaceId, err := resourceContentfulLocaleParseImportId(d.Id())
+
+				if err != nil {
+					return nil, err
+				}
+
+				err = d.Set("environment", environment)
+				if err != nil {
+					return nil, err
+				}
+
+				err = d.Set("space_id", spaceId)
+				if err != nil {
+					return nil, err
+				}
+				d.SetId(id)
+
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"version": {
@@ -32,7 +69,6 @@ func resourceContentfulLocale() *schema.Resource {
 			"fallback_code": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  "en-US",
 			},
 			"optional": {
 				Type:     schema.TypeBool,
@@ -49,31 +85,55 @@ func resourceContentfulLocale() *schema.Resource {
 				Optional: true,
 				Default:  false,
 			},
+			"environment": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
 
-func resourceCreateLocale(d *schema.ResourceData, m interface{}) (err error) {
+func resourceCreateLocale(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
+	var err error
 
 	locale := &contentful.Locale{
 		Name:         d.Get("name").(string),
 		Code:         d.Get("code").(string),
-		FallbackCode: d.Get("fallback_code").(string),
+		FallbackCode: nil,
 		Optional:     d.Get("optional").(bool),
 		CDA:          d.Get("cda").(bool),
 		CMA:          d.Get("cma").(bool),
 	}
 
-	err = client.Locales.Upsert(spaceID, locale)
-	if err != nil {
-		return err
+	if fallbackCode, ok := d.GetOk("fallback_code"); ok {
+
+		fallbackCodeStr := fallbackCode.(string)
+
+		locale.FallbackCode = &fallbackCodeStr
 	}
 
-	err = setLocaleProperties(d, locale)
+	if environment, ok := d.GetOk("environment"); ok {
+
+		env, envErr := client.Environments.Get(spaceID, environment.(string))
+
+		if envErr != nil {
+			return diag.FromErr(envErr)
+		}
+
+		err = client.Locales.UpsertWithEnv(env, locale)
+	} else {
+		err = client.Locales.Upsert(spaceID, locale)
+	}
+
 	if err != nil {
-		return err
+		return diag.FromErr(err)
+	}
+
+	diagErr := setLocaleProperties(d, locale)
+	if diagErr != nil {
+		return diagErr
 	}
 
 	d.SetId(locale.Sys.ID)
@@ -81,106 +141,158 @@ func resourceCreateLocale(d *schema.ResourceData, m interface{}) (err error) {
 	return nil
 }
 
-func resourceReadLocale(d *schema.ResourceData, m interface{}) error {
+func resourceReadLocale(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*contentful.Client)
-	spaceID := d.Get("space_id").(string)
 	localeID := d.Id()
 
-	locale, err := client.Locales.Get(spaceID, localeID)
-	if _, ok := err.(*contentful.NotFoundError); ok {
+	locale, err := readLocale(d, client, localeID)
+
+	var notFoundError *contentful.NotFoundError
+	if errors.As(err, &notFoundError) {
 		d.SetId("")
 		return nil
 	}
 
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	return setLocaleProperties(d, locale)
 }
 
-func resourceUpdateLocale(d *schema.ResourceData, m interface{}) (err error) {
+func resourceUpdateLocale(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	localeID := d.Id()
 
-	locale, err := client.Locales.Get(spaceID, localeID)
+	locale, err := readLocale(d, client, localeID)
+
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	locale.Name = d.Get("name").(string)
 	locale.Code = d.Get("code").(string)
-	locale.FallbackCode = d.Get("fallback_code").(string)
+
+	locale.FallbackCode = nil
+
+	if fallbackCode, ok := d.GetOk("fallback_code"); ok {
+
+		fallbackCodeStr := fallbackCode.(string)
+
+		locale.FallbackCode = &fallbackCodeStr
+	}
+
 	locale.Optional = d.Get("optional").(bool)
 	locale.CDA = d.Get("cda").(bool)
 	locale.CMA = d.Get("cma").(bool)
 
-	err = client.Locales.Upsert(spaceID, locale)
-	if err != nil {
-		return err
+	if environment, ok := d.GetOk("environment"); ok {
+		env, envErr := client.Environments.Get(spaceID, environment.(string))
+
+		if envErr != nil {
+			return diag.FromErr(envErr)
+		}
+
+		err = client.Locales.UpsertWithEnv(env, locale)
+
+	} else {
+		err = client.Locales.Upsert(spaceID, locale)
 	}
 
-	err = setLocaleProperties(d, locale)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return nil
+	return setLocaleProperties(d, locale)
 }
 
-func resourceDeleteLocale(d *schema.ResourceData, m interface{}) (err error) {
+func resourceDeleteLocale(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	localeID := d.Id()
 
-	locale, err := client.Locales.Get(spaceID, localeID)
+	locale, err := readLocale(d, client, localeID)
+
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	err = client.Locales.Delete(spaceID, locale)
-	if _, ok := err.(*contentful.NotFoundError); ok {
+	if environment, ok := d.GetOk("environment"); ok {
+		env, envErr := client.Environments.Get(spaceID, environment.(string))
+
+		if envErr != nil {
+			return diag.FromErr(envErr)
+		}
+
+		err = client.Locales.DeleteWithEnv(env, locale)
+
+	} else {
+		err = client.Locales.Delete(spaceID, locale)
+	}
+
+	var notFoundError *contentful.NotFoundError
+	if errors.As(err, &notFoundError) {
 		return nil
 	}
 
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	return nil
 }
 
-func setLocaleProperties(d *schema.ResourceData, locale *contentful.Locale) error {
+func setLocaleProperties(d *schema.ResourceData, locale *contentful.Locale) diag.Diagnostics {
 	err := d.Set("name", locale.Name)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	err = d.Set("code", locale.Code)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	err = d.Set("fallback_code", locale.FallbackCode)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	err = d.Set("optional", locale.Optional)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	err = d.Set("cda", locale.CDA)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	err = d.Set("cma", locale.CMA)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
+	}
+
+	err = d.Set("version", locale.Sys.Version)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
+}
+
+func readLocale(d *schema.ResourceData, client *contentful.Client, localeID string) (*contentful.Locale, error) {
+	spaceID := d.Get("space_id").(string)
+	if environment, ok := d.GetOk("environment"); ok {
+		env, envErr := client.Environments.Get(spaceID, environment.(string))
+
+		if envErr != nil {
+			return nil, envErr
+		}
+
+		return client.Locales.GetWithEnv(env, localeID)
+	} else {
+		return client.Locales.Get(spaceID, localeID)
+	}
 }
