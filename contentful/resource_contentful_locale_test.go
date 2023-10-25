@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	contentful "github.com/labd/contentful-go"
+	"github.com/labd/contentful-go"
 )
 
 func TestAccContentfulLocales_Basic(t *testing.T) {
@@ -95,8 +95,8 @@ func testAccCheckContentfulLocaleAttributes(locale *contentful.Locale, attrs map
 		}
 
 		fallbackCode := attrs["fallback_code"].(string)
-		if locale.FallbackCode != fallbackCode {
-			return fmt.Errorf("locale fallback code does not match: %s, %s", locale.FallbackCode, fallbackCode)
+		if *locale.FallbackCode != fallbackCode {
+			return fmt.Errorf("locale fallback code does not match: %s, %s", *locale.FallbackCode, fallbackCode)
 		}
 
 		isOptional := attrs["optional"].(bool)

@@ -75,3 +75,5 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 	moul.io/http2curl v1.0.1-0.20190925090545-5cd742060b0e // indirect
 )
+
+replace github.com/labd/contentful-go v0.5.3 => github.com/flaconi/contentful-go v0.5.3-0.20231024101932-f0a47fb0102a
