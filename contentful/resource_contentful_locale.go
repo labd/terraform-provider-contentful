@@ -93,7 +93,7 @@ func resourceContentfulLocale() *schema.Resource {
 	}
 }
 
-func resourceCreateLocale(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceCreateLocale(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	var err error
@@ -141,11 +141,10 @@ func resourceCreateLocale(ctx context.Context, d *schema.ResourceData, m interfa
 	return nil
 }
 
-func resourceReadLocale(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceReadLocale(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*contentful.Client)
-	localeID := d.Id()
 
-	locale, err := readLocale(d, client, localeID)
+	locale, err := getLocale(d, client)
 
 	var notFoundError *contentful.NotFoundError
 	if errors.As(err, &notFoundError) {
@@ -160,12 +159,11 @@ func resourceReadLocale(ctx context.Context, d *schema.ResourceData, m interface
 	return setLocaleProperties(d, locale)
 }
 
-func resourceUpdateLocale(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceUpdateLocale(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
-	localeID := d.Id()
 
-	locale, err := readLocale(d, client, localeID)
+	locale, err := getLocale(d, client)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -207,12 +205,11 @@ func resourceUpdateLocale(ctx context.Context, d *schema.ResourceData, m interfa
 	return setLocaleProperties(d, locale)
 }
 
-func resourceDeleteLocale(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceDeleteLocale(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
-	localeID := d.Id()
 
-	locale, err := readLocale(d, client, localeID)
+	locale, err := getLocale(d, client)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -282,7 +279,7 @@ func setLocaleProperties(d *schema.ResourceData, locale *contentful.Locale) diag
 	return nil
 }
 
-func readLocale(d *schema.ResourceData, client *contentful.Client, localeID string) (*contentful.Locale, error) {
+func getLocale(d *schema.ResourceData, client *contentful.Client) (*contentful.Locale, error) {
 	spaceID := d.Get("space_id").(string)
 	if environment, ok := d.GetOk("environment"); ok {
 		env, envErr := client.Environments.Get(spaceID, environment.(string))
@@ -291,8 +288,8 @@ func readLocale(d *schema.ResourceData, client *contentful.Client, localeID stri
 			return nil, envErr
 		}
 
-		return client.Locales.GetWithEnv(env, localeID)
+		return client.Locales.GetWithEnv(env, d.Id())
 	} else {
-		return client.Locales.Get(spaceID, localeID)
+		return client.Locales.Get(spaceID, d.Id())
 	}
 }
