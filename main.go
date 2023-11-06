@@ -1,9 +1,17 @@
 package main
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+	"context"
+	"flag"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6/tf6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"github.com/labd/terraform-provider-contentful/contentful"
+	"github.com/labd/terraform-provider-contentful/internal/provider"
+	"log"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -17,10 +25,57 @@ import (
 //
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 
+var (
+	// these will be set by the goreleaser configuration
+	// to appropriate values for the compiled binary
+	version string = "dev"
+	commit  string = "snapshot"
+)
+
 func main() {
-	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: func() *schema.Provider {
-			return contentful.Provider()
+
+	debugFlag := flag.Bool("debug", false, "Start provider in debug mode.")
+	flag.Parse()
+
+	fullVersion := fmt.Sprintf("%s (%s)", version, commit)
+
+	sdkProvider := contentful.Provider()
+
+	ctx := context.Background()
+
+	upgradedSdkProvider, err := tf5to6server.UpgradeServer(
+		ctx,
+		sdkProvider().GRPCProvider,
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	providers := []func() tfprotov6.ProviderServer{
+		providerserver.NewProtocol6(provider.New(fullVersion, *debugFlag)),
+		func() tfprotov6.ProviderServer {
+			return upgradedSdkProvider
 		},
-	})
+	}
+
+	muxServer, err := tf6muxserver.NewMuxServer(ctx, providers...)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var serveOpts []tf6server.ServeOpt
+	if *debugFlag {
+		serveOpts = append(serveOpts, tf6server.WithManagedDebug())
+	}
+
+	err = tf6server.Serve(
+		"registry.terraform.io/flaconi/contentful",
+		muxServer.ProviderServer,
+		serveOpts...,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
