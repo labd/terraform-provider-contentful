@@ -136,10 +136,12 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 		Description: "Todo for explaining contenttype",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
 				Description: "content type id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"version": schema.Int64Attribute{

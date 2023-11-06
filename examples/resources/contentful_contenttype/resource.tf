@@ -3,28 +3,26 @@ resource "contentful_contenttype" "example_contenttype" {
   name          = "tf_linked"
   description   = "content type description"
   display_field = "asset_field"
-  field {
+  fields =[{
     id   = "asset_field"
     name = "Asset Field"
     type = "Array"
-    items {
+    items = {
       type      = "Link"
       link_type = "Asset"
     }
     required = true
-  }
-  field {
+  }, {
     id        = "entry_link_field"
     name      = "Entry Link Field"
     type      = "Link"
     link_type = "Entry"
-    validations = [
-      jsonencode({
-        linkContentType = [
+    validations = [{
+        link_content_type = [
           contentful_contenttype.some_other_content_type.id
         ]
-      })
+      }
     ]
     required = false
-  }
+  }]
 }

@@ -30,6 +30,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 				Config: testContentType("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID")),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
+					resource.TestCheckResourceAttr(resourceName, "id", "tf_test1"),
 					resource.TestCheckResourceAttr(resourceName, "version", "2"),
 					resource.TestCheckResourceAttr(resourceName, "version_controls", "0"),
 					//todo check in contentful directly if the type looks like this
@@ -48,6 +49,14 @@ func TestContentTypeResource_Create(t *testing.T) {
 				Config: testContentTypeLinkConfig("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID"), "linked_content_type"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(linkedResourceName, "name", "tf_linked"),
+					//todo check in contentful directly if the type looks like this
+				),
+			},
+			{
+				Config: testContentTypeWithId("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID")),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
+					resource.TestCheckResourceAttr(resourceName, "id", "tf_test2"),
 					//todo check in contentful directly if the type looks like this
 				),
 			},
@@ -84,6 +93,31 @@ func testContentType(identifier string, spaceId string) string {
 	return utils.HCLTemplate(`
 		resource "contentful_contenttype" "{{ .identifier }}" {
   space_id = "{{ .spaceId }}"
+  name = "tf_test1"
+  description = "Terraform Acc Test Content Type description change"
+  display_field = "field1"
+  fields = [{
+    id        = "field1"
+    name      = "Field 1 name change"
+    required  = true
+    type      = "Text"
+  }, {
+    id        = "field3"
+    name      = "Field 3 new field"
+    required  = true
+    type      = "Integer"
+  }]
+}`, map[string]any{
+		"identifier": identifier,
+		"spaceId":    spaceId,
+	})
+}
+
+func testContentTypeWithId(identifier string, spaceId string) string {
+	return utils.HCLTemplate(`
+		resource "contentful_contenttype" "{{ .identifier }}" {
+  space_id = "{{ .spaceId }}"
+  id = "tf_test2"
   name = "tf_test1"
   description = "Terraform Acc Test Content Type description change"
   display_field = "field1"

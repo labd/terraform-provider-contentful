@@ -492,6 +492,10 @@ func (c *ContentType) Draft() (*contentful.ContentType, error) {
 		Fields:       fields,
 	}
 
+	if !c.ID.IsUnknown() || !c.ID.IsNull() {
+		contentfulType.Sys = &contentful.Sys{ID: c.ID.ValueString()}
+	}
+
 	if !c.Description.IsNull() && !c.Description.IsUnknown() {
 		contentfulType.Description = c.Description.ValueStringPointer()
 	}
