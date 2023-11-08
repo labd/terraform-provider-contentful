@@ -25,8 +25,10 @@ import (
 	"strings"
 )
 
+type key int
+
 const (
-	OnlyControlVersion = "onlyControlVersion"
+	OnlyControlVersion key = iota
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -131,6 +133,8 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 			},
 		},
 	}
+
+	widgetIdPath := path.MatchRelative().AtParent().AtParent().AtName("widget_id")
 
 	response.Schema = schema.Schema{
 		Description: "Todo for explaining contenttype",
@@ -285,33 +289,43 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 										"true_label": schema.StringAttribute{
 											Optional: true,
 											Validators: []validator.String{
-												customvalidator.StringAllowedWhenSetValidator(path.MatchRelative().AtParent().AtParent().AtName("widget_id"), "boolean"),
+												customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "boolean"),
 											},
 										},
 										"false_label": schema.StringAttribute{
 											Optional: true,
 											Validators: []validator.String{
-												customvalidator.StringAllowedWhenSetValidator(path.MatchRelative().AtParent().AtParent().AtName("widget_id"), "boolean"),
+												customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "boolean"),
 											},
 										},
-										"stars": schema.StringAttribute{
+										"stars": schema.Int64Attribute{
 											Optional: true,
-											Validators: []validator.String{
-												customvalidator.StringAllowedWhenSetValidator(path.MatchRelative().AtParent().AtParent().AtName("widget_id"), "rating"),
+											Validators: []validator.Int64{
+												customvalidator.Int64AllowedWhenSetValidator(path.MatchRelative().AtParent().AtParent().AtName("widget_id"), "rating"),
 											},
 										},
 										"format": schema.StringAttribute{
 											Optional: true,
 											Validators: []validator.String{
 												stringvalidator.OneOf("dateonly", "time", "timeZ"),
-												customvalidator.StringAllowedWhenSetValidator(path.MatchRelative().AtParent().AtParent().AtName("widget_id"), "datepicker"),
+												customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "datepicker"),
 											},
 										},
 										"ampm": schema.StringAttribute{
 											Optional: true,
 											Validators: []validator.String{
 												stringvalidator.OneOf("12", "24"),
-												customvalidator.StringAllowedWhenSetValidator(path.MatchRelative().AtParent().AtParent().AtName("widget_id"), "datepicker"),
+												customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "datepicker"),
+											},
+										},
+										/** (only for References, many) Select whether to enable Bulk Editing mode */
+										"bulk_editing": schema.BoolAttribute{
+											Optional: true,
+										},
+										"tracking_field_id": schema.StringAttribute{
+											Optional: true,
+											Validators: []validator.String{
+												customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "slugEditor"),
 											},
 										},
 									},
@@ -365,12 +379,12 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 		}
 	} else {
 
-		env, envErr := e.client.Environments.Get(plan.SpaceId.ValueString(), plan.Environment.ValueString())
-
-		if envErr != nil {
-			response.Diagnostics.AddError("Error creating contenttype", envErr.Error())
-			return
-		}
+		env := &contentful.Environment{Sys: &contentful.Sys{
+			ID: plan.Environment.ValueString(),
+			Space: &contentful.Space{
+				Sys: &contentful.Sys{ID: plan.SpaceId.ValueString()},
+			},
+		}}
 
 		if err = e.client.ContentTypes.UpsertWithEnv(env, draft); err != nil {
 			response.Diagnostics.AddError("Error creating contenttype", err.Error())
@@ -600,17 +614,18 @@ func (e *contentTypeResource) doUpdate(plan *ContentType, draft *contentful.Cont
 		}
 	} else {
 
-		env, err := e.client.Environments.Get(plan.SpaceId.ValueString(), plan.Environment.ValueString())
+		env := &contentful.Environment{Sys: &contentful.Sys{
+			ID: plan.Environment.ValueString(),
+			Space: &contentful.Space{
+				Sys: &contentful.Sys{ID: plan.SpaceId.ValueString()},
+			},
+		}}
 
-		if err != nil {
+		if err := e.client.ContentTypes.UpsertWithEnv(env, draft); err != nil {
 			return err
 		}
 
-		if err = e.client.ContentTypes.UpsertWithEnv(env, draft); err != nil {
-			return err
-		}
-
-		if err = e.client.ContentTypes.ActivateWithEnv(env, draft); err != nil {
+		if err := e.client.ContentTypes.ActivateWithEnv(env, draft); err != nil {
 			return err
 		}
 	}
@@ -655,17 +670,18 @@ func (e *contentTypeResource) doDelete(data *ContentType, draft *contentful.Cont
 		}
 	} else {
 
-		env, err := e.client.Environments.Get(data.SpaceId.ValueString(), data.Environment.ValueString())
+		env := &contentful.Environment{Sys: &contentful.Sys{
+			ID: data.Environment.ValueString(),
+			Space: &contentful.Space{
+				Sys: &contentful.Sys{ID: data.SpaceId.ValueString()},
+			},
+		}}
 
-		if err != nil {
+		if err := e.client.ContentTypes.DeactivateWithEnv(env, draft); err != nil {
 			return err
 		}
 
-		if err = e.client.ContentTypes.DeactivateWithEnv(env, draft); err != nil {
-			return err
-		}
-
-		if err = e.client.ContentTypes.DeleteWithEnv(env, draft); err != nil {
+		if err := e.client.ContentTypes.DeleteWithEnv(env, draft); err != nil {
 			return err
 		}
 
@@ -695,11 +711,14 @@ func (e *contentTypeResource) ImportState(ctx context.Context, request resource.
 
 func (e *contentTypeResource) getContentType(editor *ContentType) (*contentful.ContentType, error) {
 	if !editor.Environment.IsUnknown() && !editor.Environment.IsNull() {
-		env, err := e.client.Environments.Get(editor.SpaceId.ValueString(), editor.Environment.ValueString())
 
-		if err != nil {
-			return nil, err
-		}
+		env := &contentful.Environment{Sys: &contentful.Sys{
+			ID: editor.Environment.ValueString(),
+			Space: &contentful.Space{
+				Sys: &contentful.Sys{ID: editor.SpaceId.ValueString()},
+			},
+		}}
+
 		return e.client.ContentTypes.GetWithEnv(env, editor.ID.ValueString())
 	} else {
 		return e.client.ContentTypes.Get(editor.SpaceId.ValueString(), editor.ID.ValueString())
@@ -708,11 +727,14 @@ func (e *contentTypeResource) getContentType(editor *ContentType) (*contentful.C
 
 func (e *contentTypeResource) getContentTypeControls(editor *ContentType) (*contentful.EditorInterface, error) {
 	if !editor.Environment.IsUnknown() && !editor.Environment.IsNull() {
-		env, err := e.client.Environments.Get(editor.SpaceId.ValueString(), editor.Environment.ValueString())
 
-		if err != nil {
-			return nil, err
-		}
+		env := &contentful.Environment{Sys: &contentful.Sys{
+			ID: editor.Environment.ValueString(),
+			Space: &contentful.Space{
+				Sys: &contentful.Sys{ID: editor.SpaceId.ValueString()},
+			},
+		}}
+
 		return e.client.EditorInterfaces.GetWithEnv(env, editor.ID.ValueString())
 	} else {
 		return e.client.EditorInterfaces.Get(editor.SpaceId.ValueString(), editor.ID.ValueString())

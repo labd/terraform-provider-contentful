@@ -159,6 +159,10 @@ manage_field_controls = true
     control = {
 		widget_id = "numberEditor"
     	widget_namespace = "builtin"
+		settings = {
+			help_text = "blabla"
+	   		bulk_editing = true
+		}
 	}
   }]
 }`, map[string]any{
@@ -187,6 +191,10 @@ manage_field_controls = true
     control = {
 		widget_id = "numberEditor"
     	widget_namespace = "builtin"
+		settings = {
+			help_text = "blabla"
+		   	bulk_editing = false
+		}
 	}
   }]
 }

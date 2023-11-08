@@ -1,7 +1,6 @@
 package contenttype
 
 import (
-	"errors"
 	"fmt"
 	"github.com/elliotchance/pie/v2"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -268,7 +267,7 @@ func getTypeOfMap(mapValues map[string]any) (*string, error) {
 			t := "bool"
 			return &t, nil
 		default:
-			return nil, errors.New(fmt.Sprintf("The default type %T is not supported by the provider", c))
+			return nil, fmt.Errorf("The default type %T is not supported by the provider", c)
 		}
 	}
 
@@ -355,9 +354,6 @@ func (f *Field) Import(n *contentful.Field, c []contentful.Controls) error {
 
 			settings.Import(c[idx].Settings)
 		}
-		if val, ok := c[idx].Settings["helpText"]; ok {
-			settings.HelpText = types.StringValue(val)
-		}
 
 		f.Control = &Control{
 			WidgetId:        types.StringPointerValue(c[idx].WidgetID),
@@ -370,57 +366,39 @@ func (f *Field) Import(n *contentful.Field, c []contentful.Controls) error {
 }
 
 type Settings struct {
-	HelpText   types.String `tfsdk:"help_text"`
-	TrueLabel  types.String `tfsdk:"true_label"`
-	FalseLabel types.String `tfsdk:"false_label"`
-	Stars      types.String `tfsdk:"stars"`
-	Format     types.String `tfsdk:"format"`
-	TimeFormat types.String `tfsdk:"ampm"`
+	HelpText        types.String `tfsdk:"help_text"`
+	TrueLabel       types.String `tfsdk:"true_label"`
+	FalseLabel      types.String `tfsdk:"false_label"`
+	Stars           types.Int64  `tfsdk:"stars"`
+	Format          types.String `tfsdk:"format"`
+	TimeFormat      types.String `tfsdk:"ampm"`
+	BulkEditing     types.Bool   `tfsdk:"bulk_editing"`
+	TrackingFieldId types.String `tfsdk:"tracking_field_id"`
 }
 
-func (s *Settings) Import(settings map[string]string) {
-	if val, ok := settings["helpText"]; ok {
-		s.HelpText = types.StringValue(val)
-	}
-
-	if val, ok := settings["trueLabel"]; ok {
-		s.TrueLabel = types.StringValue(val)
-	}
-
-	if val, ok := settings["falseLabel"]; ok {
-		s.FalseLabel = types.StringValue(val)
-	}
-
-	if val, ok := settings["stars"]; ok {
-		s.Stars = types.StringValue(val)
-	}
-
-	if val, ok := settings["format"]; ok {
-		s.Format = types.StringValue(val)
-	}
-
-	if val, ok := settings["ampm"]; ok {
-		s.TimeFormat = types.StringValue(val)
-	}
+func (s *Settings) Import(settings *contentful.Settings) {
+	s.HelpText = types.StringPointerValue(settings.HelpText)
+	s.TrueLabel = types.StringPointerValue(settings.TrueLabel)
+	s.FalseLabel = types.StringPointerValue(settings.FalseLabel)
+	s.Stars = types.Int64PointerValue(settings.Stars)
+	s.Format = types.StringPointerValue(settings.Format)
+	s.TimeFormat = types.StringPointerValue(settings.AMPM)
+	s.BulkEditing = types.BoolPointerValue(settings.BulkEditing)
+	s.TrackingFieldId = types.StringPointerValue(settings.TrackingFieldId)
 }
 
-func (s *Settings) Draft() map[string]string {
-	settings := make(map[string]string)
+func (s *Settings) Draft() *contentful.Settings {
+	settings := &contentful.Settings{}
 
-	addValue(s.HelpText, "helpText", settings)
-	addValue(s.Format, "format", settings)
-	addValue(s.Stars, "stars", settings)
-	addValue(s.FalseLabel, "falseLabel", settings)
-	addValue(s.TrueLabel, "trueLabel", settings)
-	addValue(s.TimeFormat, "ampm", settings)
-
+	settings.HelpText = s.HelpText.ValueStringPointer()
+	settings.TrueLabel = s.TrueLabel.ValueStringPointer()
+	settings.FalseLabel = s.FalseLabel.ValueStringPointer()
+	settings.Stars = s.Stars.ValueInt64Pointer()
+	settings.Format = s.Format.ValueStringPointer()
+	settings.AMPM = s.TimeFormat.ValueStringPointer()
+	settings.BulkEditing = s.BulkEditing.ValueBoolPointer()
+	settings.TrackingFieldId = s.TrackingFieldId.ValueStringPointer()
 	return settings
-}
-
-func addValue(val types.String, key string, settings map[string]string) {
-	if !val.IsUnknown() && !val.IsNull() {
-		settings[key] = val.ValueString()
-	}
 }
 
 type Items struct {
@@ -773,5 +751,5 @@ func getValidation(cfVal contentful.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("Unsupported validation used, %s. Please implement", reflect.TypeOf(cfVal).String()))
+	return nil, fmt.Errorf("Unsupported validation used, %s. Please implement", reflect.TypeOf(cfVal).String())
 }

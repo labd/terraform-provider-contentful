@@ -80,4 +80,4 @@ require (
 	moul.io/http2curl v1.0.1-0.20190925090545-5cd742060b0e // indirect
 )
 
-replace github.com/labd/contentful-go v0.5.3 => github.com/flaconi/contentful-go v0.5.3-0.20231103124131-f3613df0a465
+replace github.com/labd/contentful-go v0.5.3 => github.com/flaconi/contentful-go v0.5.3-0.20231108092912-20ae1a342984

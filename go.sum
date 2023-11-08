@@ -41,8 +41,8 @@ github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5Kwzbycv
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
 github.com/fatih/color v1.15.0 h1:kOqh6YHBtK8aywxGerMG2Eq3H6Qgoqeo13Bk2Mv/nBs=
 github.com/fatih/color v1.15.0/go.mod h1:0h5ZqXfHYED7Bhv2ZJamyIOUej9KtShiJESRwBDUSsw=
-github.com/flaconi/contentful-go v0.5.3-0.20231103124131-f3613df0a465 h1:GzhBeGqqrF+P63Ijps+lfy2Wzui8Y4t2r07j7zGtDcQ=
-github.com/flaconi/contentful-go v0.5.3-0.20231103124131-f3613df0a465/go.mod h1:ciVUTFqeUtSSNjuEQnYLqbXvAlPu/aiPU4CsUc6Ug80=
+github.com/flaconi/contentful-go v0.5.3-0.20231108092912-20ae1a342984 h1:tUFXR7L16W2YO710oodGODQFoiwJkuVXQEa9lbPj57g=
+github.com/flaconi/contentful-go v0.5.3-0.20231108092912-20ae1a342984/go.mod h1:ciVUTFqeUtSSNjuEQnYLqbXvAlPu/aiPU4CsUc6Ug80=
 github.com/frankban/quicktest v1.14.4 h1:g2rn0vABPOOXmZUj+vbmUp0lPoXEMuhTpIluN0XL9UY=
 github.com/frankban/quicktest v1.14.4/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 h1:+zs/tPmkDkHx3U66DAb0lQFJrpS6731Oaa12ikc+DiI=

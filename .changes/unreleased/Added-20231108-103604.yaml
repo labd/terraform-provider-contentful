@@ -1,0 +1,4 @@
+kind: Added
+body: Added support for bulk_editing and tracking_field_id in settings; removed call
+  to get contentful environment
+time: 2023-11-08T10:36:04.352414+01:00
