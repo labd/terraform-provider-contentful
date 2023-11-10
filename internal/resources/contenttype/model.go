@@ -44,6 +44,26 @@ type DefaultValue struct {
 	String types.Map `tfsdk:"string"`
 }
 
+func (d *DefaultValue) Draft() map[string]any {
+	var default_values = map[string]any{}
+
+	if !d.String.IsNull() && !d.String.IsUnknown() {
+
+		for k, v := range d.String.Elements() {
+			default_values[k] = v.(types.String).ValueString()
+		}
+	}
+
+	if !d.Bool.IsNull() && !d.Bool.IsUnknown() {
+
+		for k, v := range d.Bool.Elements() {
+			default_values[k] = v.(types.Bool).ValueBool()
+		}
+	}
+
+	return default_values
+}
+
 type Control struct {
 	WidgetId        types.String `tfsdk:"widget_id"`
 	WidgetNamespace types.String `tfsdk:"widget_namespace"`
@@ -222,6 +242,10 @@ func (f *Field) Equal(n *contentful.Field) bool {
 
 	}
 
+	if f.DefaultValue != nil && !reflect.DeepEqual(f.DefaultValue.Draft(), n.DefaultValue) {
+		return false
+	}
+
 	return true
 }
 
@@ -252,6 +276,10 @@ func (f *Field) ToNative() (*contentful.Field, error) {
 		}
 
 		contentfulField.Items = items
+	}
+
+	if f.DefaultValue != nil {
+		contentfulField.DefaultValue = f.DefaultValue.Draft()
 	}
 
 	return contentfulField, nil
