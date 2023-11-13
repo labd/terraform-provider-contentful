@@ -22,8 +22,8 @@ func (m boolDefaultModifier) Description(_ context.Context) string {
 }
 
 // MarkdownDescription returns a markdown description of the plan modifier.
-func (m boolDefaultModifier) MarkdownDescription(_ context.Context) string {
-	return fmt.Sprintf("If value is not configured, defaults to `%t`", m.Default)
+func (m boolDefaultModifier) MarkdownDescription(ctx context.Context) string {
+	return m.Description(ctx)
 }
 
 func (m boolDefaultModifier) PlanModifyBool(_ context.Context, _ planmodifier.BoolRequest, resp *planmodifier.BoolResponse) {

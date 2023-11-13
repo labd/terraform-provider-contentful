@@ -22,8 +22,8 @@ func (m int64DefaultModifier) Description(_ context.Context) string {
 }
 
 // MarkdownDescription returns a markdown description of the plan modifier.
-func (m int64DefaultModifier) MarkdownDescription(_ context.Context) string {
-	return fmt.Sprintf("If value is not configured, defaults to `%d`", m.Default)
+func (m int64DefaultModifier) MarkdownDescription(ctx context.Context) string {
+	return m.Description(ctx)
 }
 
 func (m int64DefaultModifier) PlanModifyInt64(_ context.Context, _ planmodifier.Int64Request, resp *planmodifier.Int64Response) {

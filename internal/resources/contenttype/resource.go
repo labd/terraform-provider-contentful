@@ -201,6 +201,10 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 							Validators: []validator.String{
 								stringvalidator.OneOf(contentfulTypes...),
 							},
+							PlanModifiers: []planmodifier.String{
+								custommodifier.StringChangeProhibited("Content Type Field Type Change", "Changing a field type in contentful is not possible. Pls follow this faq: "+
+									"https://www.contentful.com/faq/best-practices/#how-to-change-field-type"),
+							},
 						},
 						"link_type": schema.StringAttribute{
 							Optional: true,
