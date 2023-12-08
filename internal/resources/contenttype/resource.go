@@ -51,24 +51,8 @@ func (e *contentTypeResource) Metadata(_ context.Context, request resource.Metad
 	response.TypeName = request.ProviderTypeName + "_contenttype"
 }
 
-var contentfulTypes = []string{
-	"Symbol",
-	"Text",
-	"RichText",
-	"Integer",
-	"Number",
-	"Date",
-	"Boolean",
-	"Object",
-	"Location",
-	"Array",
-	"Link",
-	"ResourceLink",
-}
-
-var linkTypes = []string{"Asset", "Entry"}
-var resourcelinkTypes = []string{"Contentful:Entry"}
-var arrayItemTypes = []string{"Symbol", "Link", "Resourcelink"}
+var resourceLinkTypes = []string{"Contentful:Entry"}
+var arrayItemTypes = []string{"Symbol", "Link", "ResourceLink"}
 
 //https://www.contentful.com/developers/docs/extensibility/app-framework/editor-interfaces/
 
@@ -199,11 +183,16 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 						"type": schema.StringAttribute{
 							Required: true,
 							Validators: []validator.String{
-								stringvalidator.OneOf(contentfulTypes...),
+								stringvalidator.OneOf(utils.GetContentTypes()...),
+								customvalidator.AttributeNeedsToBeSetValidator(path.MatchRelative().AtParent().AtName("link_type"), "Link"),
+								customvalidator.AttributeNeedsToBeSetValidator(path.MatchRelative().AtParent().AtName("items"), "Array"),
 							},
 						},
 						"link_type": schema.StringAttribute{
 							Optional: true,
+							Validators: []validator.String{
+								stringvalidator.OneOf(utils.GetLinkTypes()...),
+							},
 						},
 						"required": schema.BoolAttribute{
 							Optional: true,
@@ -243,11 +232,15 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 								"type": schema.StringAttribute{
 									Required: true,
 									Validators: []validator.String{
-										stringvalidator.OneOf(contentfulTypes...),
+										stringvalidator.OneOf(arrayItemTypes...),
+										customvalidator.AttributeNeedsToBeSetValidator(path.MatchRelative().AtParent().AtName("link_type"), "Link"),
 									},
 								},
 								"link_type": schema.StringAttribute{
 									Optional: true,
+									Validators: []validator.String{
+										stringvalidator.OneOf(utils.GetLinkTypes()...),
+									},
 								},
 								"validations": validationsSchema,
 							},
@@ -301,7 +294,7 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 										"stars": schema.Int64Attribute{
 											Optional: true,
 											Validators: []validator.Int64{
-												customvalidator.Int64AllowedWhenSetValidator(path.MatchRelative().AtParent().AtParent().AtName("widget_id"), "rating"),
+												customvalidator.Int64AllowedWhenSetValidator(widgetIdPath, "rating"),
 											},
 										},
 										"format": schema.StringAttribute{

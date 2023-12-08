@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/labd/contentful-go"
+	"github.com/labd/terraform-provider-contentful/internal/resources/app_definition"
 	"github.com/labd/terraform-provider-contentful/internal/resources/contenttype"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 	"os"
@@ -92,7 +93,8 @@ func (c contentfulProvider) Configure(ctx context.Context, request provider.Conf
 	}
 
 	data := utils.ProviderData{
-		Client: cma,
+		Client:         cma,
+		OrganizationId: organizationId,
 	}
 
 	response.ResourceData = data
@@ -106,5 +108,6 @@ func (c contentfulProvider) DataSources(_ context.Context) []func() datasource.D
 func (c contentfulProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		contenttype.NewContentTypeResource,
+		app_definition.NewAppDefinitionResource,
 	}
 }

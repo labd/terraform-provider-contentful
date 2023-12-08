@@ -456,7 +456,7 @@ func (i *Items) Equal(n *contentful.FieldTypeArrayItem) bool {
 		return false
 	}
 
-	if !compareStringPointer(i.LinkType, n.LinkType) {
+	if !utils.CompareStringPointer(i.LinkType, n.LinkType) {
 		return false
 	}
 
@@ -543,28 +543,9 @@ func (c *ContentType) Import(n *contentful.ContentType, e *contentful.EditorInte
 
 }
 
-func compareStringPointer(tfPointer types.String, cfPointer *string) bool {
-	if cfPointer != nil && tfPointer.ValueStringPointer() == nil {
-		return false
-	}
-
-	if tfPointer.ValueStringPointer() != nil {
-
-		if cfPointer == nil {
-			return false
-		}
-
-		if tfPointer.ValueString() != *cfPointer {
-			return false
-		}
-	}
-
-	return true
-}
-
 func (c *ContentType) Equal(n *contentful.ContentType) bool {
 
-	if !compareStringPointer(c.Description, n.Description) {
+	if !utils.CompareStringPointer(c.Description, n.Description) {
 		return false
 	}
 

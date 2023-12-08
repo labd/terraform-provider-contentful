@@ -74,7 +74,7 @@ func (s stringAllowedWhenSetValidator) ValidateString(ctx context.Context, reque
 
 		response.Diagnostics.Append(diags...)
 
-		// If the matched path value was not able to be converted from
+		// If the matched path value was not able to convert from
 		// attr.Value to the intended types.Int64 implementation, it most
 		// likely means that the path expression was not pointing at a
 		// types.Int64Type attribute. Collect the error and continue to

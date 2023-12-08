@@ -11,3 +11,22 @@ func FromOptionalString(value string) basetypes.StringValue {
 	}
 	return types.StringValue(value)
 }
+
+func CompareStringPointer(tfPointer types.String, stringPointer *string) bool {
+	if stringPointer != nil && tfPointer.ValueStringPointer() == nil {
+		return false
+	}
+
+	if tfPointer.ValueStringPointer() != nil {
+
+		if stringPointer == nil {
+			return false
+		}
+
+		if tfPointer.ValueString() != *stringPointer {
+			return false
+		}
+	}
+
+	return true
+}
