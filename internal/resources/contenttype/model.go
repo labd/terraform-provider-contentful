@@ -561,7 +561,7 @@ func (c *ContentType) Equal(n *contentful.ContentType) bool {
 		return false
 	}
 
-	for _, field := range c.Fields {
+	for idxOrg, field := range c.Fields {
 		idx := pie.FindFirstUsing(n.Fields, func(f *contentful.Field) bool {
 			return f.ID == field.Id.ValueString()
 		})
@@ -571,6 +571,11 @@ func (c *ContentType) Equal(n *contentful.ContentType) bool {
 		}
 
 		if !field.Equal(n.Fields[idx]) {
+			return false
+		}
+
+		// field was moved, it is the same as before but different position
+		if idxOrg != idx {
 			return false
 		}
 	}

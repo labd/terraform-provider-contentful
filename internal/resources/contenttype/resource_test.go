@@ -37,10 +37,19 @@ func TestContentTypeResource_Create(t *testing.T) {
 				),
 			},
 			{
+				Config: testContentTypeUpdateWithDifferentOrderOfFields("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID")),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
+					resource.TestCheckResourceAttr(resourceName, "version", "4"),
+					resource.TestCheckResourceAttr(resourceName, "version_controls", "0"),
+					//todo check in contentful directly if the type looks like this
+				),
+			},
+			{
 				Config: testContentTypeUpdate("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID")),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
-					resource.TestCheckResourceAttr(resourceName, "version", "2"),
+					resource.TestCheckResourceAttr(resourceName, "version", "6"),
 					resource.TestCheckResourceAttr(resourceName, "version_controls", "2"),
 					//todo check in contentful directly if the type looks like this
 				),
@@ -132,6 +141,30 @@ func testContentTypeWithId(identifier string, spaceId string) string {
     required  = true
     type      = "Integer"
   }]
+}`, map[string]any{
+		"identifier": identifier,
+		"spaceId":    spaceId,
+	})
+}
+
+func testContentTypeUpdateWithDifferentOrderOfFields(identifier string, spaceId string) string {
+	return utils.HCLTemplate(`
+		resource "contentful_contenttype" "{{ .identifier }}" {
+  space_id = "{{ .spaceId }}"
+  name = "tf_test1"
+  description = "Terraform Acc Test Content Type description change"
+  display_field = "field1"
+  fields = [{
+    id        = "field3"
+    name      = "Field 3 new field"
+    required  = true
+    type      = "Integer"
+  },{
+    id        = "field1"
+    name      = "Field 1 name change"
+    required  = true
+    type      = "Text"
+  } ]
 }`, map[string]any{
 		"identifier": identifier,
 		"spaceId":    spaceId,
