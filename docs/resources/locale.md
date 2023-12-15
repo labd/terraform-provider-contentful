@@ -14,7 +14,8 @@ description: |-
 
 ```terraform
 resource "contentful_locale" "example_locale" {
-  space_id = "spaced-id"
+  space_id    = "spaced-id"
+  environment = "master"
 
   name          = "locale-name"
   code          = "de"
@@ -38,6 +39,7 @@ resource "contentful_locale" "example_locale" {
 
 - `cda` (Boolean)
 - `cma` (Boolean)
+- `environment` (String)
 - `fallback_code` (String)
 - `optional` (Boolean)
 

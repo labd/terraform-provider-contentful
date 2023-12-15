@@ -6,6 +6,7 @@ require (
 	github.com/elliotchance/pie/v2 v2.8.0
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/terraform-plugin-framework v1.4.2
+	github.com/hashicorp/terraform-plugin-framework-jsontypes v0.1.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.12.0
 	github.com/hashicorp/terraform-plugin-mux v0.12.0
 	github.com/hashicorp/terraform-plugin-testing v1.6.0
@@ -85,4 +86,4 @@ require (
 	moul.io/http2curl v1.0.1-0.20190925090545-5cd742060b0e // indirect
 )
 
-replace github.com/labd/contentful-go v0.5.3 => github.com/flaconi/contentful-go v0.5.3-0.20231208091000-136be0669443
+replace github.com/labd/contentful-go v0.5.3 => github.com/flaconi/contentful-go v0.5.3-0.20231215085749-a6bd885d770b

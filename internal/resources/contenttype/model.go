@@ -1,8 +1,10 @@
 package contenttype
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/elliotchance/pie/v2"
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/labd/contentful-go"
@@ -22,6 +24,14 @@ type ContentType struct {
 	VersionControls     types.Int64  `tfsdk:"version_controls"`
 	Fields              []Field      `tfsdk:"fields"`
 	ManageFieldControls types.Bool   `tfsdk:"manage_field_controls"`
+	Sidebar             []Sidebar    `tfsdk:"sidebar"`
+}
+
+type Sidebar struct {
+	WidgetId        types.String         `tfsdk:"widget_id"`
+	WidgetNamespace types.String         `tfsdk:"widget_namespace"`
+	Settings        jsontypes.Normalized `tfsdk:"settings"`
+	Disabled        types.Bool           `tfsdk:"disabled"`
 }
 
 type Field struct {
@@ -45,23 +55,23 @@ type DefaultValue struct {
 }
 
 func (d *DefaultValue) Draft() map[string]any {
-	var default_values = map[string]any{}
+	var defaultValues = map[string]any{}
 
 	if !d.String.IsNull() && !d.String.IsUnknown() {
 
 		for k, v := range d.String.Elements() {
-			default_values[k] = v.(types.String).ValueString()
+			defaultValues[k] = v.(types.String).ValueString()
 		}
 	}
 
 	if !d.Bool.IsNull() && !d.Bool.IsUnknown() {
 
 		for k, v := range d.Bool.Elements() {
-			default_values[k] = v.(types.Bool).ValueBool()
+			defaultValues[k] = v.(types.Bool).ValueBool()
 		}
 	}
 
-	return default_values
+	return defaultValues
 }
 
 type Control struct {
@@ -149,7 +159,7 @@ func (v Validation) Draft() contentful.FieldValidation {
 
 	if len(v.In) > 0 {
 		return contentful.FieldValidationPredefinedValues{
-			In: pie.Map(v.In, func(t types.String) interface{} {
+			In: pie.Map(v.In, func(t types.String) any {
 				return t.ValueString()
 			}),
 		}
@@ -522,9 +532,11 @@ func (c *ContentType) Import(n *contentful.ContentType, e *contentful.EditorInte
 	var fields []Field
 
 	var controls []contentful.Controls
-
+	var sidebar []contentful.Sidebar
+	c.VersionControls = types.Int64Value(0)
 	if e != nil {
 		controls = e.Controls
+		sidebar = e.SideBar
 		c.VersionControls = types.Int64Value(int64(e.Sys.Version))
 	}
 
@@ -536,6 +548,22 @@ func (c *ContentType) Import(n *contentful.ContentType, e *contentful.EditorInte
 		}
 		fields = append(fields, *field)
 	}
+
+	c.Sidebar = pie.Map(sidebar, func(t contentful.Sidebar) Sidebar {
+
+		settings := jsontypes.NewNormalizedValue("{}")
+
+		if t.Settings != nil {
+			data, _ := json.Marshal(t.Settings)
+			settings = jsontypes.NewNormalizedValue(string(data))
+		}
+		return Sidebar{
+			WidgetId:        types.StringValue(t.WidgetID),
+			WidgetNamespace: types.StringValue(t.WidgetNameSpace),
+			Settings:        settings,
+			Disabled:        types.BoolValue(t.Disabled),
+		}
+	})
 
 	c.Fields = fields
 
@@ -583,13 +611,13 @@ func (c *ContentType) Equal(n *contentful.ContentType) bool {
 	return true
 }
 
-func (c *ContentType) EqualControls(n []contentful.Controls) bool {
+func (c *ContentType) EqualEditorInterface(n *contentful.EditorInterface) bool {
 
-	if len(c.Fields) != len(n) {
+	if len(c.Fields) != len(n.Controls) {
 		return false
 	}
 
-	filteredControls := pie.Filter(n, func(c contentful.Controls) bool {
+	filteredControls := pie.Filter(n.Controls, func(c contentful.Controls) bool {
 		return c.WidgetID != nil || c.WidgetNameSpace != nil || c.Settings != nil
 	})
 
@@ -628,11 +656,52 @@ func (c *ContentType) EqualControls(n []contentful.Controls) bool {
 		}
 	}
 
+	if len(c.Sidebar) != len(n.SideBar) {
+		return false
+	}
+
+	for idxOrg, s := range c.Sidebar {
+		idx := pie.FindFirstUsing(n.SideBar, func(t contentful.Sidebar) bool {
+			return t.WidgetID == s.WidgetId.ValueString()
+		})
+
+		if idx == -1 {
+			return false
+		}
+
+		// field was moved, it is the same as before but different position
+		if idxOrg != idx {
+			return false
+		}
+
+		sidebar := n.SideBar[idx]
+
+		if sidebar.Disabled != s.Disabled.ValueBool() {
+			return false
+		}
+
+		if sidebar.WidgetID != s.WidgetId.ValueString() {
+			return false
+		}
+
+		if sidebar.WidgetNameSpace != s.WidgetNamespace.ValueString() {
+			return false
+		}
+
+		a := make(map[string]string)
+
+		s.Settings.Unmarshal(a)
+
+		if !reflect.DeepEqual(sidebar.Settings, a) {
+			return false
+		}
+	}
+
 	return true
 }
 
-func (c *ContentType) DraftControls() []contentful.Controls {
-	return pie.Map(c.Fields, func(field Field) contentful.Controls {
+func (c *ContentType) DraftEditorInterface(n *contentful.EditorInterface) {
+	n.Controls = pie.Map(c.Fields, func(field Field) contentful.Controls {
 
 		control := contentful.Controls{
 			FieldID: field.Id.ValueString(),
@@ -649,6 +718,24 @@ func (c *ContentType) DraftControls() []contentful.Controls {
 
 		return control
 
+	})
+
+	n.SideBar = pie.Map(c.Sidebar, func(t Sidebar) contentful.Sidebar {
+
+		sidebar := contentful.Sidebar{
+			WidgetNameSpace: t.WidgetNamespace.ValueString(),
+			WidgetID:        t.WidgetId.ValueString(),
+			Disabled:        t.Disabled.ValueBool(),
+		}
+
+		if !sidebar.Disabled {
+			settings := make(map[string]string)
+
+			t.Settings.Unmarshal(settings)
+			sidebar.Settings = settings
+		}
+
+		return sidebar
 	})
 }
 
@@ -765,5 +852,5 @@ func getValidation(cfVal contentful.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
-	return nil, fmt.Errorf("Unsupported validation used, %s. Please implement", reflect.TypeOf(cfVal).String())
+	return nil, fmt.Errorf("unsupported validation used, %s. Please implement", reflect.TypeOf(cfVal).String())
 }

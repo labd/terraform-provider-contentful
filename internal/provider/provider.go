@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/labd/contentful-go"
 	"github.com/labd/terraform-provider-contentful/internal/resources/app_definition"
+	"github.com/labd/terraform-provider-contentful/internal/resources/app_installation"
 	"github.com/labd/terraform-provider-contentful/internal/resources/contenttype"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 	"os"
@@ -109,5 +110,6 @@ func (c contentfulProvider) Resources(_ context.Context) []func() resource.Resou
 	return []func() resource.Resource{
 		contenttype.NewContentTypeResource,
 		app_definition.NewAppDefinitionResource,
+		app_installation.NewAppInstallationResource,
 	}
 }

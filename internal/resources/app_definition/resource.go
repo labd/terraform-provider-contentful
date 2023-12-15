@@ -49,7 +49,6 @@ func (e *appDefinitionResource) Schema(_ context.Context, _ resource.SchemaReque
 		Description: "Todo for explaining app definition",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "app definition id",
 				PlanModifiers: []planmodifier.String{

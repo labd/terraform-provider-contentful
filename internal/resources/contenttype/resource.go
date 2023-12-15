@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/elliotchance/pie/v2"
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -335,6 +336,35 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 					},
 				},
 			},
+
+			"sidebar": schema.ListNestedAttribute{
+				Optional: true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"disabled": schema.BoolAttribute{
+							Optional: true,
+							Computed: true,
+							PlanModifiers: []planmodifier.Bool{
+								custommodifier.BoolDefault(false),
+							},
+						},
+						"widget_id": schema.StringAttribute{
+							Required: true,
+						},
+						"widget_namespace": schema.StringAttribute{
+							Required: true,
+						},
+						"settings": schema.StringAttribute{
+							CustomType: jsontypes.NormalizedType{},
+							Optional:   true,
+							Computed:   true,
+							PlanModifiers: []planmodifier.String{
+								custommodifier.StringDefault("{}"),
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -427,10 +457,10 @@ func (e *contentTypeResource) doRead(ctx context.Context, contentType *ContentTy
 		return
 	}
 
-	var controls *contentful.EditorInterface
+	var editorInterface *contentful.EditorInterface
 
 	if contentType.ManageFieldControls.ValueBool() {
-		controls, err = e.getContentTypeControls(contentType)
+		editorInterface, err = e.getEditorInterface(contentType)
 		if err != nil {
 			d.AddError(
 				"Error reading contenttype",
@@ -440,19 +470,20 @@ func (e *contentTypeResource) doRead(ctx context.Context, contentType *ContentTy
 		}
 
 		if u, ok := ctx.Value(OnlyControlVersion).(bool); ok && u {
-			contentType.VersionControls = types.Int64Value(int64(controls.Sys.Version))
+			contentType.VersionControls = types.Int64Value(int64(editorInterface.Sys.Version))
 
-			draftControls := contentType.DraftControls()
+			ei := &contentful.EditorInterface{}
+			contentType.DraftEditorInterface(ei)
 			// remove all controls which are not in the plan for an easier import
-			controls.Controls = pie.Filter(controls.Controls, func(c contentful.Controls) bool {
-				return pie.Any(draftControls, func(value contentful.Controls) bool {
+			editorInterface.Controls = pie.Filter(editorInterface.Controls, func(c contentful.Controls) bool {
+				return pie.Any(ei.Controls, func(value contentful.Controls) bool {
 					return value.FieldID == c.FieldID && value.WidgetID != nil && reflect.DeepEqual(value.WidgetID, c.WidgetID)
 				})
 			})
 		}
 	}
 
-	err = contentType.Import(contentfulContentType, controls)
+	err = contentType.Import(contentfulContentType, editorInterface)
 
 	if err != nil {
 		d.AddError(
@@ -555,38 +586,38 @@ func (e *contentTypeResource) Update(ctx context.Context, request resource.Updat
 		}
 	}
 
-	ctxControls := e.updateControls(ctx, state, plan, &response.Diagnostics)
+	ctxControls := e.updateEditorInterface(ctx, state, plan, &response.Diagnostics)
 
 	e.doRead(ctxControls, plan, &response.State, &response.Diagnostics)
 }
 
-func (e *contentTypeResource) updateControls(ctx context.Context, state *ContentType, plan *ContentType, d *diag.Diagnostics) context.Context {
+func (e *contentTypeResource) updateEditorInterface(ctx context.Context, state *ContentType, plan *ContentType, d *diag.Diagnostics) context.Context {
 	if plan.ManageFieldControls.ValueBool() {
-		// first import of controls to the state just get the controls version
+		// first import of editorInterface to the state just get the editorInterface version
 		if state.VersionControls.IsNull() {
 			return context.WithValue(ctx, OnlyControlVersion, true)
 		}
 
-		controls, err := e.getContentTypeControls(plan)
+		editorInterface, err := e.getEditorInterface(plan)
 		if err != nil {
 			d.AddError(
 				"Error reading contenttype",
-				"Could not retrieve contenttype controls, unexpected error: "+err.Error(),
+				"Could not retrieve contenttype editorInterface, unexpected error: "+err.Error(),
 			)
 			return ctx
 		}
 
-		if !plan.EqualControls(controls.Controls) {
+		if !plan.EqualEditorInterface(editorInterface) {
 
-			controls.Controls = plan.DraftControls()
+			plan.DraftEditorInterface(editorInterface)
 			if !plan.Environment.IsUnknown() && !plan.Environment.IsNull() {
 				e.client.SetEnvironment(plan.Environment.ValueString())
 			}
 
-			if err = e.client.EditorInterfaces.Update(plan.SpaceId.ValueString(), plan.ID.ValueString(), controls); err != nil {
+			if err = e.client.EditorInterfaces.Update(plan.SpaceId.ValueString(), plan.ID.ValueString(), editorInterface); err != nil {
 				d.AddError(
-					"Error updating contenttype controls",
-					"Could not update contenttype controls, unexpected error: "+err.Error(),
+					"Error updating contenttype editorInterface",
+					"Could not update contenttype editorInterface, unexpected error: "+err.Error(),
 				)
 
 				return ctx
@@ -721,7 +752,7 @@ func (e *contentTypeResource) getContentType(editor *ContentType) (*contentful.C
 	}
 }
 
-func (e *contentTypeResource) getContentTypeControls(editor *ContentType) (*contentful.EditorInterface, error) {
+func (e *contentTypeResource) getEditorInterface(editor *ContentType) (*contentful.EditorInterface, error) {
 	if !editor.Environment.IsUnknown() && !editor.Environment.IsNull() {
 
 		env := &contentful.Environment{Sys: &contentful.Sys{

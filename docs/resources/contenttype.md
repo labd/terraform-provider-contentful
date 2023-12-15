@@ -3,45 +3,65 @@
 page_title: "contentful_contenttype Resource - terraform-provider-contentful"
 subcategory: ""
 description: |-
-  
+  Todo for explaining contenttype
 ---
 
 # contentful_contenttype (Resource)
 
-
+Todo for explaining contenttype
 
 ## Example Usage
 
 ```terraform
 resource "contentful_contenttype" "example_contenttype" {
-  space_id      = "space-id"
-  name          = "tf_linked"
-  description   = "content type description"
-  display_field = "asset_field"
-  field {
+  space_id              = "space-id"
+  environment           = "master"
+  id                    = "tf_linked"
+  name                  = "tf_linked"
+  description           = "content type description"
+  display_field         = "asset_field"
+  manage_field_controls = true
+  fields = [{
     id   = "asset_field"
     name = "Asset Field"
     type = "Array"
-    items {
+    items = {
       type      = "Link"
       link_type = "Asset"
     }
     required = true
-  }
-  field {
+    }, {
     id        = "entry_link_field"
     name      = "Entry Link Field"
     type      = "Link"
     link_type = "Entry"
-    validations = [
-      jsonencode({
-        linkContentType = [
-          contentful_contenttype.some_other_content_type.id
-        ]
-      })
+    validations = [{
+      link_content_type = [
+        contentful_contenttype.some_other_content_type.id
+      ]
+      }
     ]
     required = false
-  }
+    }, {
+    id       = "select",
+    name     = "Select Field",
+    type     = "Symbol",
+    required = true,
+    validations = [
+      {
+        in = [
+          "choice 1",
+          "choice 2",
+          "choice 3",
+          "choice 4"
+        ]
+      }
+    ]
+    control = {
+      widget_id        = "radio"
+      widget_namespace = "builtin"
+    }
+  }]
 }
 ```
 
@@ -51,49 +71,210 @@ resource "contentful_contenttype" "example_contenttype" {
 ### Required
 
 - `display_field` (String)
-- `field` (Block List, Min: 1) (see [below for nested schema](#nestedblock--field))
+- `fields` (Attributes List) (see [below for nested schema](#nestedatt--fields))
 - `name` (String)
-- `space_id` (String)
+- `space_id` (String) space id
 
 ### Optional
 
 - `description` (String)
+- `environment` (String)
+- `id` (String) content type id
+- `manage_field_controls` (Boolean)
+- `sidebar` (Attributes List) (see [below for nested schema](#nestedatt--sidebar))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
 - `version` (Number)
+- `version_controls` (Number)
 
-<a id="nestedblock--field"></a>
-### Nested Schema for `field`
+<a id="nestedatt--fields"></a>
+### Nested Schema for `fields`
 
 Required:
 
+- `id` (String)
 - `name` (String)
 - `type` (String)
 
 Optional:
 
+- `control` (Attributes) (see [below for nested schema](#nestedatt--fields--control))
+- `default_value` (Attributes) (see [below for nested schema](#nestedatt--fields--default_value))
 - `disabled` (Boolean)
-- `items` (Block List, Max: 1) (see [below for nested schema](#nestedblock--field--items))
+- `items` (Attributes) (see [below for nested schema](#nestedatt--fields--items))
 - `link_type` (String)
 - `localized` (Boolean)
 - `omitted` (Boolean)
 - `required` (Boolean)
-- `validations` (List of String)
+- `validations` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations))
 
-Read-Only:
-
-- `id` (String) The ID of this resource.
-
-<a id="nestedblock--field--items"></a>
-### Nested Schema for `field.items`
+<a id="nestedatt--fields--control"></a>
+### Nested Schema for `fields.control`
 
 Required:
 
-- `link_type` (String)
+- `widget_id` (String)
+- `widget_namespace` (String)
+
+Optional:
+
+- `settings` (Attributes) (see [below for nested schema](#nestedatt--fields--control--settings))
+
+<a id="nestedatt--fields--control--settings"></a>
+### Nested Schema for `fields.control.settings`
+
+Optional:
+
+- `ampm` (String)
+- `bulk_editing` (Boolean)
+- `false_label` (String)
+- `format` (String)
+- `help_text` (String)
+- `stars` (Number)
+- `tracking_field_id` (String)
+- `true_label` (String)
+
+
+
+<a id="nestedatt--fields--default_value"></a>
+### Nested Schema for `fields.default_value`
+
+Optional:
+
+- `bool` (Map of Boolean)
+- `string` (Map of String)
+
+
+<a id="nestedatt--fields--items"></a>
+### Nested Schema for `fields.items`
+
+Required:
+
 - `type` (String)
 
 Optional:
 
-- `validations` (List of String)
+- `link_type` (String)
+- `validations` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations))
+
+<a id="nestedatt--fields--items--validations"></a>
+### Nested Schema for `fields.items.validations`
+
+Optional:
+
+- `asset_file_size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--asset_file_size))
+- `enabled_marks` (List of String)
+- `enabled_node_types` (List of String)
+- `in` (List of String)
+- `link_content_type` (List of String)
+- `link_mimetype_group` (List of String)
+- `message` (String)
+- `range` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--range))
+- `regexp` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--regexp))
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--size))
+- `unique` (Boolean)
+
+<a id="nestedatt--fields--items--validations--asset_file_size"></a>
+### Nested Schema for `fields.items.validations.unique`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+<a id="nestedatt--fields--items--validations--range"></a>
+### Nested Schema for `fields.items.validations.unique`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+<a id="nestedatt--fields--items--validations--regexp"></a>
+### Nested Schema for `fields.items.validations.unique`
+
+Optional:
+
+- `pattern` (String)
+
+
+<a id="nestedatt--fields--items--validations--size"></a>
+### Nested Schema for `fields.items.validations.unique`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+
+
+<a id="nestedatt--fields--validations"></a>
+### Nested Schema for `fields.validations`
+
+Optional:
+
+- `asset_file_size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--asset_file_size))
+- `enabled_marks` (List of String)
+- `enabled_node_types` (List of String)
+- `in` (List of String)
+- `link_content_type` (List of String)
+- `link_mimetype_group` (List of String)
+- `message` (String)
+- `range` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--range))
+- `regexp` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--regexp))
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--size))
+- `unique` (Boolean)
+
+<a id="nestedatt--fields--validations--asset_file_size"></a>
+### Nested Schema for `fields.validations.asset_file_size`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+<a id="nestedatt--fields--validations--range"></a>
+### Nested Schema for `fields.validations.range`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+<a id="nestedatt--fields--validations--regexp"></a>
+### Nested Schema for `fields.validations.regexp`
+
+Optional:
+
+- `pattern` (String)
+
+
+<a id="nestedatt--fields--validations--size"></a>
+### Nested Schema for `fields.validations.size`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+
+
+<a id="nestedatt--sidebar"></a>
+### Nested Schema for `sidebar`
+
+Required:
+
+- `widget_id` (String)
+- `widget_namespace` (String)
+
+Optional:
+
+- `disabled` (Boolean)
+- `settings` (String)
