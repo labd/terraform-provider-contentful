@@ -2,9 +2,9 @@ package app_installation
 
 import (
 	"encoding/json"
+	"github.com/flaconi/contentful-go"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go"
 )
 
 // AppInstallation is the main resource schema data

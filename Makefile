@@ -14,7 +14,7 @@ test-unit: build
 
 interactive:
 	sudo -S docker run -it \
-		-v $(shell pwd):/go/src/github.com/labd/terraform-provider-contentful \
+		-v $(shell pwd):/go/src/github.com/flaconi/terraform-provider-contentful \
 		-e CONTENTFUL_MANAGEMENT_TOKEN=${CONTENTFUL_MANAGEMENT_TOKEN} \
         -e CONTENTFUL_ORGANIZATION_ID=${CONTENTFUL_ORGANIZATION_ID} \
         -e SPACE_ID=${SPACE_ID} \

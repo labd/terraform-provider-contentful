@@ -1,6 +1,5 @@
-![Go](https://github.com/labd/terraform-provider-contentful/workflows/Go/badge.svg?branch=master)
-[![codecov](https://codecov.io/gh/labd/terraform-provider-contentful/branch/master/graph/badge.svg)](https://codecov.io/gh/labd/terraform-provider-contentful)
-[![license](https://img.shields.io/github/license/labd/terraform-provider-contentful.svg)](https://github.com/labd/terraform-provider-contentful/blob/master/LICENSE)
+![Go](https://github.com/flaconi/terraform-provider-contentful/workflows/Go/badge.svg?branch=master)
+[![license](https://img.shields.io/github/license/flaconi/terraform-provider-contentful.svg)](https://github.com/flaconi/terraform-provider-contentful/blob/master/LICENSE)
 
 Terraform Provider for [Contentful's](https://www.contentful.com) Content Management API
 
@@ -150,7 +149,7 @@ Julien Fabre: [Writing a Terraform provider](http://blog.jfabre.net/2017/01/22/w
 
 ## Support
 
-If you have a problem with this provider, please file an [issue](https://github.com/labd/terraform-provider-contentful/issues/new) here on Github.
+If you have a problem with this provider, please file an [issue](https://github.com/flaconi/terraform-provider-contentful/issues/new) here on Github.
 
 ## License
 

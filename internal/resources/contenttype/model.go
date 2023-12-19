@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/elliotchance/pie/v2"
+	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go"
-	"github.com/labd/terraform-provider-contentful/internal/utils"
 	"reflect"
 )
 

@@ -3,6 +3,10 @@ package app_definition
 import (
 	"context"
 	_ "embed"
+	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/terraform-provider-contentful/internal/custommodifier"
+	"github.com/flaconi/terraform-provider-contentful/internal/customvalidator"
+	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -14,10 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go"
-	"github.com/labd/terraform-provider-contentful/internal/custommodifier"
-	"github.com/labd/terraform-provider-contentful/internal/customvalidator"
-	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
 //go:embed bundle.zip

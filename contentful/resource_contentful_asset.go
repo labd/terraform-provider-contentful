@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	contentful "github.com/flaconi/contentful-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	contentful "github.com/labd/contentful-go"
 )
 
 func resourceContentfulAsset() *schema.Resource {

@@ -1,7 +1,7 @@
 package acctest
 
 import (
-	"github.com/labd/contentful-go"
+	"github.com/flaconi/contentful-go"
 	"os"
 )
 

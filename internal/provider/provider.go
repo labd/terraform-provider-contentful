@@ -2,16 +2,16 @@ package provider
 
 import (
 	"context"
+	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/terraform-provider-contentful/internal/resources/app_definition"
+	"github.com/flaconi/terraform-provider-contentful/internal/resources/app_installation"
+	"github.com/flaconi/terraform-provider-contentful/internal/resources/contenttype"
+	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go"
-	"github.com/labd/terraform-provider-contentful/internal/resources/app_definition"
-	"github.com/labd/terraform-provider-contentful/internal/resources/app_installation"
-	"github.com/labd/terraform-provider-contentful/internal/resources/contenttype"
-	"github.com/labd/terraform-provider-contentful/internal/utils"
 	"os"
 )
 

@@ -1,6 +1,6 @@
 package utils
 
-import "github.com/labd/contentful-go"
+import "github.com/flaconi/contentful-go"
 
 type ProviderData struct {
 	Client         *contentful.Client

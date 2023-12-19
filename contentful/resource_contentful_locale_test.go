@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/flaconi/contentful-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/labd/contentful-go"
 )
 
 func TestAccContentfulLocales_Basic(t *testing.T) {

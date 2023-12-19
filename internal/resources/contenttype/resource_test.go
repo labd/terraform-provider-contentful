@@ -3,14 +3,14 @@ package contenttype_test
 import (
 	"errors"
 	"fmt"
+	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/terraform-provider-contentful/internal/acctest"
+	"github.com/flaconi/terraform-provider-contentful/internal/provider"
+	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/labd/contentful-go"
-	"github.com/labd/terraform-provider-contentful/internal/acctest"
-	"github.com/labd/terraform-provider-contentful/internal/provider"
-	"github.com/labd/terraform-provider-contentful/internal/utils"
 	"github.com/stretchr/testify/assert"
 	"os"
 

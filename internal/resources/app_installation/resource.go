@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/elliotchance/pie/v2"
+	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -14,8 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go"
-	"github.com/labd/terraform-provider-contentful/internal/utils"
 	"strings"
 )
 
