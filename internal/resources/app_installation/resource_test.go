@@ -1,9 +1,11 @@
 package app_installation_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/contentful-go/pkgs/common"
+	"github.com/flaconi/contentful-go/pkgs/model"
 	"github.com/flaconi/terraform-provider-contentful/internal/acctest"
 	"github.com/flaconi/terraform-provider-contentful/internal/provider"
 	"github.com/flaconi/terraform-provider-contentful/internal/utils"
@@ -16,7 +18,7 @@ import (
 	"testing"
 )
 
-type assertFunc func(*testing.T, *contentful.AppInstallation)
+type assertFunc func(*testing.T, *model.AppInstallation)
 
 func TestAppInstallation_Create(t *testing.T) {
 	resourceName := "contentful_app_installation.acctest_app_installation"
@@ -35,7 +37,7 @@ func TestAppInstallation_Create(t *testing.T) {
 				Config: testAppInstallation("acctest_app_installation", os.Getenv("CONTENTFUL_SPACE_ID"), "master", appInstallationId),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "app_definition_id", appInstallationId),
-					testAccCheckContentfulAppInstallationExists(t, resourceName, func(t *testing.T, appInstallation *contentful.AppInstallation) {
+					testAccCheckContentfulAppInstallationExists(t, resourceName, func(t *testing.T, appInstallation *model.AppInstallation) {
 						assert.IsType(t, map[string]any{}, appInstallation.Parameters)
 						assert.Len(t, appInstallation.Parameters, 0)
 						assert.EqualValues(t, appInstallationId, appInstallation.Sys.AppDefinition.Sys.ID)
@@ -46,7 +48,7 @@ func TestAppInstallation_Create(t *testing.T) {
 				Config: testAppInstallationWithParameter("acctest_app_installation_2", os.Getenv("CONTENTFUL_SPACE_ID"), "master", otherId),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("contentful_app_installation.acctest_app_installation_2", "app_definition_id", otherId),
-					testAccCheckContentfulAppInstallationExists(t, "contentful_app_installation.acctest_app_installation_2", func(t *testing.T, appInstallation *contentful.AppInstallation) {
+					testAccCheckContentfulAppInstallationExists(t, "contentful_app_installation.acctest_app_installation_2", func(t *testing.T, appInstallation *model.AppInstallation) {
 						assert.IsType(t, map[string]any{}, appInstallation.Parameters)
 						assert.Len(t, appInstallation.Parameters, 1)
 						assert.EqualValues(t, "not-working-ever", appInstallation.Parameters["cpaToken"])
@@ -58,7 +60,7 @@ func TestAppInstallation_Create(t *testing.T) {
 	})
 }
 
-func getAppInstallationFromState(s *terraform.State, resourceName string) (*contentful.AppInstallation, error) {
+func getAppInstallationFromState(s *terraform.State, resourceName string) (*model.AppInstallation, error) {
 	rs, ok := s.RootModule().Resources[resourceName]
 	if !ok {
 		return nil, fmt.Errorf("app installation not found")
@@ -68,9 +70,9 @@ func getAppInstallationFromState(s *terraform.State, resourceName string) (*cont
 		return nil, fmt.Errorf("no app installation ID found")
 	}
 
-	client := acctest.GetClient()
+	client := acctest.GetCMA()
 
-	return client.AppInstallations.Get(os.Getenv("CONTENTFUL_SPACE_ID"), rs.Primary.ID, "master")
+	return client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).WithEnvironment("master").AppInstallations().Get(context.Background(), rs.Primary.ID)
 }
 
 func testAccCheckContentfulAppInstallationExists(t *testing.T, resourceName string, assertFunc assertFunc) resource.TestCheckFunc {
@@ -86,15 +88,15 @@ func testAccCheckContentfulAppInstallationExists(t *testing.T, resourceName stri
 }
 
 func testAccCheckContentfulAppInstallationDestroy(s *terraform.State) error {
-	client := acctest.GetClient()
+	client := acctest.GetCMA()
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "contentful_app_installation" {
 			continue
 		}
 
-		_, err := client.AppInstallations.Get(os.Getenv("CONTENTFUL_ORGANIZATION_ID"), rs.Primary.ID, "master")
-		var notFoundError contentful.NotFoundError
+		_, err := client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).WithEnvironment("master").AppInstallations().Get(context.Background(), rs.Primary.ID)
+		var notFoundError common.NotFoundError
 		if errors.As(err, &notFoundError) {
 			return nil
 		}

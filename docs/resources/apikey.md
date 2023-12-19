@@ -3,12 +3,12 @@
 page_title: "contentful_apikey Resource - terraform-provider-contentful"
 subcategory: ""
 description: |-
-  
+  Todo for explaining apikey
 ---
 
 # contentful_apikey (Resource)
 
-
+Todo for explaining apikey
 
 ## Example Usage
 
@@ -27,14 +27,17 @@ resource "contentful_apikey" "myapikey" {
 ### Required
 
 - `name` (String)
-- `space_id` (String)
+- `space_id` (String) space id
 
 ### Optional
 
 - `description` (String)
+- `environments` (List of String) List of needed environments if not added then master is used
 
 ### Read-Only
 
-- `access_token` (String)
-- `id` (String) The ID of this resource.
+- `access_token` (String, Sensitive)
+- `id` (String) api key id
+- `preview_id` (String) preview api key id
+- `preview_token` (String, Sensitive)
 - `version` (Number)

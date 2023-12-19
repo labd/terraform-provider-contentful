@@ -5,8 +5,9 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"github.com/elliotchance/pie/v2"
 	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/contentful-go/pkgs/model"
+	"github.com/flaconi/contentful-go/service/common"
 	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -32,7 +33,7 @@ func NewAppInstallationResource() resource.Resource {
 
 // appInstallationResource is the resource implementation.
 type appInstallationResource struct {
-	client         *contentful.Client
+	client         common.SpaceIdClientBuilder
 	organizationId string
 }
 
@@ -87,7 +88,7 @@ func (e *appInstallationResource) Configure(_ context.Context, request resource.
 	}
 
 	data := request.ProviderData.(utils.ProviderData)
-	e.client = data.Client
+	e.client = data.CMAClient
 	e.organizationId = data.OrganizationId
 
 }
@@ -101,11 +102,7 @@ func (e *appInstallationResource) Create(ctx context.Context, request resource.C
 
 	draft := plan.Draft()
 
-	terms := pie.Map(plan.AcceptedTerms, func(t types.String) string {
-		return t.ValueString()
-	})
-
-	if err := e.client.AppInstallations.Upsert(plan.SpaceId.ValueString(), plan.AppDefinitionID.ValueString(), draft, plan.Environment.ValueString(), terms); err != nil {
+	if err := e.client.WithSpaceId(plan.SpaceId.ValueString()).WithEnvironment(plan.Environment.ValueString()).AppInstallations().Upsert(ctx, draft); err != nil {
 		var errorResponse contentful.ErrorResponse
 		if errors.As(err, &errorResponse) {
 			if errorResponse.Error() == "Forbidden" {
@@ -140,7 +137,7 @@ func (e *appInstallationResource) Read(ctx context.Context, request resource.Rea
 
 func (e *appInstallationResource) doRead(ctx context.Context, app *AppInstallation, state *tfsdk.State, d *diag.Diagnostics) {
 
-	appDefinition, err := e.getAppInstallation(app)
+	appDefinition, err := e.getAppInstallation(ctx, app)
 	if err != nil {
 		d.AddError(
 			"Error reading app installation",
@@ -175,7 +172,7 @@ func (e *appInstallationResource) Update(ctx context.Context, request resource.U
 		return
 	}
 
-	appDefinition, err := e.getAppInstallation(plan)
+	appDefinition, err := e.getAppInstallation(ctx, plan)
 	if err != nil {
 		response.Diagnostics.AddError(
 			"Error reading app installation",
@@ -188,11 +185,7 @@ func (e *appInstallationResource) Update(ctx context.Context, request resource.U
 
 		draft := plan.Draft()
 
-		terms := pie.Map(plan.AcceptedTerms, func(t types.String) string {
-			return t.ValueString()
-		})
-
-		if err = e.client.AppInstallations.Upsert(plan.SpaceId.ValueString(), plan.AppDefinitionID.ValueString(), draft, plan.Environment.ValueString(), terms); err != nil {
+		if err = e.client.WithSpaceId(state.SpaceId.ValueString()).WithEnvironment(state.Environment.ValueString()).AppInstallations().Upsert(ctx, draft); err != nil {
 			response.Diagnostics.AddError(
 				"Error updating app installation",
 				"Could not update app installation, unexpected error: "+err.Error(),
@@ -209,7 +202,7 @@ func (e *appInstallationResource) Delete(ctx context.Context, request resource.D
 	var state *AppInstallation
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 
-	if err := e.client.AppInstallations.Delete(state.SpaceId.ValueString(), state.AppDefinitionID.ValueString(), state.Environment.ValueString()); err != nil {
+	if err := e.client.WithSpaceId(state.SpaceId.ValueString()).WithEnvironment(state.Environment.ValueString()).AppInstallations().Delete(ctx, state.Draft()); err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting app_installation",
 			"Could not delete app_installation, unexpected error: "+err.Error(),
@@ -239,6 +232,6 @@ func (e *appInstallationResource) ImportState(ctx context.Context, request resou
 	e.doRead(ctx, futureState, &response.State, &response.Diagnostics)
 }
 
-func (e *appInstallationResource) getAppInstallation(app *AppInstallation) (*contentful.AppInstallation, error) {
-	return e.client.AppInstallations.Get(app.SpaceId.ValueString(), app.AppDefinitionID.ValueString(), app.Environment.ValueString())
+func (e *appInstallationResource) getAppInstallation(ctx context.Context, app *AppInstallation) (*model.AppInstallation, error) {
+	return e.client.WithSpaceId(app.SpaceId.ValueString()).WithEnvironment(app.Environment.ValueString()).AppInstallations().Get(ctx, app.AppDefinitionID.ValueString())
 }

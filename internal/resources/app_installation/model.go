@@ -2,7 +2,8 @@ package app_installation
 
 import (
 	"encoding/json"
-	"github.com/flaconi/contentful-go"
+	"github.com/elliotchance/pie/v2"
+	"github.com/flaconi/contentful-go/pkgs/model"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -17,20 +18,38 @@ type AppInstallation struct {
 	AcceptedTerms   []types.String       `tfsdk:"accepted_terms"`
 }
 
-func (a *AppInstallation) Draft() *contentful.AppInstallation {
+func (a *AppInstallation) Draft() *model.AppInstallation {
 
-	app := &contentful.AppInstallation{}
+	app := &model.AppInstallation{}
 
 	parameters := make(map[string]any)
 
 	a.Parameters.Unmarshal(&parameters)
 
+	if !a.AppDefinitionID.IsUnknown() || !a.AppDefinitionID.IsNull() {
+
+		appDefinitionSys := struct {
+			Sys model.BaseSys
+		}{
+			Sys: model.BaseSys{
+				ID: a.AppDefinitionID.ValueString(),
+			},
+		}
+
+		app.Sys = &model.AppInstallationSys{AppDefinition: (*struct {
+			Sys model.BaseSys `json:"sys,omitempty"`
+		})(&appDefinitionSys)}
+	}
+
+	app.Terms = pie.Map(a.AcceptedTerms, func(t types.String) string {
+		return t.ValueString()
+	})
 	app.Parameters = parameters
 
 	return app
 }
 
-func (a *AppInstallation) Equal(n *contentful.AppInstallation) bool {
+func (a *AppInstallation) Equal(n *model.AppInstallation) bool {
 
 	data, _ := json.Marshal(n.Parameters)
 
@@ -41,7 +60,7 @@ func (a *AppInstallation) Equal(n *contentful.AppInstallation) bool {
 	return true
 }
 
-func (a *AppInstallation) Import(n *contentful.AppInstallation) {
+func (a *AppInstallation) Import(n *model.AppInstallation) {
 	a.AppDefinitionID = types.StringValue(n.Sys.AppDefinition.Sys.ID)
 	a.ID = types.StringValue(n.Sys.AppDefinition.Sys.ID)
 	data, _ := json.Marshal(n.Parameters)

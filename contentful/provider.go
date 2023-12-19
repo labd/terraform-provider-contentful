@@ -29,7 +29,6 @@ func Provider() func() *schema.Provider {
 			},
 			ResourcesMap: map[string]*schema.Resource{
 				"contentful_space":       resourceContentfulSpace(),
-				"contentful_apikey":      resourceContentfulAPIKey(),
 				"contentful_webhook":     resourceContentfulWebhook(),
 				"contentful_locale":      resourceContentfulLocale(),
 				"contentful_environment": resourceContentfulEnvironment(),
