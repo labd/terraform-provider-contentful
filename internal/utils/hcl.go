@@ -22,11 +22,5 @@ func HCLTemplateFromPath(path string, params map[string]any) string {
 		panic(err)
 	}
 
-	var out bytes.Buffer
-	tmpl := template.Must(template.New("hcl").Parse(string(data)))
-	err = tmpl.Execute(&out, params)
-	if err != nil {
-		panic(err)
-	}
-	return out.String()
+	return HCLTemplate(string(data), params)
 }

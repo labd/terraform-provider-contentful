@@ -1,7 +1,10 @@
 package contentful
 
 import (
-	contentful "github.com/flaconi/contentful-go"
+	"context"
+	"github.com/flaconi/contentful-go/pkgs/common"
+	"github.com/flaconi/contentful-go/pkgs/model"
+	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -25,11 +28,11 @@ func resourceContentfulEntry() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"contenttype_id": {
+			"environment": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"locale": {
+			"contenttype_id": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -66,7 +69,7 @@ func resourceContentfulEntry() *schema.Resource {
 }
 
 func resourceCreateEntry(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 
 	fieldProperties := map[string]interface{}{}
 	rawField := d.Get("field").([]interface{})
@@ -76,15 +79,22 @@ func resourceCreateEntry(d *schema.ResourceData, m interface{}) (err error) {
 		fieldProperties[field["id"].(string)].(map[string]interface{})[field["locale"].(string)] = field["content"].(string)
 	}
 
-	entry := &contentful.Entry{
-		Locale: d.Get("locale").(string),
+	entry := &model.Entry{
 		Fields: fieldProperties,
-		Sys: &contentful.Sys{
-			ID: d.Get("entry_id").(string),
+		Sys: &model.PublishSys{
+			EnvironmentSys: model.EnvironmentSys{
+				SpaceSys: model.SpaceSys{
+					CreatedSys: model.CreatedSys{
+						BaseSys: model.BaseSys{
+							ID: d.Get("entry_id").(string),
+						},
+					},
+				},
+			},
 		},
 	}
 
-	err = client.Entries.Upsert(d.Get("space_id").(string), d.Get("contenttype_id").(string), entry)
+	err = client.WithSpaceId(d.Get("space_id").(string)).WithEnvironment(d.Get("environment").(string)).Entries().Upsert(context.Background(), d.Get("contenttype_id").(string), entry)
 	if err != nil {
 		return err
 	}
@@ -103,11 +113,13 @@ func resourceCreateEntry(d *schema.ResourceData, m interface{}) (err error) {
 }
 
 func resourceUpdateEntry(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 	spaceID := d.Get("space_id").(string)
 	entryID := d.Id()
 
-	entry, err := client.Entries.Get(spaceID, entryID)
+	entryClient := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Entries()
+
+	entry, err := entryClient.Get(context.Background(), entryID)
 	if err != nil {
 		return err
 	}
@@ -121,9 +133,8 @@ func resourceUpdateEntry(d *schema.ResourceData, m interface{}) (err error) {
 	}
 
 	entry.Fields = fieldProperties
-	entry.Locale = d.Get("locale").(string)
 
-	err = client.Entries.Upsert(d.Get("space_id").(string), d.Get("contenttype_id").(string), entry)
+	err = entryClient.Upsert(context.Background(), d.Get("contenttype_id").(string), entry)
 	if err != nil {
 		return err
 	}
@@ -142,34 +153,36 @@ func resourceUpdateEntry(d *schema.ResourceData, m interface{}) (err error) {
 }
 
 func setEntryState(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 	spaceID := d.Get("space_id").(string)
 	entryID := d.Id()
 
-	entry, _ := client.Entries.Get(spaceID, entryID)
+	entryClient := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Entries()
+
+	entry, _ := entryClient.Get(context.Background(), entryID)
 
 	if d.Get("published").(bool) && entry.Sys.PublishedAt == "" {
-		err = client.Entries.Publish(spaceID, entry)
+		err = entryClient.Publish(context.Background(), entry)
 	} else if !d.Get("published").(bool) && entry.Sys.PublishedAt != "" {
-		err = client.Entries.Unpublish(spaceID, entry)
+		err = entryClient.Unpublish(context.Background(), entry)
 	}
 
 	if d.Get("archived").(bool) && entry.Sys.ArchivedAt == "" {
-		err = client.Entries.Archive(spaceID, entry)
+		err = entryClient.Archive(context.Background(), entry)
 	} else if !d.Get("archived").(bool) && entry.Sys.ArchivedAt != "" {
-		err = client.Entries.Unarchive(spaceID, entry)
+		err = entryClient.Unarchive(context.Background(), entry)
 	}
 
 	return err
 }
 
 func resourceReadEntry(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 	spaceID := d.Get("space_id").(string)
 	entryID := d.Id()
 
-	entry, err := client.Entries.Get(spaceID, entryID)
-	if _, ok := err.(contentful.NotFoundError); ok {
+	entry, err := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Entries().Get(context.Background(), entryID)
+	if _, ok := err.(common.NotFoundError); ok {
 		d.SetId("")
 		return nil
 	}
@@ -178,19 +191,21 @@ func resourceReadEntry(d *schema.ResourceData, m interface{}) (err error) {
 }
 
 func resourceDeleteEntry(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 	spaceID := d.Get("space_id").(string)
 	entryID := d.Id()
 
-	_, err = client.Entries.Get(spaceID, entryID)
+	entryClient := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Entries()
+
+	entry, err := entryClient.Get(context.Background(), entryID)
 	if err != nil {
 		return err
 	}
 
-	return client.Entries.Delete(spaceID, entryID)
+	return entryClient.Delete(context.Background(), entry)
 }
 
-func setEntryProperties(d *schema.ResourceData, entry *contentful.Entry) (err error) {
+func setEntryProperties(d *schema.ResourceData, entry *model.Entry) (err error) {
 	if err = d.Set("space_id", entry.Sys.Space.Sys.ID); err != nil {
 		return err
 	}

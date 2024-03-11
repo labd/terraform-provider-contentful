@@ -41,7 +41,7 @@ func (a *ApiKey) Draft() *model.APIKey {
 	draft := &model.APIKey{}
 
 	if !a.ID.IsUnknown() || !a.ID.IsNull() {
-		draft.Sys = &model.SpaceSys{BaseSys: model.BaseSys{ID: a.ID.ValueString(), Version: int(a.Version.ValueInt64())}}
+		draft.Sys = &model.SpaceSys{CreatedSys: model.CreatedSys{BaseSys: model.BaseSys{ID: a.ID.ValueString(), Version: int(a.Version.ValueInt64())}}}
 
 	}
 

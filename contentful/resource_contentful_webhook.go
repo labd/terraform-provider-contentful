@@ -2,6 +2,8 @@ package contentful
 
 import (
 	contentful "github.com/flaconi/contentful-go"
+	"github.com/flaconi/contentful-go/pkgs/common"
+	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -57,7 +59,7 @@ func resourceContentfulWebhook() *schema.Resource {
 }
 
 func resourceCreateWebhook(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 
 	webhook := &contentful.Webhook{
@@ -85,7 +87,7 @@ func resourceCreateWebhook(d *schema.ResourceData, m interface{}) (err error) {
 }
 
 func resourceUpdateWebhook(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 	webhookID := d.Id()
 
@@ -117,12 +119,12 @@ func resourceUpdateWebhook(d *schema.ResourceData, m interface{}) (err error) {
 }
 
 func resourceReadWebhook(d *schema.ResourceData, m interface{}) error {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 	webhookID := d.Id()
 
 	webhook, err := client.Webhooks.Get(spaceID, webhookID)
-	if _, ok := err.(contentful.NotFoundError); ok {
+	if _, ok := err.(common.NotFoundError); ok {
 		d.SetId("")
 		return nil
 	}
@@ -135,7 +137,7 @@ func resourceReadWebhook(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDeleteWebhook(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 	webhookID := d.Id()
 
@@ -145,7 +147,7 @@ func resourceDeleteWebhook(d *schema.ResourceData, m interface{}) (err error) {
 	}
 
 	err = client.Webhooks.Delete(spaceID, webhook)
-	if _, ok := err.(contentful.NotFoundError); ok {
+	if _, ok := err.(common.NotFoundError); ok {
 		return nil
 	}
 

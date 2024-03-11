@@ -1,16 +1,20 @@
 package contentful
 
 import (
+	"context"
 	"fmt"
+	"github.com/flaconi/contentful-go/pkgs/common"
+	"github.com/flaconi/contentful-go/pkgs/model"
+	"github.com/flaconi/terraform-provider-contentful/internal/acctest"
+	"os"
 	"testing"
 
-	contentful "github.com/flaconi/contentful-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccContentfulEnvironment_Basic(t *testing.T) {
-	var environment contentful.Environment
+	var environment model.Environment
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -41,7 +45,7 @@ func TestAccContentfulEnvironment_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckContentfulEnvironmentExists(n string, environment *contentful.Environment) resource.TestCheckFunc {
+func testAccCheckContentfulEnvironmentExists(n string, environment *model.Environment) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -58,9 +62,10 @@ func testAccCheckContentfulEnvironmentExists(n string, environment *contentful.E
 			return fmt.Errorf("no name is set")
 		}
 
-		client := testAccProvider.Meta().(*contentful.Client)
+		client := acctest.GetCMA()
 
-		contentfulEnvironment, err := client.Environments.Get(spaceID, rs.Primary.ID)
+		contentfulEnvironment, err := client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).Environments().Get(context.Background(), rs.Primary.ID)
+
 		if err != nil {
 			return err
 		}
@@ -71,11 +76,11 @@ func testAccCheckContentfulEnvironmentExists(n string, environment *contentful.E
 	}
 }
 
-func testAccCheckContentfulEnvironmentAttributes(environment *contentful.Environment, attrs map[string]interface{}) resource.TestCheckFunc {
+func testAccCheckContentfulEnvironmentAttributes(environment *model.Environment, attrs map[string]interface{}) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		name := attrs["name"].(string)
 		if environment.Name != name {
-			return fmt.Errorf("locale name does not match: %s, %s", environment.Name, name)
+			return fmt.Errorf("environment name does not match: %s, %s", environment.Name, name)
 		}
 
 		return nil
@@ -84,7 +89,7 @@ func testAccCheckContentfulEnvironmentAttributes(environment *contentful.Environ
 
 func testAccContentfulEnvironmentDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "contentful_locale" {
+		if rs.Type != "contentful_environment" {
 			continue
 		}
 		spaceID := rs.Primary.Attributes["space_id"]
@@ -92,19 +97,20 @@ func testAccContentfulEnvironmentDestroy(s *terraform.State) error {
 			return fmt.Errorf("no space_id is set")
 		}
 
-		localeID := rs.Primary.ID
-		if localeID == "" {
-			return fmt.Errorf("no locale ID is set")
+		environmentID := rs.Primary.ID
+		if environmentID == "" {
+			return fmt.Errorf("no environment ID is set")
 		}
 
-		client := testAccProvider.Meta().(*contentful.Client)
+		client := acctest.GetCMA()
 
-		_, err := client.Locales.Get(spaceID, localeID)
-		if _, ok := err.(contentful.NotFoundError); ok {
+		_, err := client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).Environments().Get(context.Background(), environmentID)
+
+		if _, ok := err.(common.NotFoundError); ok {
 			return nil
 		}
 
-		return fmt.Errorf("locale still exists with id: %s", localeID)
+		return fmt.Errorf("environment still exists with id: %s", environmentID)
 	}
 
 	return nil

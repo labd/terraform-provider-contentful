@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/elliotchance/pie/v2"
 	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/contentful-go/pkgs/model"
 	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -94,17 +95,17 @@ type Validation struct {
 	Message           types.String   `tfsdk:"message"`
 }
 
-func (v Validation) Draft() contentful.FieldValidation {
+func (v Validation) Draft() model.FieldValidation {
 
 	if !v.Unique.IsUnknown() && !v.Unique.IsNull() {
-		return contentful.FieldValidationUnique{
+		return model.FieldValidationUnique{
 			Unique: v.Unique.ValueBool(),
 		}
 	}
 
 	if v.Size != nil {
-		return contentful.FieldValidationSize{
-			Size: &contentful.MinMax{
+		return model.FieldValidationSize{
+			Size: &model.MinMax{
 				Min: v.Size.Min.ValueFloat64Pointer(),
 				Max: v.Size.Max.ValueFloat64Pointer(),
 			},
@@ -113,8 +114,8 @@ func (v Validation) Draft() contentful.FieldValidation {
 	}
 
 	if v.Range != nil {
-		return contentful.FieldValidationRange{
-			Range: &contentful.MinMax{
+		return model.FieldValidationRange{
+			Range: &model.MinMax{
 				Min: v.Range.Min.ValueFloat64Pointer(),
 				Max: v.Range.Max.ValueFloat64Pointer(),
 			},
@@ -123,8 +124,8 @@ func (v Validation) Draft() contentful.FieldValidation {
 	}
 
 	if v.AssetFileSize != nil {
-		return contentful.FieldValidationFileSize{
-			Size: &contentful.MinMax{
+		return model.FieldValidationFileSize{
+			Size: &model.MinMax{
 				Min: v.AssetFileSize.Min.ValueFloat64Pointer(),
 				Max: v.AssetFileSize.Max.ValueFloat64Pointer(),
 			},
@@ -132,8 +133,8 @@ func (v Validation) Draft() contentful.FieldValidation {
 	}
 
 	if v.Regexp != nil {
-		return contentful.FieldValidationRegex{
-			Regex: &contentful.Regex{
+		return model.FieldValidationRegex{
+			Regex: &model.Regex{
 				Pattern: v.Regexp.Pattern.ValueString(),
 			},
 			ErrorMessage: v.Message.ValueStringPointer(),
@@ -141,7 +142,7 @@ func (v Validation) Draft() contentful.FieldValidation {
 	}
 
 	if len(v.LinkContentType) > 0 {
-		return contentful.FieldValidationLink{
+		return model.FieldValidationLink{
 			LinkContentType: pie.Map(v.LinkContentType, func(t types.String) string {
 				return t.ValueString()
 			}),
@@ -149,7 +150,7 @@ func (v Validation) Draft() contentful.FieldValidation {
 	}
 
 	if len(v.LinkMimetypeGroup) > 0 {
-		return contentful.FieldValidationMimeType{
+		return model.FieldValidationMimeType{
 			MimeTypes: pie.Map(v.LinkMimetypeGroup, func(t types.String) string {
 				return t.ValueString()
 			}),
@@ -158,7 +159,7 @@ func (v Validation) Draft() contentful.FieldValidation {
 	}
 
 	if len(v.In) > 0 {
-		return contentful.FieldValidationPredefinedValues{
+		return model.FieldValidationPredefinedValues{
 			In: pie.Map(v.In, func(t types.String) any {
 				return t.ValueString()
 			}),
@@ -166,7 +167,7 @@ func (v Validation) Draft() contentful.FieldValidation {
 	}
 
 	if len(v.EnabledMarks) > 0 {
-		return contentful.FieldValidationEnabledMarks{
+		return model.FieldValidationEnabledMarks{
 			Marks: pie.Map(v.EnabledMarks, func(t types.String) string {
 				return t.ValueString()
 			}),
@@ -175,7 +176,7 @@ func (v Validation) Draft() contentful.FieldValidation {
 	}
 
 	if len(v.EnabledNodeTypes) > 0 {
-		return contentful.FieldValidationEnabledNodeTypes{
+		return model.FieldValidationEnabledNodeTypes{
 			NodeTypes: pie.Map(v.EnabledNodeTypes, func(t types.String) string {
 				return t.ValueString()
 			}),
@@ -195,7 +196,7 @@ type Regexp struct {
 	Pattern types.String `tfsdk:"pattern"`
 }
 
-func (f *Field) Equal(n *contentful.Field) bool {
+func (f *Field) Equal(n *model.Field) bool {
 
 	if n.Type != f.Type.ValueString() {
 		return false
@@ -241,7 +242,7 @@ func (f *Field) Equal(n *contentful.Field) bool {
 		return false
 	}
 
-	for idx, validation := range pie.Map(f.Validations, func(t Validation) contentful.FieldValidation {
+	for idx, validation := range pie.Map(f.Validations, func(t Validation) model.FieldValidation {
 		return t.Draft()
 	}) {
 		cfVal := n.Validations[idx]
@@ -259,9 +260,9 @@ func (f *Field) Equal(n *contentful.Field) bool {
 	return true
 }
 
-func (f *Field) ToNative() (*contentful.Field, error) {
+func (f *Field) ToNative() (*model.Field, error) {
 
-	contentfulField := &contentful.Field{
+	contentfulField := &model.Field{
 		ID:        f.Id.ValueString(),
 		Name:      f.Name.ValueString(),
 		Type:      f.Type.ValueString(),
@@ -269,7 +270,7 @@ func (f *Field) ToNative() (*contentful.Field, error) {
 		Required:  f.Required.ValueBool(),
 		Disabled:  f.Disabled.ValueBool(),
 		Omitted:   f.Omitted.ValueBool(),
-		Validations: pie.Map(f.Validations, func(t Validation) contentful.FieldValidation {
+		Validations: pie.Map(f.Validations, func(t Validation) model.FieldValidation {
 			return t.Draft()
 		}),
 	}
@@ -278,7 +279,7 @@ func (f *Field) ToNative() (*contentful.Field, error) {
 		contentfulField.LinkType = f.LinkType.ValueString()
 	}
 
-	if contentfulField.Type == contentful.FieldTypeArray {
+	if contentfulField.Type == model.FieldTypeArray {
 		items, errItem := f.Items.ToNative()
 
 		if errItem != nil {
@@ -312,7 +313,7 @@ func getTypeOfMap(mapValues map[string]any) (*string, error) {
 	return nil, nil
 }
 
-func (f *Field) Import(n *contentful.Field, c []contentful.Controls) error {
+func (f *Field) Import(n *model.Field, c []contentful.Controls) error {
 	f.Id = types.StringValue(n.ID)
 	f.Name = types.StringValue(n.Name)
 	f.Type = types.StringValue(n.Type)
@@ -364,7 +365,7 @@ func (f *Field) Import(n *contentful.Field, c []contentful.Controls) error {
 
 	f.Validations = validations
 
-	if n.Type == contentful.FieldTypeArray {
+	if n.Type == model.FieldTypeArray {
 
 		itemValidations, err := getValidations(n.Items.Validations)
 
@@ -445,18 +446,18 @@ type Items struct {
 	Validations []Validation `tfsdk:"validations"`
 }
 
-func (i *Items) ToNative() (*contentful.FieldTypeArrayItem, error) {
+func (i *Items) ToNative() (*model.FieldTypeArrayItem, error) {
 
-	return &contentful.FieldTypeArrayItem{
+	return &model.FieldTypeArrayItem{
 		Type: i.Type.ValueString(),
-		Validations: pie.Map(i.Validations, func(t Validation) contentful.FieldValidation {
+		Validations: pie.Map(i.Validations, func(t Validation) model.FieldValidation {
 			return t.Draft()
 		}),
 		LinkType: i.LinkType.ValueStringPointer(),
 	}, nil
 }
 
-func (i *Items) Equal(n *contentful.FieldTypeArrayItem) bool {
+func (i *Items) Equal(n *model.FieldTypeArrayItem) bool {
 
 	if n == nil {
 		return false
@@ -474,7 +475,7 @@ func (i *Items) Equal(n *contentful.FieldTypeArrayItem) bool {
 		return false
 	}
 
-	for idx, validation := range pie.Map(i.Validations, func(t Validation) contentful.FieldValidation {
+	for idx, validation := range pie.Map(i.Validations, func(t Validation) model.FieldValidation {
 		return t.Draft()
 	}) {
 		cfVal := n.Validations[idx]
@@ -488,9 +489,9 @@ func (i *Items) Equal(n *contentful.FieldTypeArrayItem) bool {
 	return true
 }
 
-func (c *ContentType) Draft() (*contentful.ContentType, error) {
+func (c *ContentType) Draft() (*model.ContentType, error) {
 
-	var fields []*contentful.Field
+	var fields []*model.Field
 
 	for _, field := range c.Fields {
 
@@ -502,14 +503,22 @@ func (c *ContentType) Draft() (*contentful.ContentType, error) {
 		fields = append(fields, nativeField)
 	}
 
-	contentfulType := &contentful.ContentType{
+	contentfulType := &model.ContentType{
 		Name:         c.Name.ValueString(),
 		DisplayField: c.DisplayField.ValueString(),
 		Fields:       fields,
 	}
 
 	if !c.ID.IsUnknown() || !c.ID.IsNull() {
-		contentfulType.Sys = &contentful.Sys{ID: c.ID.ValueString()}
+		contentfulType.Sys = &model.EnvironmentSys{
+			SpaceSys: model.SpaceSys{
+				CreatedSys: model.CreatedSys{
+					BaseSys: model.BaseSys{
+						ID: c.ID.ValueString(),
+					},
+				},
+			},
+		}
 	}
 
 	if !c.Description.IsNull() && !c.Description.IsUnknown() {
@@ -520,7 +529,7 @@ func (c *ContentType) Draft() (*contentful.ContentType, error) {
 
 }
 
-func (c *ContentType) Import(n *contentful.ContentType, e *contentful.EditorInterface) error {
+func (c *ContentType) Import(n *model.ContentType, e *contentful.EditorInterface) error {
 	c.ID = types.StringValue(n.Sys.ID)
 	c.Version = types.Int64Value(int64(n.Sys.Version))
 
@@ -571,7 +580,7 @@ func (c *ContentType) Import(n *contentful.ContentType, e *contentful.EditorInte
 
 }
 
-func (c *ContentType) Equal(n *contentful.ContentType) bool {
+func (c *ContentType) Equal(n *model.ContentType) bool {
 
 	if !utils.CompareStringPointer(c.Description, n.Description) {
 		return false
@@ -590,7 +599,7 @@ func (c *ContentType) Equal(n *contentful.ContentType) bool {
 	}
 
 	for idxOrg, field := range c.Fields {
-		idx := pie.FindFirstUsing(n.Fields, func(f *contentful.Field) bool {
+		idx := pie.FindFirstUsing(n.Fields, func(f *model.Field) bool {
 			return f.ID == field.Id.ValueString()
 		})
 
@@ -739,7 +748,7 @@ func (c *ContentType) DraftEditorInterface(n *contentful.EditorInterface) {
 	})
 }
 
-func getValidations(contentfulValidations []contentful.FieldValidation) ([]Validation, error) {
+func getValidations(contentfulValidations []model.FieldValidation) ([]Validation, error) {
 	var validations []Validation
 
 	for _, validation := range contentfulValidations {
@@ -756,9 +765,9 @@ func getValidations(contentfulValidations []contentful.FieldValidation) ([]Valid
 	return validations, nil
 }
 
-func getValidation(cfVal contentful.FieldValidation) (*Validation, error) {
+func getValidation(cfVal model.FieldValidation) (*Validation, error) {
 
-	if v, ok := cfVal.(contentful.FieldValidationPredefinedValues); ok {
+	if v, ok := cfVal.(model.FieldValidationPredefinedValues); ok {
 
 		return &Validation{
 			In: pie.Map(v.In, func(t any) types.String {
@@ -767,14 +776,14 @@ func getValidation(cfVal contentful.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
-	if v, ok := cfVal.(contentful.FieldValidationUnique); ok {
+	if v, ok := cfVal.(model.FieldValidationUnique); ok {
 
 		return &Validation{
 			Unique: types.BoolValue(v.Unique),
 		}, nil
 	}
 
-	if v, ok := cfVal.(contentful.FieldValidationRegex); ok {
+	if v, ok := cfVal.(model.FieldValidationRegex); ok {
 
 		return &Validation{
 			Regexp: &Regexp{
@@ -784,7 +793,7 @@ func getValidation(cfVal contentful.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
-	if v, ok := cfVal.(contentful.FieldValidationSize); ok {
+	if v, ok := cfVal.(model.FieldValidationSize); ok {
 
 		return &Validation{
 			Size: &Size{
@@ -794,7 +803,7 @@ func getValidation(cfVal contentful.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
-	if v, ok := cfVal.(contentful.FieldValidationLink); ok {
+	if v, ok := cfVal.(model.FieldValidationLink); ok {
 
 		return &Validation{
 			LinkContentType: pie.Map(v.LinkContentType, func(t string) types.String {
@@ -803,7 +812,7 @@ func getValidation(cfVal contentful.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
-	if v, ok := cfVal.(contentful.FieldValidationMimeType); ok {
+	if v, ok := cfVal.(model.FieldValidationMimeType); ok {
 
 		return &Validation{
 			LinkMimetypeGroup: pie.Map(v.MimeTypes, func(t string) types.String {
@@ -813,7 +822,7 @@ func getValidation(cfVal contentful.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
-	if v, ok := cfVal.(contentful.FieldValidationRange); ok {
+	if v, ok := cfVal.(model.FieldValidationRange); ok {
 
 		return &Validation{
 			Range: &Size{
@@ -823,7 +832,7 @@ func getValidation(cfVal contentful.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
-	if v, ok := cfVal.(contentful.FieldValidationEnabledNodeTypes); ok {
+	if v, ok := cfVal.(model.FieldValidationEnabledNodeTypes); ok {
 
 		return &Validation{
 			EnabledNodeTypes: pie.Map(v.NodeTypes, func(t string) types.String {
@@ -833,7 +842,7 @@ func getValidation(cfVal contentful.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
-	if v, ok := cfVal.(contentful.FieldValidationEnabledMarks); ok {
+	if v, ok := cfVal.(model.FieldValidationEnabledMarks); ok {
 
 		return &Validation{
 			EnabledMarks: pie.Map(v.Marks, func(t string) types.String {
@@ -843,7 +852,7 @@ func getValidation(cfVal contentful.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
-	if v, ok := cfVal.(contentful.FieldValidationFileSize); ok {
+	if v, ok := cfVal.(model.FieldValidationFileSize); ok {
 		return &Validation{
 			AssetFileSize: &Size{
 				Max: types.Float64PointerValue(v.Size.Max),

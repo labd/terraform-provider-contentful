@@ -2,11 +2,11 @@ package utils
 
 import (
 	"github.com/flaconi/contentful-go"
-	"github.com/flaconi/contentful-go/service/common"
+	"github.com/flaconi/contentful-go/service/cma"
 )
 
 type ProviderData struct {
 	Client         *contentful.Client
-	CMAClient      common.SpaceIdClientBuilder
+	CMAClient      cma.SpaceIdClientBuilder
 	OrganizationId string
 }

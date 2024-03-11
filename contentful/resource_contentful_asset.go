@@ -1,10 +1,13 @@
 package contentful
 
 import (
+	"context"
 	"fmt"
+	"github.com/flaconi/contentful-go/pkgs/common"
+	"github.com/flaconi/contentful-go/pkgs/model"
+	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"time"
 
-	contentful "github.com/flaconi/contentful-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -23,10 +26,6 @@ func resourceContentfulAsset() *schema.Resource {
 			"version": {
 				Type:     schema.TypeInt,
 				Computed: true,
-			},
-			"locale": {
-				Type:     schema.TypeString,
-				Required: true,
 			},
 			"space_id": {
 				Type:     schema.TypeString,
@@ -75,6 +74,10 @@ func resourceContentfulAsset() *schema.Resource {
 							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
+									"locale": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
 									"url": {
 										Type:     schema.TypeString,
 										Computed: true,
@@ -133,6 +136,10 @@ func resourceContentfulAsset() *schema.Resource {
 				Type:     schema.TypeBool,
 				Required: true,
 			},
+			"environment": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
 			"archived": {
 				Type:     schema.TypeBool,
 				Required: true,
@@ -142,75 +149,22 @@ func resourceContentfulAsset() *schema.Resource {
 }
 
 func resourceCreateAsset(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
+	spaceID := d.Get("space_id").(string)
 
-	fields := d.Get("fields").([]interface{})[0].(map[string]interface{})
+	assetClient := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Assets()
 
-	localizedTitle := map[string]string{}
-	rawTitle := fields["title"].([]interface{})
-	for i := 0; i < len(rawTitle); i++ {
-		field := rawTitle[i].(map[string]interface{})
-		localizedTitle[field["locale"].(string)] = field["content"].(string)
-	}
+	asset, err := buildAsset(d)
 
-	localizedDescription := map[string]string{}
-	rawDescription := fields["description"].([]interface{})
-	for i := 0; i < len(rawDescription); i++ {
-		field := rawDescription[i].(map[string]interface{})
-		localizedDescription[field["locale"].(string)] = field["content"].(string)
-	}
-
-	files := fields["file"].([]interface{})
-
-	if len(files) == 0 {
-		return fmt.Errorf("file block not defined in asset")
-	}
-
-	file := files[0].(map[string]interface{})
-
-	asset := &contentful.Asset{
-		Sys: &contentful.Sys{
-			ID:      d.Get("asset_id").(string),
-			Version: 0,
-		},
-		Locale: d.Get("locale").(string),
-		Fields: &contentful.AssetFields{
-			Title:       localizedTitle,
-			Description: localizedDescription,
-			File: map[string]*contentful.File{
-				d.Get("locale").(string): {
-					FileName:    file["file_name"].(string),
-					ContentType: file["content_type"].(string),
-				},
-			},
-		},
-	}
-
-	if url, ok := file["url"].(string); ok && url != "" {
-		asset.Fields.File[d.Get("locale").(string)].URL = url
-	}
-
-	if upload, ok := file["upload"].(string); ok && upload != "" {
-		asset.Fields.File[d.Get("locale").(string)].UploadURL = upload
-	}
-
-	if details, ok := file["file_details"].(*contentful.FileDetails); ok {
-		asset.Fields.File[d.Get("locale").(string)].Details = details
-	}
-
-	if uploadFrom, ok := file["upload_from"].(string); ok && uploadFrom != "" {
-		asset.Fields.File[d.Get("locale").(string)].UploadFrom = &contentful.UploadFrom{
-			Sys: &contentful.Sys{
-				ID: uploadFrom,
-			},
-		}
-	}
-
-	if err = client.Assets.Upsert(d.Get("space_id").(string), asset); err != nil {
+	if err != nil {
 		return err
 	}
 
-	if err = client.Assets.Process(d.Get("space_id").(string), asset); err != nil {
+	if err = assetClient.Upsert(context.Background(), asset); err != nil {
+		return err
+	}
+
+	if err = assetClient.Process(context.Background(), asset); err != nil {
 		return err
 	}
 
@@ -230,15 +184,45 @@ func resourceCreateAsset(d *schema.ResourceData, m interface{}) (err error) {
 }
 
 func resourceUpdateAsset(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 	spaceID := d.Get("space_id").(string)
 	assetID := d.Id()
 
-	_, err = client.Assets.Get(spaceID, assetID)
+	assetClient := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Assets()
+
+	_, err = assetClient.Get(context.Background(), assetID)
 	if err != nil {
 		return err
 	}
 
+	asset, err := buildAsset(d)
+
+	if err != nil {
+		return err
+	}
+
+	if err := assetClient.Upsert(context.Background(), asset); err != nil {
+		return err
+	}
+
+	if err = assetClient.Process(context.Background(), asset); err != nil {
+		return err
+	}
+
+	d.SetId(asset.Sys.ID)
+
+	if err := setAssetProperties(d, asset); err != nil {
+		return err
+	}
+
+	if err = setAssetState(d, m); err != nil {
+		return err
+	}
+
+	return err
+}
+
+func buildAsset(d *schema.ResourceData) (*model.Asset, error) {
 	fields := d.Get("fields").([]interface{})[0].(map[string]interface{})
 
 	localizedTitle := map[string]string{}
@@ -258,93 +242,92 @@ func resourceUpdateAsset(d *schema.ResourceData, m interface{}) (err error) {
 	files := fields["file"].([]interface{})
 
 	if len(files) == 0 {
-		return fmt.Errorf("file block not defined in asset")
+		return nil, fmt.Errorf("file block not defined in asset")
 	}
 
-	file := files[0].(map[string]interface{})
+	fileData := map[string]*model.File{}
+	for _, file := range files {
+		fileLocale := file.(map[string]any)
 
-	asset := &contentful.Asset{
-		Sys: &contentful.Sys{
-			ID:      d.Get("asset_id").(string),
-			Version: d.Get("version").(int),
-		},
-		Locale: d.Get("locale").(string),
-		Fields: &contentful.AssetFields{
-			Title:       localizedTitle,
-			Description: localizedDescription,
-			File: map[string]*contentful.File{
-				d.Get("locale").(string): {
-					FileName:    file["file_name"].(string),
-					ContentType: file["content_type"].(string),
+		fileData[fileLocale["locale"].(string)] = &model.File{
+			URL:         "",
+			UploadURL:   "",
+			UploadFrom:  nil,
+			Details:     nil,
+			FileName:    fileLocale["file_name"].(string),
+			ContentType: fileLocale["content_type"].(string),
+		}
+
+		if url, ok := fileLocale["url"].(string); ok && url != "" {
+			fileData[fileLocale["locale"].(string)].URL = url
+		}
+
+		if upload, ok := fileLocale["upload"].(string); ok && upload != "" {
+			fileData[fileLocale["locale"].(string)].UploadURL = upload
+		}
+
+		if details, ok := fileLocale["file_details"].(*model.FileDetails); ok {
+			fileData[fileLocale["locale"].(string)].Details = details
+		}
+
+		if uploadFrom, ok := fileLocale["upload_from"].(string); ok && uploadFrom != "" {
+			fileData[fileLocale["locale"].(string)].UploadFrom = &model.UploadFrom{
+				Sys: &model.BaseSys{
+					ID: uploadFrom,
+				},
+			}
+		}
+
+	}
+
+	return &model.Asset{
+		Sys: &model.PublishSys{
+			EnvironmentSys: model.EnvironmentSys{
+				SpaceSys: model.SpaceSys{
+					CreatedSys: model.CreatedSys{
+						BaseSys: model.BaseSys{
+							ID:      d.Get("asset_id").(string),
+							Version: d.Get("version").(int),
+						},
+					},
 				},
 			},
 		},
-	}
-
-	if url, ok := file["url"].(string); ok && url != "" {
-		asset.Fields.File[d.Get("locale").(string)].URL = url
-	}
-
-	if upload, ok := file["upload"].(string); ok && upload != "" {
-		asset.Fields.File[d.Get("locale").(string)].UploadURL = upload
-	}
-
-	if details, ok := file["file_details"].(*contentful.FileDetails); ok {
-		asset.Fields.File[d.Get("locale").(string)].Details = details
-	}
-
-	if uploadFrom, ok := file["upload_from"].(string); ok && uploadFrom != "" {
-		asset.Fields.File[d.Get("locale").(string)].UploadFrom = &contentful.UploadFrom{
-			Sys: &contentful.Sys{
-				ID: uploadFrom,
-			},
-		}
-	}
-
-	if err := client.Assets.Upsert(d.Get("space_id").(string), asset); err != nil {
-		return err
-	}
-
-	if err = client.Assets.Process(d.Get("space_id").(string), asset); err != nil {
-		return err
-	}
-
-	d.SetId(asset.Sys.ID)
-
-	if err := setAssetProperties(d, asset); err != nil {
-		return err
-	}
-
-	if err = setAssetState(d, m); err != nil {
-		return err
-	}
-
-	return err
+		Fields: &model.AssetFields{
+			Title:       localizedTitle,
+			Description: localizedDescription,
+			File:        fileData,
+		},
+	}, nil
 }
 
 func setAssetState(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 	spaceID := d.Get("space_id").(string)
 	assetID := d.Id()
 
-	asset, _ := client.Assets.Get(spaceID, assetID)
+	assetClient := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Assets()
+
+	ctx := context.Background()
+
+	asset, _ := assetClient.Get(ctx, assetID)
 
 	if d.Get("published").(bool) && asset.Sys.PublishedAt == "" {
-		if err = client.Assets.Publish(spaceID, asset); err != nil {
+		if err = assetClient.Publish(ctx, asset); err != nil {
 			return err
 		}
 	} else if !d.Get("published").(bool) && asset.Sys.PublishedAt != "" {
-		if err = client.Assets.Unpublish(spaceID, asset); err != nil {
+		if err = assetClient.Unpublish(ctx, asset); err != nil {
 			return err
 		}
 	}
 
 	if d.Get("archived").(bool) && asset.Sys.ArchivedAt == "" {
-		if err = client.Assets.Archive(spaceID, asset); err != nil {
+		if err = assetClient.Archive(ctx, asset); err != nil {
 			return err
 		}
 	} else if !d.Get("archived").(bool) && asset.Sys.ArchivedAt != "" {
-		if err = client.Assets.Unarchive(spaceID, asset); err != nil {
+		if err = assetClient.Unarchive(ctx, asset); err != nil {
 			return err
 		}
 	}
@@ -354,12 +337,14 @@ func setAssetState(d *schema.ResourceData, m interface{}) (err error) {
 }
 
 func resourceReadAsset(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 	spaceID := d.Get("space_id").(string)
 	assetID := d.Id()
 
-	asset, err := client.Assets.Get(spaceID, assetID)
-	if _, ok := err.(contentful.NotFoundError); ok {
+	assetClient := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Assets()
+
+	asset, err := assetClient.Get(context.Background(), assetID)
+	if _, ok := err.(common.NotFoundError); ok {
 		d.SetId("")
 		return nil
 	}
@@ -368,19 +353,21 @@ func resourceReadAsset(d *schema.ResourceData, m interface{}) (err error) {
 }
 
 func resourceDeleteAsset(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 	spaceID := d.Get("space_id").(string)
 	assetID := d.Id()
 
-	asset, err := client.Assets.Get(spaceID, assetID)
+	assetClient := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Assets()
+
+	asset, err := assetClient.Get(context.Background(), assetID)
 	if err != nil {
 		return err
 	}
 
-	return client.Assets.Delete(spaceID, asset)
+	return assetClient.Delete(context.Background(), asset)
 }
 
-func setAssetProperties(d *schema.ResourceData, asset *contentful.Asset) (err error) {
+func setAssetProperties(d *schema.ResourceData, asset *model.Asset) (err error) {
 	if err = d.Set("space_id", asset.Sys.Space.Sys.ID); err != nil {
 		return err
 	}

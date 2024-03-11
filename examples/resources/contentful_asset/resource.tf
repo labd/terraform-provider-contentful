@@ -1,6 +1,6 @@
 resource "contentful_asset" "example_asset" {
   asset_id = "test_asset"
-  locale   = "en-US"
+  environment   = "master"
   space_id = "space-id"
 
   fields {

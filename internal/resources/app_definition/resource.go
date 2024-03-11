@@ -4,6 +4,8 @@ import (
 	"context"
 	_ "embed"
 	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/contentful-go/pkgs/model"
+	"github.com/flaconi/contentful-go/service/cma"
 	"github.com/flaconi/terraform-provider-contentful/internal/custommodifier"
 	"github.com/flaconi/terraform-provider-contentful/internal/customvalidator"
 	"github.com/flaconi/terraform-provider-contentful/internal/utils"
@@ -36,8 +38,9 @@ func NewAppDefinitionResource() resource.Resource {
 
 // appDefinitionResource is the resource implementation.
 type appDefinitionResource struct {
-	client         *contentful.Client
-	organizationId string
+	client          cma.OrganizationIdClient
+	clientAppUpload *contentful.Client
+	organizationId  string
 }
 
 func (e *appDefinitionResource) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -157,8 +160,9 @@ func (e *appDefinitionResource) Configure(_ context.Context, request resource.Co
 	}
 
 	data := request.ProviderData.(utils.ProviderData)
-	e.client = data.Client
+	e.client = data.CMAClient.WithOrganizationId(data.OrganizationId)
 	e.organizationId = data.OrganizationId
+	e.clientAppUpload = data.Client
 
 }
 
@@ -169,13 +173,13 @@ func (e *appDefinitionResource) Create(ctx context.Context, request resource.Cre
 		return
 	}
 
-	if e.setDefaultBundle(&plan, response.Diagnostics) {
+	if e.setDefaultBundle(ctx, &plan, response.Diagnostics) {
 		return
 	}
 
 	draft := plan.Draft()
 
-	if err := e.client.AppDefinitions.Upsert(e.organizationId, draft); err != nil {
+	if err := e.client.AppDefinitions().Upsert(ctx, draft); err != nil {
 		response.Diagnostics.AddError("Error creating app_definition definition", err.Error())
 		return
 	}
@@ -189,21 +193,21 @@ func (e *appDefinitionResource) Create(ctx context.Context, request resource.Cre
 	}
 }
 
-func (e *appDefinitionResource) setDefaultBundle(plan *AppDefinition, diagnostics diag.Diagnostics) bool {
+func (e *appDefinitionResource) setDefaultBundle(ctx context.Context, plan *AppDefinition, diagnostics diag.Diagnostics) bool {
 	if plan.UseBundle.ValueBool() && (plan.BundleId.IsNull() || plan.BundleId.IsUnknown()) {
 
 		draft := plan.Draft()
 
 		locations := draft.Locations
 
-		draft.Locations = []contentful.Locations{}
+		draft.Locations = []model.Locations{}
 
-		if err := e.client.AppDefinitions.Upsert(e.organizationId, draft); err != nil {
+		if err := e.client.AppDefinitions().Upsert(ctx, draft); err != nil {
 			diagnostics.AddError("Error upsert app_definition definition", err.Error())
 			return true
 		}
 
-		upload, err := e.client.AppUpload.Create(e.organizationId, defaultDummyBundle)
+		upload, err := e.clientAppUpload.AppUpload.Create(e.organizationId, defaultDummyBundle)
 
 		if err != nil {
 			diagnostics.AddError("Error uploading default bundle", err.Error())
@@ -212,7 +216,7 @@ func (e *appDefinitionResource) setDefaultBundle(plan *AppDefinition, diagnostic
 
 		draft.Locations = locations
 
-		bundle, err := e.client.AppBundle.Create(e.organizationId, draft.Sys.ID, "Default Terraform BundleId", upload.Sys.ID)
+		bundle, err := e.clientAppUpload.AppBundle.Create(e.organizationId, draft.Sys.ID, "Default Terraform BundleId", upload.Sys.ID)
 		if err != nil {
 			diagnostics.AddError("Error creating app_bundle for app definition", err.Error())
 			return true
@@ -238,7 +242,7 @@ func (e *appDefinitionResource) Read(ctx context.Context, request resource.ReadR
 
 func (e *appDefinitionResource) doRead(ctx context.Context, app *AppDefinition, state *tfsdk.State, d *diag.Diagnostics) {
 
-	appDefinition, err := e.getApp(app)
+	appDefinition, err := e.getApp(ctx, app)
 	if err != nil {
 		d.AddError(
 			"Error reading app definition",
@@ -273,7 +277,7 @@ func (e *appDefinitionResource) Update(ctx context.Context, request resource.Upd
 		return
 	}
 
-	appDefinition, err := e.getApp(plan)
+	appDefinition, err := e.getApp(ctx, plan)
 	if err != nil {
 		response.Diagnostics.AddError(
 			"Error reading app definition",
@@ -284,13 +288,13 @@ func (e *appDefinitionResource) Update(ctx context.Context, request resource.Upd
 
 	if !plan.Equal(appDefinition) {
 
-		if e.setDefaultBundle(plan, response.Diagnostics) {
+		if e.setDefaultBundle(ctx, plan, response.Diagnostics) {
 			return
 		}
 
 		draft := plan.Draft()
 
-		if err = e.client.AppDefinitions.Upsert(e.organizationId, draft); err != nil {
+		if err = e.client.AppDefinitions().Upsert(ctx, draft); err != nil {
 			response.Diagnostics.AddError(
 				"Error updating app definition",
 				"Could not update app definition, unexpected error: "+err.Error(),
@@ -307,7 +311,7 @@ func (e *appDefinitionResource) Delete(ctx context.Context, request resource.Del
 	var state *AppDefinition
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 
-	if err := e.client.AppDefinitions.Delete(e.organizationId, state.ID.ValueString()); err != nil {
+	if err := e.client.AppDefinitions().Delete(ctx, state.Draft()); err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting app_definition definition",
 			"Could not delete app_definition definition, unexpected error: "+err.Error(),
@@ -325,6 +329,6 @@ func (e *appDefinitionResource) ImportState(ctx context.Context, request resourc
 	e.doRead(ctx, futureState, &response.State, &response.Diagnostics)
 }
 
-func (e *appDefinitionResource) getApp(app *AppDefinition) (*contentful.AppDefinition, error) {
-	return e.client.AppDefinitions.Get(e.organizationId, app.ID.ValueString())
+func (e *appDefinitionResource) getApp(ctx context.Context, app *AppDefinition) (*model.AppDefinition, error) {
+	return e.client.AppDefinitions().Get(ctx, app.ID.ValueString())
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/elliotchance/pie/v2"
 	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/contentful-go/pkgs/model"
+	"github.com/flaconi/contentful-go/service/cma"
 	"github.com/flaconi/terraform-provider-contentful/internal/custommodifier"
 	"github.com/flaconi/terraform-provider-contentful/internal/customvalidator"
 	"github.com/flaconi/terraform-provider-contentful/internal/utils"
@@ -45,7 +47,8 @@ func NewContentTypeResource() resource.Resource {
 
 // contentTypeResource is the resource implementation.
 type contentTypeResource struct {
-	client *contentful.Client
+	client    cma.SpaceIdClientBuilder
+	clientOld *contentful.Client
 }
 
 func (e *contentTypeResource) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -147,7 +150,7 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 				Description: "space id",
 			},
 			"environment": schema.StringAttribute{
-				Optional: true,
+				Required: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -171,6 +174,7 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 			"fields": schema.ListNestedAttribute{
 				Validators: []validator.List{
 					listvalidator.SizeAtLeast(1),
+					listvalidator.UniqueValues(),
 				},
 				Required: true,
 				NestedObject: schema.NestedAttributeObject{
@@ -375,7 +379,8 @@ func (e *contentTypeResource) Configure(_ context.Context, request resource.Conf
 	}
 
 	data := request.ProviderData.(utils.ProviderData)
-	e.client = data.Client
+	e.client = data.CMAClient
+	e.clientOld = data.Client
 
 }
 
@@ -393,34 +398,16 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 		return
 	}
 
-	if plan.Environment.IsUnknown() || plan.Environment.IsNull() {
-		if err = e.client.ContentTypes.Upsert(plan.SpaceId.ValueString(), draft); err != nil {
-			response.Diagnostics.AddError("Error creating contenttype", err.Error())
-			return
-		}
+	envClient := e.client.WithSpaceId(plan.SpaceId.ValueString()).WithEnvironment(plan.Environment.ValueString())
 
-		if err = e.client.ContentTypes.Activate(plan.SpaceId.ValueString(), draft); err != nil {
-			response.Diagnostics.AddError("Error activating contenttype", err.Error())
-			return
-		}
-	} else {
+	if err = envClient.ContentTypes().Upsert(ctx, draft); err != nil {
+		response.Diagnostics.AddError("Error creating contenttype", err.Error())
+		return
+	}
 
-		env := &contentful.Environment{Sys: &contentful.Sys{
-			ID: plan.Environment.ValueString(),
-			Space: &contentful.Space{
-				Sys: &contentful.Sys{ID: plan.SpaceId.ValueString()},
-			},
-		}}
-
-		if err = e.client.ContentTypes.UpsertWithEnv(env, draft); err != nil {
-			response.Diagnostics.AddError("Error creating contenttype", err.Error())
-			return
-		}
-
-		if err = e.client.ContentTypes.ActivateWithEnv(env, draft); err != nil {
-			response.Diagnostics.AddError("Error activating contenttype", err.Error())
-			return
-		}
+	if err = envClient.ContentTypes().Activate(ctx, draft); err != nil {
+		response.Diagnostics.AddError("Error activating contenttype", err.Error())
+		return
 	}
 
 	plan.Version = types.Int64Value(int64(draft.Sys.Version))
@@ -448,7 +435,7 @@ func (e *contentTypeResource) Read(ctx context.Context, request resource.ReadReq
 
 func (e *contentTypeResource) doRead(ctx context.Context, contentType *ContentType, state *tfsdk.State, d *diag.Diagnostics) {
 
-	contentfulContentType, err := e.getContentType(contentType)
+	contentfulContentType, err := e.getContentType(ctx, contentType)
 	if err != nil {
 		d.AddError(
 			"Error reading contenttype",
@@ -517,7 +504,7 @@ func (e *contentTypeResource) Update(ctx context.Context, request resource.Updat
 		return
 	}
 
-	contentfulContentType, err := e.getContentType(plan)
+	contentfulContentType, err := e.getContentType(ctx, plan)
 	if err != nil {
 		response.Diagnostics.AddError(
 			"Error reading contenttype",
@@ -526,12 +513,12 @@ func (e *contentTypeResource) Update(ctx context.Context, request resource.Updat
 		return
 	}
 
-	deletedFields := pie.Of(pie.FilterNot(contentfulContentType.Fields, func(cf *contentful.Field) bool {
+	deletedFields := pie.Of(pie.FilterNot(contentfulContentType.Fields, func(cf *model.Field) bool {
 		return pie.FindFirstUsing(plan.Fields, func(f Field) bool {
 			return cf.ID == f.Id.ValueString()
 		}) != -1
 
-	})).Map(func(f *contentful.Field) *contentful.Field {
+	})).Map(func(f *model.Field) *model.Field {
 		f.Omitted = true
 
 		return f
@@ -555,11 +542,11 @@ func (e *contentTypeResource) Update(ctx context.Context, request resource.Updat
 	// followed by the field removal and final publish.
 
 	if !plan.Equal(contentfulContentType) {
-		err = e.doUpdate(plan, draft)
+		err = e.doUpdate(ctx, plan, draft)
 		if err != nil {
 			response.Diagnostics.AddError(
-				"Error updating subscription",
-				"Could not update subscription, unexpected error: "+err.Error(),
+				"Error updating contenttype",
+				"Could not update contenttype, unexpected error: "+err.Error(),
 			)
 			return
 		}
@@ -575,11 +562,11 @@ func (e *contentTypeResource) Update(ctx context.Context, request resource.Updat
 
 			draft.Sys = sys
 
-			err = e.doUpdate(plan, draft)
+			err = e.doUpdate(ctx, plan, draft)
 			if err != nil {
 				response.Diagnostics.AddError(
-					"Error updating subscription",
-					"Could not update subscription, unexpected error: "+err.Error(),
+					"Error updating contenttype",
+					"Could not update contenttype, unexpected error: "+err.Error(),
 				)
 				return
 			}
@@ -610,11 +597,9 @@ func (e *contentTypeResource) updateEditorInterface(ctx context.Context, state *
 		if !plan.EqualEditorInterface(editorInterface) {
 
 			plan.DraftEditorInterface(editorInterface)
-			if !plan.Environment.IsUnknown() && !plan.Environment.IsNull() {
-				e.client.SetEnvironment(plan.Environment.ValueString())
-			}
+			e.clientOld.SetEnvironment(plan.Environment.ValueString())
 
-			if err = e.client.EditorInterfaces.Update(plan.SpaceId.ValueString(), plan.ID.ValueString(), editorInterface); err != nil {
+			if err = e.clientOld.EditorInterfaces.Update(plan.SpaceId.ValueString(), plan.ID.ValueString(), editorInterface); err != nil {
 				d.AddError(
 					"Error updating contenttype editorInterface",
 					"Could not update contenttype editorInterface, unexpected error: "+err.Error(),
@@ -629,34 +614,14 @@ func (e *contentTypeResource) updateEditorInterface(ctx context.Context, state *
 	return ctx
 }
 
-func (e *contentTypeResource) doUpdate(plan *ContentType, draft *contentful.ContentType) error {
-	if plan.Environment.IsUnknown() || plan.Environment.IsNull() {
+func (e *contentTypeResource) doUpdate(ctx context.Context, plan *ContentType, draft *model.ContentType) error {
+	envClient := e.client.WithSpaceId(plan.SpaceId.ValueString()).WithEnvironment(plan.Environment.ValueString())
 
-		if err := e.client.ContentTypes.Upsert(plan.SpaceId.ValueString(), draft); err != nil {
-			return err
-		}
-
-		if err := e.client.ContentTypes.Activate(plan.SpaceId.ValueString(), draft); err != nil {
-			return err
-		}
-	} else {
-
-		env := &contentful.Environment{Sys: &contentful.Sys{
-			ID: plan.Environment.ValueString(),
-			Space: &contentful.Space{
-				Sys: &contentful.Sys{ID: plan.SpaceId.ValueString()},
-			},
-		}}
-
-		if err := e.client.ContentTypes.UpsertWithEnv(env, draft); err != nil {
-			return err
-		}
-
-		if err := e.client.ContentTypes.ActivateWithEnv(env, draft); err != nil {
-			return err
-		}
+	if err := envClient.ContentTypes().Upsert(ctx, draft); err != nil {
+		return err
 	}
-	return nil
+
+	return envClient.ContentTypes().Activate(ctx, draft)
 }
 
 func (e *contentTypeResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
@@ -664,7 +629,7 @@ func (e *contentTypeResource) Delete(ctx context.Context, request resource.Delet
 	var state *ContentType
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 
-	contentfulContentType, err := e.getContentType(state)
+	contentfulContentType, err := e.getContentType(ctx, state)
 
 	if err != nil {
 		response.Diagnostics.AddError(
@@ -674,7 +639,7 @@ func (e *contentTypeResource) Delete(ctx context.Context, request resource.Delet
 		return
 	}
 
-	err = e.doDelete(state, contentfulContentType)
+	err = e.doDelete(ctx, state, contentfulContentType)
 	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting contenttype",
@@ -685,35 +650,14 @@ func (e *contentTypeResource) Delete(ctx context.Context, request resource.Delet
 
 }
 
-func (e *contentTypeResource) doDelete(data *ContentType, draft *contentful.ContentType) error {
-	if data.Environment.IsUnknown() || data.Environment.IsNull() {
+func (e *contentTypeResource) doDelete(ctx context.Context, data *ContentType, draft *model.ContentType) error {
+	envClient := e.client.WithSpaceId(data.SpaceId.ValueString()).WithEnvironment(data.Environment.ValueString())
 
-		if err := e.client.ContentTypes.Deactivate(data.SpaceId.ValueString(), draft); err != nil {
-			return err
-		}
-
-		if err := e.client.ContentTypes.Delete(data.SpaceId.ValueString(), draft); err != nil {
-			return err
-		}
-	} else {
-
-		env := &contentful.Environment{Sys: &contentful.Sys{
-			ID: data.Environment.ValueString(),
-			Space: &contentful.Space{
-				Sys: &contentful.Sys{ID: data.SpaceId.ValueString()},
-			},
-		}}
-
-		if err := e.client.ContentTypes.DeactivateWithEnv(env, draft); err != nil {
-			return err
-		}
-
-		if err := e.client.ContentTypes.DeleteWithEnv(env, draft); err != nil {
-			return err
-		}
-
+	if err := envClient.ContentTypes().Deactivate(ctx, draft); err != nil {
+		return err
 	}
-	return nil
+
+	return envClient.ContentTypes().Delete(ctx, draft)
 }
 
 func (e *contentTypeResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -736,34 +680,21 @@ func (e *contentTypeResource) ImportState(ctx context.Context, request resource.
 	e.doRead(ctx, futureState, &response.State, &response.Diagnostics)
 }
 
-func (e *contentTypeResource) getContentType(editor *ContentType) (*contentful.ContentType, error) {
-	if !editor.Environment.IsUnknown() && !editor.Environment.IsNull() {
+func (e *contentTypeResource) getContentType(ctx context.Context, editor *ContentType) (*model.ContentType, error) {
+	envClient := e.client.WithSpaceId(editor.SpaceId.ValueString()).WithEnvironment(editor.Environment.ValueString())
 
-		env := &contentful.Environment{Sys: &contentful.Sys{
-			ID: editor.Environment.ValueString(),
-			Space: &contentful.Space{
-				Sys: &contentful.Sys{ID: editor.SpaceId.ValueString()},
-			},
-		}}
-
-		return e.client.ContentTypes.GetWithEnv(env, editor.ID.ValueString())
-	} else {
-		return e.client.ContentTypes.Get(editor.SpaceId.ValueString(), editor.ID.ValueString())
-	}
+	return envClient.ContentTypes().Get(ctx, editor.ID.ValueString())
 }
 
 func (e *contentTypeResource) getEditorInterface(editor *ContentType) (*contentful.EditorInterface, error) {
-	if !editor.Environment.IsUnknown() && !editor.Environment.IsNull() {
 
-		env := &contentful.Environment{Sys: &contentful.Sys{
-			ID: editor.Environment.ValueString(),
-			Space: &contentful.Space{
-				Sys: &contentful.Sys{ID: editor.SpaceId.ValueString()},
-			},
-		}}
+	env := &contentful.Environment{Sys: &contentful.Sys{
+		ID: editor.Environment.ValueString(),
+		Space: &contentful.Space{
+			Sys: &contentful.Sys{ID: editor.SpaceId.ValueString()},
+		},
+	}}
 
-		return e.client.EditorInterfaces.GetWithEnv(env, editor.ID.ValueString())
-	} else {
-		return e.client.EditorInterfaces.Get(editor.SpaceId.ValueString(), editor.ID.ValueString())
-	}
+	return e.clientOld.EditorInterfaces.GetWithEnv(env, editor.ID.ValueString())
+
 }

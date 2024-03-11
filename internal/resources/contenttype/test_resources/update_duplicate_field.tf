@@ -10,7 +10,14 @@ resource "contentful_contenttype" "{{ .identifier }}" {
     name     = "Field 1 name change"
     required = true
     type     = "Text"
-    }, {
+    },
+    {
+      id       = "field1"
+      name     = "Field 1 name change"
+      required = true
+      type     = "Text"
+    },
+    {
     id       = "field3"
     name     = "Field 3 new field"
     required = true
@@ -22,6 +29,6 @@ resource "contentful_contenttype" "{{ .identifier }}" {
         help_text    = "blabla"
         bulk_editing = true
       }
-    }
+    },
   }]
 }

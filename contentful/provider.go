@@ -3,6 +3,9 @@ package contentful
 import (
 	"context"
 	"github.com/flaconi/contentful-go"
+	client2 "github.com/flaconi/contentful-go/pkgs/client"
+	"github.com/flaconi/contentful-go/pkgs/util"
+	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -48,9 +51,28 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	cma := contentful.NewCMA(d.Get("cma_token").(string))
 	cma.SetOrganization(d.Get("organization_id").(string))
 
+	debug := false
+
 	if logBoolean != "" {
 		cma.Debug = true
+		debug = true
 	}
 
-	return cma, nil
+	client, err := contentful.NewCMAV2(client2.ClientConfig{
+		Debug:     debug,
+		UserAgent: util.ToPointer("terraform-provider-contentful"),
+		Token:     d.Get("cma_token").(string),
+	})
+
+	if err != nil {
+		return nil, diag.FromErr(err)
+	}
+
+	data := utils.ProviderData{
+		Client:         cma,
+		CMAClient:      client,
+		OrganizationId: d.Get("organization_id").(string),
+	}
+
+	return data, nil
 }

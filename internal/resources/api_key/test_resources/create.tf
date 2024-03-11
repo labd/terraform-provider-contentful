@@ -3,4 +3,11 @@ resource "contentful_apikey" "myapikey" {
 
   name = "{{ .name }}"
   description = "{{ .description }}"
+
+  {{if .environments}}
+
+  environments = [ {{range .environments}}"{{.}}",{{end}}]
+
+  {{end}}
+
 }

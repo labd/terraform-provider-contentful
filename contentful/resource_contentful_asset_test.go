@@ -1,16 +1,18 @@
 package contentful
 
 import (
+	"context"
 	"fmt"
+	"github.com/flaconi/contentful-go/pkgs/model"
+	"github.com/flaconi/terraform-provider-contentful/internal/acctest"
 	"testing"
 
-	contentful "github.com/flaconi/contentful-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccContentfulAsset_Basic(t *testing.T) {
-	var asset contentful.Asset
+	var asset model.Asset
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -39,7 +41,7 @@ func TestAccContentfulAsset_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckContentfulAssetExists(n string, asset *contentful.Asset) resource.TestCheckFunc {
+func testAccCheckContentfulAssetExists(n string, asset *model.Asset) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -51,9 +53,9 @@ func testAccCheckContentfulAssetExists(n string, asset *contentful.Asset) resour
 			return fmt.Errorf("no space_id is set")
 		}
 
-		client := testAccProvider.Meta().(*contentful.Client)
+		client := acctest.GetCMA()
 
-		contentfulAsset, err := client.Assets.Get(spaceID, rs.Primary.ID)
+		contentfulAsset, err := client.WithSpaceId(spaceID).WithEnvironment("master").Assets().Get(context.Background(), rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -64,7 +66,7 @@ func testAccCheckContentfulAssetExists(n string, asset *contentful.Asset) resour
 	}
 }
 
-func testAccCheckContentfulAssetAttributes(asset *contentful.Asset, attrs map[string]interface{}) resource.TestCheckFunc {
+func testAccCheckContentfulAssetAttributes(asset *model.Asset, attrs map[string]interface{}) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		spaceIDCheck := attrs["space_id"].(string)
@@ -94,9 +96,9 @@ func testAccContentfulAssetDestroy(s *terraform.State) error {
 		}
 
 		// sdk client
-		client := testAccProvider.Meta().(*contentful.Client)
+		client := acctest.GetCMA()
 
-		asset, _ := client.Assets.Get(spaceID, rs.Primary.ID)
+		asset, _ := client.WithSpaceId(spaceID).WithEnvironment("master").Assets().Get(context.Background(), rs.Primary.ID)
 		if asset == nil {
 			return nil
 		}
@@ -110,7 +112,8 @@ func testAccContentfulAssetDestroy(s *terraform.State) error {
 var testAccContentfulAssetConfig = `
 resource "contentful_asset" "myasset" {
   asset_id = "test_asset"
-  locale = "en-US"
+  
+  environment = "master"
   space_id = "` + spaceID + `"
   fields {
     title {
@@ -125,6 +128,7 @@ resource "contentful_asset" "myasset" {
       upload = "https://images.ctfassets.net/fo9twyrwpveg/2VQx7vz73aMEYi20MMgCk0/66e502115b1f1f973a944b4bd2cc536f/IC-1H_Modern_Stack_Website.svg"
       file_name = "example.jpeg"
       content_type = "image/jpeg"
+      locale = "en-US"
     }
   }
   published = true
@@ -135,7 +139,7 @@ resource "contentful_asset" "myasset" {
 var testAccContentfulAssetUpdateConfig = `
 resource "contentful_asset" "myasset" {
   asset_id = "test_asset"
-  locale = "en-US"
+  environment = "master"
   space_id = "` + spaceID + `"
   fields {
     title {
@@ -150,6 +154,7 @@ resource "contentful_asset" "myasset" {
       upload = "https://images.ctfassets.net/fo9twyrwpveg/2VQx7vz73aMEYi20MMgCk0/66e502115b1f1f973a944b4bd2cc536f/IC-1H_Modern_Stack_Website.svg"
       file_name = "example.jpeg"
       content_type = "image/jpeg"
+ locale = "en-US"
     }
   }
   published = false

@@ -3,7 +3,8 @@ package acctest
 import (
 	"github.com/flaconi/contentful-go"
 	client2 "github.com/flaconi/contentful-go/pkgs/client"
-	"github.com/flaconi/contentful-go/service/common"
+	"github.com/flaconi/contentful-go/pkgs/util"
+	"github.com/flaconi/contentful-go/service/cma"
 	"os"
 )
 
@@ -16,11 +17,10 @@ func GetClient() *contentful.Client {
 	return cma
 }
 
-func GetCMA() common.SpaceIdClientBuilder {
+func GetCMA() cma.SpaceIdClientBuilder {
 	client, err := contentful.NewCMAV2(client2.ClientConfig{
-		URL:       "https://api.contentful.com",
 		Debug:     false,
-		UserAgent: "terraform-provider-contentful-test",
+		UserAgent: util.ToPointer("terraform-provider-contentful-test"),
 		Token:     os.Getenv("CONTENTFUL_MANAGEMENT_TOKEN"),
 	})
 

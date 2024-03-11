@@ -1,5 +1,6 @@
 resource "contentful_contenttype" "{{ .identifier }}" {
   space_id      = "{{ .spaceId }}"
+  environment   = "master"
 {{.id_definition}}
   name          = "tf_test1"
   description   = "{{.desc}}"

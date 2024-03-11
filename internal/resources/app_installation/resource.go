@@ -5,9 +5,9 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/contentful-go/pkgs/common"
 	"github.com/flaconi/contentful-go/pkgs/model"
-	"github.com/flaconi/contentful-go/service/common"
+	"github.com/flaconi/contentful-go/service/cma"
 	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -33,7 +33,7 @@ func NewAppInstallationResource() resource.Resource {
 
 // appInstallationResource is the resource implementation.
 type appInstallationResource struct {
-	client         common.SpaceIdClientBuilder
+	client         cma.SpaceIdClientBuilder
 	organizationId string
 }
 
@@ -103,7 +103,7 @@ func (e *appInstallationResource) Create(ctx context.Context, request resource.C
 	draft := plan.Draft()
 
 	if err := e.client.WithSpaceId(plan.SpaceId.ValueString()).WithEnvironment(plan.Environment.ValueString()).AppInstallations().Upsert(ctx, draft); err != nil {
-		var errorResponse contentful.ErrorResponse
+		var errorResponse common.ErrorResponse
 		if errors.As(err, &errorResponse) {
 			if errorResponse.Error() == "Forbidden" {
 				response.Diagnostics.AddError("Error creating app_installation", fmt.Sprintf("%s: %s", errorResponse.Error(), errorResponse.Details.Reasons))

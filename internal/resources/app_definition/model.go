@@ -2,7 +2,7 @@ package app_definition
 
 import (
 	"github.com/elliotchance/pie/v2"
-	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/contentful-go/pkgs/model"
 	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -17,12 +17,12 @@ type AppDefinition struct {
 	Locations []Location   `tfsdk:"locations"`
 }
 
-func (a AppDefinition) Draft() *contentful.AppDefinition {
+func (a AppDefinition) Draft() *model.AppDefinition {
 
-	app := &contentful.AppDefinition{}
+	app := &model.AppDefinition{}
 
 	if !a.ID.IsUnknown() || !a.ID.IsNull() {
-		app.Sys = &contentful.Sys{ID: a.ID.ValueString()}
+		app.Sys = &model.CreatedSys{BaseSys: model.BaseSys{ID: a.ID.ValueString()}}
 	}
 
 	if !a.Src.IsNull() && !a.Src.IsUnknown() {
@@ -31,12 +31,12 @@ func (a AppDefinition) Draft() *contentful.AppDefinition {
 
 	app.Name = a.Name.ValueString()
 
-	app.Locations = pie.Map(a.Locations, func(t Location) contentful.Locations {
+	app.Locations = pie.Map(a.Locations, func(t Location) model.Locations {
 		return t.Draft()
 	})
 
 	if a.UseBundle.ValueBool() && !a.BundleId.IsNull() && !a.BundleId.IsUnknown() {
-		app.Bundle = &contentful.Bundle{Sys: &contentful.Sys{
+		app.Bundle = &model.Bundle{Sys: &model.BaseSys{
 			ID:       a.BundleId.ValueString(),
 			Type:     "Link",
 			LinkType: "AppBundle",
@@ -46,7 +46,7 @@ func (a AppDefinition) Draft() *contentful.AppDefinition {
 	return app
 }
 
-func (a *AppDefinition) Equal(n *contentful.AppDefinition) bool {
+func (a *AppDefinition) Equal(n *model.AppDefinition) bool {
 
 	if a.Name.ValueString() != n.Name {
 		return false
@@ -61,7 +61,7 @@ func (a *AppDefinition) Equal(n *contentful.AppDefinition) bool {
 	}
 
 	for _, location := range a.Locations {
-		idx := pie.FindFirstUsing(n.Locations, func(f contentful.Locations) bool {
+		idx := pie.FindFirstUsing(n.Locations, func(f model.Locations) bool {
 			return f.Location == location.Location.ValueString()
 		})
 
@@ -73,7 +73,7 @@ func (a *AppDefinition) Equal(n *contentful.AppDefinition) bool {
 	return true
 }
 
-func (a *AppDefinition) Import(n *contentful.AppDefinition) {
+func (a *AppDefinition) Import(n *model.AppDefinition) {
 	a.ID = types.StringValue(n.Sys.ID)
 	a.UseBundle = types.BoolValue(false)
 	a.BundleId = types.StringNull()
@@ -104,7 +104,7 @@ type Location struct {
 	NavigationItem *NavigationItem `tfsdk:"navigation_item"`
 }
 
-func (l *Location) Import(n contentful.Locations) {
+func (l *Location) Import(n model.Locations) {
 	l.Location = types.StringValue(n.Location)
 
 	if n.NavigationItem != nil {
@@ -112,26 +112,26 @@ func (l *Location) Import(n contentful.Locations) {
 		l.NavigationItem.Import(n.NavigationItem)
 	}
 
-	l.FieldTypes = pie.Map(n.FieldTypes, func(t contentful.FieldType) FieldType {
+	l.FieldTypes = pie.Map(n.FieldTypes, func(t model.FieldType) FieldType {
 		field := &FieldType{}
 		field.Import(t)
 		return *field
 	})
 }
 
-func (l *Location) Draft() contentful.Locations {
-	location := contentful.Locations{
+func (l *Location) Draft() model.Locations {
+	location := model.Locations{
 		Location: l.Location.ValueString(),
 	}
 
 	if l.NavigationItem != nil {
-		location.NavigationItem = &contentful.NavigationItem{
+		location.NavigationItem = &model.NavigationItem{
 			Name: l.NavigationItem.Name.ValueString(),
 			Path: l.NavigationItem.Path.String(),
 		}
 	}
 
-	location.FieldTypes = pie.Map(l.FieldTypes, func(t FieldType) contentful.FieldType {
+	location.FieldTypes = pie.Map(l.FieldTypes, func(t FieldType) model.FieldType {
 		return t.Draft()
 	})
 
@@ -144,8 +144,8 @@ type FieldType struct {
 	Items    *Items       `tfsdk:"items"`
 }
 
-func (f *FieldType) Draft() contentful.FieldType {
-	fieldType := contentful.FieldType{
+func (f *FieldType) Draft() model.FieldType {
+	fieldType := model.FieldType{
 		Type:     f.Type.ValueString(),
 		LinkType: f.LinkType.ValueStringPointer(),
 	}
@@ -157,7 +157,7 @@ func (f *FieldType) Draft() contentful.FieldType {
 	return fieldType
 }
 
-func (f *FieldType) Import(n contentful.FieldType) {
+func (f *FieldType) Import(n model.FieldType) {
 	f.Type = types.StringValue(n.Type)
 	f.LinkType = types.StringPointerValue(n.LinkType)
 
@@ -174,8 +174,8 @@ type Items struct {
 	LinkType types.String `tfsdk:"link_type"`
 }
 
-func (i *Items) Draft() *contentful.Items {
-	return &contentful.Items{
+func (i *Items) Draft() *model.Items {
+	return &model.Items{
 		Type:     i.Type.ValueString(),
 		LinkType: i.LinkType.ValueStringPointer(),
 	}
@@ -186,7 +186,7 @@ type NavigationItem struct {
 	Path types.String `tfsdk:"path"`
 }
 
-func (l *NavigationItem) Import(n *contentful.NavigationItem) {
+func (l *NavigationItem) Import(n *model.NavigationItem) {
 	l.Name = types.StringValue(n.Name)
 	l.Path = types.StringValue(n.Path)
 }

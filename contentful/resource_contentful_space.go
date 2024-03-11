@@ -2,6 +2,8 @@ package contentful
 
 import (
 	contentful "github.com/flaconi/contentful-go"
+	"github.com/flaconi/contentful-go/pkgs/common"
+	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -32,7 +34,7 @@ func resourceContentfulSpace() *schema.Resource {
 }
 
 func resourceSpaceCreate(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 
 	space := &contentful.Space{
 		Name:          d.Get("name").(string),
@@ -55,11 +57,11 @@ func resourceSpaceCreate(d *schema.ResourceData, m interface{}) (err error) {
 }
 
 func resourceSpaceRead(d *schema.ResourceData, m interface{}) error {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Id()
 
 	_, err := client.Spaces.Get(spaceID)
-	if _, ok := err.(contentful.NotFoundError); ok {
+	if _, ok := err.(common.NotFoundError); ok {
 		d.SetId("")
 		return nil
 	}
@@ -68,7 +70,7 @@ func resourceSpaceRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceSpaceUpdate(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Id()
 
 	space, err := client.Spaces.Get(spaceID)
@@ -87,7 +89,7 @@ func resourceSpaceUpdate(d *schema.ResourceData, m interface{}) (err error) {
 }
 
 func resourceSpaceDelete(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Id()
 
 	space, err := client.Spaces.Get(spaceID)
@@ -96,7 +98,7 @@ func resourceSpaceDelete(d *schema.ResourceData, m interface{}) (err error) {
 	}
 
 	err = client.Spaces.Delete(space)
-	if _, ok := err.(contentful.NotFoundError); ok {
+	if _, ok := err.(common.NotFoundError); ok {
 		return nil
 	}
 

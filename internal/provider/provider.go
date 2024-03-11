@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/flaconi/contentful-go"
 	client2 "github.com/flaconi/contentful-go/pkgs/client"
+	"github.com/flaconi/contentful-go/pkgs/util"
 	"github.com/flaconi/terraform-provider-contentful/internal/resources/api_key"
 	"github.com/flaconi/terraform-provider-contentful/internal/resources/app_definition"
 	"github.com/flaconi/terraform-provider-contentful/internal/resources/app_installation"
@@ -98,9 +99,8 @@ func (c contentfulProvider) Configure(ctx context.Context, request provider.Conf
 	cma.Debug = debug
 
 	client, err := contentful.NewCMAV2(client2.ClientConfig{
-		URL:       "https://api.contentful.com",
 		Debug:     debug,
-		UserAgent: "terraform-provider-contentful",
+		UserAgent: util.ToPointer("terraform-provider-contentful"),
 		Token:     cmaToken,
 	})
 
