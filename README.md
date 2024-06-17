@@ -23,6 +23,19 @@ Create, update and delete Contentful resources such as:
 - [x] Assets
 
 # Getting started
+You can use this terraform module in two ways, either from terraform register or building & using locally on your machine. 
+
+# Option-1: Using Terraform Registry 
+
+terraform {
+  required_providers {
+    contentful = {
+      source = "labd/contentful"
+      version = "0.5.0"
+    }
+  }
+}
+# Option-2: Using Terraform Registry 
 
 Download [go](https://golang.org/dl) for your platform.
 
