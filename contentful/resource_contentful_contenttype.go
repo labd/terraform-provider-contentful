@@ -2,10 +2,14 @@ package contentful
 
 import (
 	"context"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/labd/contentful-go"
 )
+
+var consistencyBuffer time.Duration = 10 * time.Second
 
 func resourceContentfulContentType() *schema.Resource {
 	return &schema.Resource{
@@ -20,6 +24,11 @@ func resourceContentfulContentType() *schema.Resource {
 			"space_id": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
+			},
+			"environment_id": {
+				Type:     schema.TypeString,
+				Optional: true,
 				ForceNew: true,
 			},
 			"version": {
@@ -114,8 +123,11 @@ func resourceContentfulContentType() *schema.Resource {
 }
 
 func resourceContentTypeCreate(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer) // this is built in to depend on the eventual consistency of contentful so all pervious calls will have had time to take effect
+
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
+	environmentID := d.Get("environment_id").(string)
 
 	ct := &contentful.ContentType{
 		Name:         d.Get("name").(string),
@@ -161,28 +173,53 @@ func resourceContentTypeCreate(_ context.Context, d *schema.ResourceData, m inte
 		ct.Fields = append(ct.Fields, contentfulField)
 	}
 
-	if err := client.ContentTypes.Upsert(spaceID, ct); err != nil {
-		return parseError(err)
-	}
+	if environmentID != "" {
+		env := environment(environmentID, spaceID)
 
-	if err := client.ContentTypes.Activate(spaceID, ct); err != nil {
-		return parseError(err)
-	}
+		if err := client.ContentTypes.UpsertWithEnv(env, ct); err != nil {
+			return parseError(err)
+		}
 
-	if err := setContentTypeProperties(d, ct); err != nil {
-		return parseError(err)
-	}
+		if err := client.ContentTypes.ActivateWithEnv(env, ct); err != nil {
+			return parseError(err)
+		}
 
+		if err := setContentTypeProperties(d, ct); err != nil {
+			return parseError(err)
+		}
+	} else {
+		if err := client.ContentTypes.Upsert(spaceID, ct); err != nil {
+			return parseError(err)
+		}
+
+		if err := client.ContentTypes.Activate(spaceID, ct); err != nil {
+			return parseError(err)
+		}
+
+		if err := setContentTypeProperties(d, ct); err != nil {
+			return parseError(err)
+		}
+	}
 	d.SetId(ct.Sys.ID)
 
 	return nil
 }
 
 func resourceContentTypeRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(8 * time.Second)
+
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
+	environmentID := d.Get("environment_id").(string)
+	var env *contentful.Environment
+	var err error
 
-	_, err := client.ContentTypes.Get(spaceID, d.Id())
+	if environmentID != "" {
+		env = environment(environmentID, spaceID)
+		_, err = client.ContentTypes.GetWithEnv(env, d.Id())
+	} else {
+		_, err = client.ContentTypes.Get(spaceID, d.Id())
+	}
 	if err != nil {
 		return parseError(err)
 	}
@@ -191,13 +228,25 @@ func resourceContentTypeRead(_ context.Context, d *schema.ResourceData, m interf
 }
 
 func resourceContentTypeUpdate(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(8 * time.Second)
+
 	var existingFields []*contentful.Field
 	var deletedFields []*contentful.Field
 
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
+	environmentID := d.Get("environment_id").(string)
 
-	ct, err := client.ContentTypes.Get(spaceID, d.Id())
+	var env *contentful.Environment
+	var ct *contentful.ContentType
+	var err error
+
+	if environmentID != "" {
+		env = environment(environmentID, spaceID)
+		ct, err = client.ContentTypes.GetWithEnv(env, d.Id())
+	} else {
+		ct, err = client.ContentTypes.Get(spaceID, d.Id())
+	}
 	if err != nil {
 		return parseError(err)
 	}
@@ -224,17 +273,27 @@ func resourceContentTypeUpdate(_ context.Context, d *schema.ResourceData, m inte
 	// To remove a field from a content type 4 API calls need to be made.
 	// Omit the removed fields and publish the new version of the content type,
 	// followed by the field removal and final publish.
-	if err = client.ContentTypes.Upsert(spaceID, ct); err != nil {
-		return parseError(err)
-	}
+	if env != nil {
+		if err = client.ContentTypes.UpsertWithEnv(env, ct); err != nil {
+			return parseError(err)
+		}
 
-	if err = client.ContentTypes.Activate(spaceID, ct); err != nil {
-		return parseError(err)
-	}
+		if err = client.ContentTypes.ActivateWithEnv(env, ct); err != nil {
+			return parseError(err)
+		}
 
-	if deletedFields != nil {
-		ct.Fields = existingFields
+		if deletedFields != nil {
+			ct.Fields = existingFields
 
+			if err = client.ContentTypes.UpsertWithEnv(env, ct); err != nil {
+				return parseError(err)
+			}
+
+			if err = client.ContentTypes.ActivateWithEnv(env, ct); err != nil {
+				return parseError(err)
+			}
+		}
+	} else {
 		if err = client.ContentTypes.Upsert(spaceID, ct); err != nil {
 			return parseError(err)
 		}
@@ -242,8 +301,19 @@ func resourceContentTypeUpdate(_ context.Context, d *schema.ResourceData, m inte
 		if err = client.ContentTypes.Activate(spaceID, ct); err != nil {
 			return parseError(err)
 		}
-	}
 
+		if deletedFields != nil {
+			ct.Fields = existingFields
+
+			if err = client.ContentTypes.Upsert(spaceID, ct); err != nil {
+				return parseError(err)
+			}
+
+			if err = client.ContentTypes.Activate(spaceID, ct); err != nil {
+				return parseError(err)
+			}
+		}
+	}
 	if err = setContentTypeProperties(d, ct); err != nil {
 		return parseError(err)
 	}
@@ -252,23 +322,42 @@ func resourceContentTypeUpdate(_ context.Context, d *schema.ResourceData, m inte
 }
 
 func resourceContentTypeDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(8 * time.Second)
+
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
+	environmentID := d.Get("environment_id").(string)
 
-	ct, err := client.ContentTypes.Get(spaceID, d.Id())
-	if err != nil {
-		return parseError(err)
+	if environmentID != "" {
+		env := environment(environmentID, spaceID)
+		ct, err := client.ContentTypes.GetWithEnv(env, d.Id())
+		if err != nil {
+			return parseError(err)
+		}
+
+		err = client.ContentTypes.DeactivateWithEnv(env, ct)
+		if err != nil {
+			return parseError(err)
+		}
+
+		if err = client.ContentTypes.DeleteWithEnv(env, ct); err != nil {
+			return parseError(err)
+		}
+	} else {
+		ct, err := client.ContentTypes.Get(spaceID, d.Id())
+		if err != nil {
+			return parseError(err)
+		}
+
+		err = client.ContentTypes.Deactivate(spaceID, ct)
+		if err != nil {
+			return parseError(err)
+		}
+
+		if err = client.ContentTypes.Delete(spaceID, ct); err != nil {
+			return parseError(err)
+		}
 	}
-
-	err = client.ContentTypes.Deactivate(spaceID, ct)
-	if err != nil {
-		return parseError(err)
-	}
-
-	if err = client.ContentTypes.Delete(spaceID, ct); err != nil {
-		return parseError(err)
-	}
-
 	return nil
 }
 
@@ -365,4 +454,21 @@ func processItems(fieldItems []interface{}) *contentful.FieldTypeArrayItem {
 		}
 	}
 	return items
+}
+
+func environment(environmentID string, spaceID string) *contentful.Environment {
+	return &contentful.Environment{
+		Sys: &contentful.Sys{
+			Type: "Environment",
+			ID:   environmentID,
+			Space: &contentful.Space{
+				Sys: &contentful.Sys{
+					Type:     "Link",
+					LinkType: "Space",
+					ID:       spaceID,
+				},
+			},
+		},
+		Name: environmentID,
+	}
 }

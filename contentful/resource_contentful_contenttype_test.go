@@ -11,7 +11,9 @@ import (
 
 func TestAccContentfulContentType_Basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckContentfulContentTypeDestroy,
 		Steps: []resource.TestStep{
@@ -27,6 +29,155 @@ func TestAccContentfulContentType_Basic(t *testing.T) {
 			},
 			{
 				Config: testAccContentfulContentTypeLinkConfig,
+				Check: resource.TestCheckResourceAttr(
+					"contentful_contenttype.mylinked_contenttype", "name", "tf_linked"),
+			},
+		},
+	})
+}
+
+var testAccContentfulContentTypeConfig = `
+resource "contentful_contenttype" "mycontenttype" {
+  space_id = "` + spaceID + `"
+  name = "tf_test1"
+  description = "Terraform Acc Test Content Type"
+  display_field = "field1"
+  field {
+	disabled  = false
+	id        = "field1"
+	localized = false
+	name      = "Field 1"
+	omitted   = false
+	required  = true
+	type      = "Text"
+  }
+  field {
+	disabled  = false
+	id        = "field2"
+	localized = false
+	name      = "Field 2"
+	omitted   = false
+	required  = true
+	type      = "Integer"
+  }
+}
+`
+
+var testAccContentfulContentTypeUpdateConfig = `
+resource "contentful_contenttype" "mycontenttype" {
+  space_id = "` + spaceID + `"
+  name = "tf_test1"
+  description = "Terraform Acc Test Content Type description change"
+  display_field = "field1"
+  field {
+    disabled  = false
+    id        = "field1"
+    localized = false
+    name      = "Field 1 name change"
+    omitted   = false
+    required  = true
+    type      = "Text"
+  }
+  field {
+    disabled  = false
+    id        = "field3"
+    localized = false
+    name      = "Field 3 new field"
+    omitted   = false
+    required  = true
+    type      = "Integer"
+}
+`
+
+var testAccContentfulContentTypeLinkConfig = `
+resource "contentful_contenttype" "mycontenttype" {
+  space_id = "` + spaceID + `"
+  name = "tf_test1"
+  description = "Terraform Acc Test Content Type description change"
+  display_field = "field1"
+  field {
+    disabled  = false
+    id        = "field1"
+    localized = false
+    name      = "Field 1 name change"
+    omitted   = false
+    required  = true
+    type      = "Text"
+  }
+  field {
+    disabled  = false
+    id        = "field3"
+    localized = false
+    name      = "Field 3 new field"
+    omitted   = false
+    required  = true
+    type      = "Integer"
+  }	
+}
+
+resource "contentful_contenttype" "mylinked_contenttype" {
+  space_id = "` + spaceID + `"
+  name          = "tf_linked"
+  description   = "Terraform Acc Test Content Type with links"
+  display_field = "asset_field"
+  field {
+    id   = "asset_field"
+    name = "Asset Field"
+    type = "Array"
+    items {
+      type      = "Link"
+      link_type = "Asset"
+    }
+    required = true
+  }
+  field {
+    id        = "entry_link_field"
+    name      = "Entry Link Field"
+    type      = "Link"
+    link_type = "Entry"
+    validations = [
+	  jsonencode({
+		linkContentType = [
+			contentful_contenttype.mycontenttype.id
+		]
+	  })
+	]
+    required = false
+  }
+}
+`
+
+var contentTypeTestEnvironment = "provider-test"
+
+func TestAccContentfulContentType_WithEnv(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+		},
+		Providers: testAccProviders,
+		// CheckDestroy: testAccCheckContentfulContentTypeDestroy,
+		CheckDestroy: func(s *terraform.State) (err error) {
+			// if err = testAccCheckContentfulContentTypeDestroy(s); err != nil {
+			// 	return
+			// } else if err = testAccContentfulEnvironmentDestroy(s); err != nil {
+			// 	return
+			// }
+			return nil
+		},
+		Steps: []resource.TestStep{
+			{
+
+				Config: testAccContentfulContentTypeConfigWithEnv,
+				Check: resource.TestCheckResourceAttr(
+					"contentful_contenttype.mycontenttype", "name", "tf_test1"),
+			},
+			{
+				Config: testAccContentfulContentTypeUpdateConfigWithEnv,
+				Check: resource.TestCheckResourceAttr(
+					"contentful_contenttype.mycontenttype", "name", "tf_test1"),
+			},
+			{
+				Config: testAccContentfulContentTypeLinkConfigWithEnv,
 				Check: resource.TestCheckResourceAttr(
 					"contentful_contenttype.mylinked_contenttype", "name", "tf_linked"),
 			},
@@ -88,9 +239,15 @@ func testAccCheckContentfulContentTypeDestroy(s *terraform.State) (err error) {
 	return nil
 }
 
-var testAccContentfulContentTypeConfig = `
+var testAccContentfulContentTypeConfigWithEnv = `
+resource "contentful_environment" "testenvironment" {
+  space_id = "` + spaceID + `"
+  name = "provider-test"
+}
+
 resource "contentful_contenttype" "mycontenttype" {
   space_id = "` + spaceID + `"
+  environment_id = contentful_environment.testenvironment.id
   name = "tf_test1"
   description = "Terraform Acc Test Content Type"
   display_field = "field1"
@@ -115,9 +272,15 @@ resource "contentful_contenttype" "mycontenttype" {
 }
 `
 
-var testAccContentfulContentTypeUpdateConfig = `
+var testAccContentfulContentTypeUpdateConfigWithEnv = `
+resource "contentful_environment" "testenvironment" {
+  space_id = "` + spaceID + `"
+  name = "provider-test"
+}
+
 resource "contentful_contenttype" "mycontenttype" {
   space_id = "` + spaceID + `"
+  environment_id = contentful_environment.testenvironment.id
   name = "tf_test1"
   description = "Terraform Acc Test Content Type description change"
   display_field = "field1"
@@ -142,9 +305,15 @@ resource "contentful_contenttype" "mycontenttype" {
 }
 `
 
-var testAccContentfulContentTypeLinkConfig = `
+var testAccContentfulContentTypeLinkConfigWithEnv = `
+resource "contentful_environment" "testenvironment" {
+  space_id = "` + spaceID + `"
+  name = "provider-test"
+}
+
 resource "contentful_contenttype" "mycontenttype" {
   space_id = "` + spaceID + `"
+  environment_id = contentful_environment.testenvironment.id
   name = "tf_test1"
   description = "Terraform Acc Test Content Type description change"
   display_field = "field1"
@@ -170,6 +339,7 @@ resource "contentful_contenttype" "mycontenttype" {
 
 resource "contentful_contenttype" "mylinked_contenttype" {
   space_id = "` + spaceID + `"
+  environment_id = contentful_environment.testenvironment.id
   name          = "tf_linked"
   description   = "Terraform Acc Test Content Type with links"
   display_field = "asset_field"
