@@ -3,6 +3,7 @@ package contentful
 import (
 	"context"
 	"errors"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/labd/contentful-go"
@@ -30,6 +31,11 @@ func resourceContentfulAPIKey() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"environment_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -48,6 +54,11 @@ func resourceCreateAPIKey(_ context.Context, d *schema.ResourceData, m interface
 	apiKey := &contentful.APIKey{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
+	}
+
+	environmentID := d.Get("environment_id").(string)
+	if environmentID != "" {
+		apiKey.Environments = append(apiKey.Environments, environmentLink(environmentID))
 	}
 
 	err := client.APIKeys.Upsert(d.Get("space_id").(string), apiKey)
@@ -151,4 +162,14 @@ func setAPIKeyProperties(d *schema.ResourceData, apiKey *contentful.APIKey) erro
 	}
 
 	return nil
+}
+
+func environmentLink(environmentID string) contentful.Environments {
+	return contentful.Environments{
+		Sys: contentful.Sys{
+			Type:     "Link",
+			LinkType: "Environment",
+			ID:       environmentID,
+		},
+	}
 }
