@@ -3,6 +3,8 @@ package contentful
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/labd/contentful-go"
@@ -59,6 +61,7 @@ func resourceContentfulLocale() *schema.Resource {
 }
 
 func resourceCreateLocale(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 
@@ -87,6 +90,7 @@ func resourceCreateLocale(ctx context.Context, d *schema.ResourceData, m interfa
 }
 
 func resourceReadLocale(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	localeID := d.Id()
@@ -111,6 +115,7 @@ func resourceReadLocale(ctx context.Context, d *schema.ResourceData, m interface
 }
 
 func resourceUpdateLocale(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	localeID := d.Id()
@@ -141,6 +146,7 @@ func resourceUpdateLocale(ctx context.Context, d *schema.ResourceData, m interfa
 }
 
 func resourceDeleteLocale(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	localeID := d.Id()

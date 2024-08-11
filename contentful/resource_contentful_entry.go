@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/labd/contentful-go"
@@ -73,6 +75,7 @@ func resourceContentfulEntry() *schema.Resource {
 }
 
 func resourceCreateEntry(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 
 	fieldProperties := map[string]interface{}{}
@@ -110,6 +113,7 @@ func resourceCreateEntry(_ context.Context, d *schema.ResourceData, m interface{
 }
 
 func resourceUpdateEntry(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	entryID := d.Id()
@@ -171,6 +175,7 @@ func setEntryState(d *schema.ResourceData, m interface{}) (err error) {
 }
 
 func resourceReadEntry(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	entryID := d.Id()
@@ -191,6 +196,7 @@ func resourceReadEntry(_ context.Context, d *schema.ResourceData, m interface{})
 }
 
 func resourceDeleteEntry(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	entryID := d.Id()

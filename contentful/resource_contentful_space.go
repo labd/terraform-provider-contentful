@@ -3,6 +3,8 @@ package contentful
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/labd/contentful-go"
@@ -37,6 +39,7 @@ func resourceContentfulSpace() *schema.Resource {
 }
 
 func resourceSpaceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 
 	space := &contentful.Space{
@@ -60,6 +63,7 @@ func resourceSpaceCreate(ctx context.Context, d *schema.ResourceData, m interfac
 }
 
 func resourceSpaceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Id()
 
@@ -74,6 +78,7 @@ func resourceSpaceRead(ctx context.Context, d *schema.ResourceData, m interface{
 }
 
 func resourceSpaceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Id()
 
@@ -98,6 +103,7 @@ func resourceSpaceUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 }
 
 func resourceSpaceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Id()
 

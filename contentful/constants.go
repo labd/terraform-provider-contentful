@@ -2,6 +2,7 @@ package contentful
 
 import (
 	"os"
+	"time"
 )
 
 var (
@@ -13,3 +14,5 @@ var (
 	// Terraform configuration values
 	logBoolean = os.Getenv("TF_LOG")
 )
+
+var consistencyBuffer time.Duration = 10 * time.Second

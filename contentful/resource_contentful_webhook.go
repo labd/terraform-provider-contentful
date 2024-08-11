@@ -3,6 +3,8 @@ package contentful
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/labd/contentful-go"
@@ -62,6 +64,7 @@ func resourceContentfulWebhook() *schema.Resource {
 }
 
 func resourceCreateWebhook(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 
@@ -90,6 +93,7 @@ func resourceCreateWebhook(ctx context.Context, d *schema.ResourceData, m interf
 }
 
 func resourceUpdateWebhook(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	webhookID := d.Id()
@@ -122,6 +126,7 @@ func resourceUpdateWebhook(ctx context.Context, d *schema.ResourceData, m interf
 }
 
 func resourceReadWebhook(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	webhookID := d.Id()
@@ -146,6 +151,7 @@ func resourceReadWebhook(ctx context.Context, d *schema.ResourceData, m interfac
 }
 
 func resourceDeleteWebhook(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	webhookID := d.Id()

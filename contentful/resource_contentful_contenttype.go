@@ -9,8 +9,6 @@ import (
 	"github.com/labd/contentful-go"
 )
 
-var consistencyBuffer time.Duration = 10 * time.Second
-
 func resourceContentfulContentType() *schema.Resource {
 	return &schema.Resource{
 		Description: "A Contentful Content Type represents a structure for entries.",
@@ -123,8 +121,7 @@ func resourceContentfulContentType() *schema.Resource {
 }
 
 func resourceContentTypeCreate(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	time.Sleep(consistencyBuffer) // this is built in to depend on the eventual consistency of contentful so all pervious calls will have had time to take effect
-
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	environmentID := d.Get("environment_id").(string)
@@ -206,8 +203,7 @@ func resourceContentTypeCreate(_ context.Context, d *schema.ResourceData, m inte
 }
 
 func resourceContentTypeRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	time.Sleep(8 * time.Second)
-
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	environmentID := d.Get("environment_id").(string)
@@ -228,8 +224,7 @@ func resourceContentTypeRead(_ context.Context, d *schema.ResourceData, m interf
 }
 
 func resourceContentTypeUpdate(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	time.Sleep(8 * time.Second)
-
+	time.Sleep(consistencyBuffer)
 	var existingFields []*contentful.Field
 	var deletedFields []*contentful.Field
 
@@ -322,8 +317,7 @@ func resourceContentTypeUpdate(_ context.Context, d *schema.ResourceData, m inte
 }
 
 func resourceContentTypeDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	time.Sleep(8 * time.Second)
-
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	environmentID := d.Get("environment_id").(string)

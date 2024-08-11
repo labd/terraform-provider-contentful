@@ -3,8 +3,9 @@ package contentful
 import (
 	"context"
 	"errors"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/labd/contentful-go"
@@ -145,6 +146,7 @@ func resourceContentfulAsset() *schema.Resource {
 }
 
 func resourceCreateAsset(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 
 	fields := d.Get("fields").([]interface{})[0].(map[string]interface{})
@@ -233,6 +235,7 @@ func resourceCreateAsset(_ context.Context, d *schema.ResourceData, m interface{
 }
 
 func resourceUpdateAsset(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	assetID := d.Id()
@@ -357,6 +360,7 @@ func setAssetState(d *schema.ResourceData, m interface{}) (err error) {
 }
 
 func resourceReadAsset(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	assetID := d.Id()
@@ -377,6 +381,7 @@ func resourceReadAsset(_ context.Context, d *schema.ResourceData, m interface{})
 }
 
 func resourceDeleteAsset(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	assetID := d.Id()

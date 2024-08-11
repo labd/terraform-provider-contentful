@@ -3,6 +3,8 @@ package contentful
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/labd/contentful-go"
@@ -34,6 +36,7 @@ func resourceContentfulEnvironment() *schema.Resource {
 }
 
 func resourceCreateEnvironment(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 
 	environment := &contentful.Environment{
@@ -55,6 +58,7 @@ func resourceCreateEnvironment(_ context.Context, d *schema.ResourceData, m inte
 }
 
 func resourceUpdateEnvironment(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	environmentID := d.Id()
@@ -81,6 +85,7 @@ func resourceUpdateEnvironment(_ context.Context, d *schema.ResourceData, m inte
 }
 
 func resourceReadEnvironment(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	environmentID := d.Id()
@@ -101,6 +106,7 @@ func resourceReadEnvironment(_ context.Context, d *schema.ResourceData, m interf
 }
 
 func resourceDeleteEnvironment(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	time.Sleep(consistencyBuffer)
 	client := m.(*contentful.Client)
 	spaceID := d.Get("space_id").(string)
 	environmentID := d.Id()
