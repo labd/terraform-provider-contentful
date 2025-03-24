@@ -13,6 +13,18 @@ tasks:
     cmds:
       - go generate ./...
 
+  build-local:
+    cmds:
+      - go build -o terraform-provider-contentful_{{ .VERSION }}
+      - mkdir -p ~/.terraform.d/plugins/registry.terraform.io/labd/contentful/{{ .VERSION }}/{{ .PLATFORM }}/
+      - mv terraform-provider-contentful_{{ .VERSION }} ~/.terraform.d/plugins/registry.terraform.io/labd/contentful/{{ .VERSION }}/{{ .PLATFORM }}/terraform-provider-contentful_v{{ .VERSION }}
+      - cmd: codesign --deep --force -s - ~/.terraform.d/plugins/registry.terraform.io/labd/contentful/{{ .VERSION }}/{{ .PLATFORM }}/terraform-provider-contentful_v{{ .VERSION }}
+        platforms: [ darwin ]
+    vars:
+      VERSION: 99.0.0
+      PLATFORM:
+        sh: echo "$(go env GOOS)_$(go env GOARCH)"
+
   coverage-html:
     cmds:
       - go test -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...

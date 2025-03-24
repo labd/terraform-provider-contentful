@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/flaconi/contentful-go/pkgs/common"
-	"github.com/flaconi/contentful-go/pkgs/model"
+	"github.com/labd/contentful-go/pkgs/common"
+	"github.com/labd/contentful-go/pkgs/model"
 	"github.com/labd/terraform-provider-contentful/internal/acctest"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"

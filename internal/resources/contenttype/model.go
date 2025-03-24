@@ -6,11 +6,11 @@ import (
 	"reflect"
 
 	"github.com/elliotchance/pie/v2"
-	"github.com/flaconi/contentful-go"
-	"github.com/flaconi/contentful-go/pkgs/model"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/labd/contentful-go"
+	"github.com/labd/contentful-go/pkgs/model"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 

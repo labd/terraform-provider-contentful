@@ -2,10 +2,11 @@ package app_installation
 
 import (
 	"encoding/json"
+
 	"github.com/elliotchance/pie/v2"
-	"github.com/flaconi/contentful-go/pkgs/model"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/labd/contentful-go/pkgs/model"
 )
 
 // AppInstallation is the main resource schema data

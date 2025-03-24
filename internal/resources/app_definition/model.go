@@ -2,8 +2,8 @@ package app_definition
 
 import (
 	"github.com/elliotchance/pie/v2"
-	"github.com/flaconi/contentful-go/pkgs/model"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/labd/contentful-go/pkgs/model"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/flaconi/contentful-go/pkgs/common"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/labd/contentful-go/pkgs/common"
 	"github.com/stretchr/testify/assert"
 )
 

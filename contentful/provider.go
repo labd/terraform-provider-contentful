@@ -3,11 +3,11 @@ package contentful
 import (
 	"context"
 
-	contentful "github.com/flaconi/contentful-go"
-	client2 "github.com/flaconi/contentful-go/pkgs/client"
-	"github.com/flaconi/contentful-go/pkgs/util"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	contentful "github.com/labd/contentful-go"
+	client2 "github.com/labd/contentful-go/pkgs/client"
+	"github.com/labd/contentful-go/pkgs/util"
 
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )

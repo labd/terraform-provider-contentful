@@ -4,14 +4,14 @@ import (
 	"context"
 	"os"
 
-	"github.com/flaconi/contentful-go"
-	client2 "github.com/flaconi/contentful-go/pkgs/client"
-	"github.com/flaconi/contentful-go/pkgs/util"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/labd/contentful-go"
+	client2 "github.com/labd/contentful-go/pkgs/client"
+	"github.com/labd/contentful-go/pkgs/util"
 
 	"github.com/labd/terraform-provider-contentful/internal/resources/api_key"
 	"github.com/labd/terraform-provider-contentful/internal/resources/app_definition"

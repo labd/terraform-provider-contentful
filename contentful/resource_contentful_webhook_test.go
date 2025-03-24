@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/flaconi/contentful-go/pkgs/common"
+	"github.com/labd/contentful-go/pkgs/common"
 	"github.com/labd/terraform-provider-contentful/internal/acctest"
 
-	contentful "github.com/flaconi/contentful-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	contentful "github.com/labd/contentful-go"
 )
 
 func TestAccContentfulWebhook_Basic(t *testing.T) {

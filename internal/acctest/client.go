@@ -1,11 +1,12 @@
 package acctest
 
 import (
-	"github.com/flaconi/contentful-go"
-	client2 "github.com/flaconi/contentful-go/pkgs/client"
-	"github.com/flaconi/contentful-go/pkgs/util"
-	"github.com/flaconi/contentful-go/service/cma"
 	"os"
+
+	"github.com/labd/contentful-go"
+	client2 "github.com/labd/contentful-go/pkgs/client"
+	"github.com/labd/contentful-go/pkgs/util"
+	"github.com/labd/contentful-go/service/cma"
 )
 
 func GetClient() *contentful.Client {

@@ -4,17 +4,15 @@ go 1.23.0
 
 toolchain go1.23.7
 
-//replace github.com/flaconi/contentful-go => ../contentful-go
-
 require (
 	github.com/elliotchance/pie/v2 v2.9.1
-	github.com/flaconi/contentful-go v0.5.3-0.20240307133521-ac9bdf1c97f2
 	github.com/hashicorp/terraform-plugin-docs v0.19.0
 	github.com/hashicorp/terraform-plugin-framework v1.14.1
 	github.com/hashicorp/terraform-plugin-framework-jsontypes v0.2.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.17.0
 	github.com/hashicorp/terraform-plugin-mux v0.18.0
 	github.com/hashicorp/terraform-plugin-testing v1.12.0
+	github.com/labd/contentful-go v0.5.4-0.20250324140149-2fdab88b69c2
 	github.com/stretchr/testify v1.9.0
 )
 

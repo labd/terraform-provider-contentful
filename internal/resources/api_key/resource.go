@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/flaconi/contentful-go/pkgs/model"
-	"github.com/flaconi/contentful-go/service/cma"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -15,6 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/labd/contentful-go/pkgs/model"
+	"github.com/labd/contentful-go/service/cma"
 	"github.com/labd/terraform-provider-contentful/internal/custommodifier"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )

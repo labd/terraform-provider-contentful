@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"github.com/flaconi/contentful-go"
-	"github.com/flaconi/contentful-go/service/cma"
+	"github.com/labd/contentful-go"
+	"github.com/labd/contentful-go/service/cma"
 )
 
 type ProviderData struct {

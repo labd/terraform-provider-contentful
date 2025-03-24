@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/flaconi/contentful-go/pkgs/common"
-	"github.com/flaconi/contentful-go/pkgs/model"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/labd/contentful-go/pkgs/common"
+	"github.com/labd/contentful-go/pkgs/model"
 
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
