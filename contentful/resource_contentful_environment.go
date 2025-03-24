@@ -2,10 +2,13 @@ package contentful
 
 import (
 	"context"
-	"errors"
+
+	"github.com/flaconi/contentful-go/pkgs/common"
+	"github.com/flaconi/contentful-go/pkgs/model"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/labd/contentful-go"
+
+	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
 func resourceContentfulEnvironment() *schema.Resource {
@@ -34,13 +37,13 @@ func resourceContentfulEnvironment() *schema.Resource {
 }
 
 func resourceCreateEnvironment(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 
-	environment := &contentful.Environment{
+	environment := &model.Environment{
 		Name: d.Get("name").(string),
 	}
 
-	err := client.Environments.Upsert(d.Get("space_id").(string), environment)
+	err := client.WithSpaceId(spaceID).Environments().Upsert(context.Background(), environment, nil)
 	if err != nil {
 		return parseError(err)
 	}
@@ -55,18 +58,20 @@ func resourceCreateEnvironment(_ context.Context, d *schema.ResourceData, m inte
 }
 
 func resourceUpdateEnvironment(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 	spaceID := d.Get("space_id").(string)
 	environmentID := d.Id()
 
-	environment, err := client.Environments.Get(spaceID, environmentID)
+	envClient := client.WithSpaceId(spaceID).Environments()
+
+	environment, err := envClient.Get(context.Background(), environmentID)
 	if err != nil {
 		return parseError(err)
 	}
 
 	environment.Name = d.Get("name").(string)
 
-	err = client.Environments.Upsert(spaceID, environment)
+	err = envClient.Upsert(context.Background(), environment, nil)
 	if err != nil {
 		return parseError(err)
 	}
@@ -81,13 +86,12 @@ func resourceUpdateEnvironment(_ context.Context, d *schema.ResourceData, m inte
 }
 
 func resourceReadEnvironment(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 	spaceID := d.Get("space_id").(string)
 	environmentID := d.Id()
 
-	environment, err := client.Environments.Get(spaceID, environmentID)
-	var notFoundError contentful.NotFoundError
-	if errors.As(err, &notFoundError) {
+	environment, err := client.WithSpaceId(spaceID).Environments().Get(context.Background(), environmentID)
+	if _, ok := err.(common.NotFoundError); ok {
 		d.SetId("")
 		return nil
 	}
@@ -101,16 +105,18 @@ func resourceReadEnvironment(_ context.Context, d *schema.ResourceData, m interf
 }
 
 func resourceDeleteEnvironment(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).CMAClient
 	spaceID := d.Get("space_id").(string)
 	environmentID := d.Id()
 
-	environment, err := client.Environments.Get(spaceID, environmentID)
+	envClient := client.WithSpaceId(spaceID).Environments()
+
+	environment, err := envClient.Get(context.Background(), environmentID)
 	if err != nil {
 		return parseError(err)
 	}
 
-	err = client.Environments.Delete(spaceID, environment)
+	err = envClient.Delete(context.Background(), environment)
 	if err != nil {
 		return parseError(err)
 	}
@@ -118,7 +124,7 @@ func resourceDeleteEnvironment(_ context.Context, d *schema.ResourceData, m inte
 	return nil
 }
 
-func setEnvironmentProperties(d *schema.ResourceData, environment *contentful.Environment) error {
+func setEnvironmentProperties(d *schema.ResourceData, environment *model.Environment) error {
 	if err := d.Set("space_id", environment.Sys.Space.Sys.ID); err != nil {
 		return err
 	}

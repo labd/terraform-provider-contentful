@@ -1,10 +1,19 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+	"fmt"
+	"log"
+
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6/tf6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
+
 	"github.com/labd/terraform-provider-contentful/contentful"
+	"github.com/labd/terraform-provider-contentful/internal/provider"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -18,19 +27,57 @@ import (
 //
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 
-func main() {
-	var debug bool
+var (
+	// these will be set by the goreleaser configuration
+	// to appropriate values for the compiled binary
+	version string = "dev"
+	commit  string = "snapshot"
+)
 
-	flag.BoolVar(&debug, "debug", false, "set to true to run the provider with support for debuggers like delve")
+func main() {
+
+	debugFlag := flag.Bool("debug", false, "Start provider in debug mode.")
 	flag.Parse()
 
-	opts := &plugin.ServeOpts{
-		Debug:        debug,
-		ProviderAddr: "registry.terraform.io/labd/contentful",
-		ProviderFunc: func() *schema.Provider {
-			return contentful.Provider()
+	fullVersion := fmt.Sprintf("%s (%s)", version, commit)
+
+	sdkProvider := contentful.Provider()
+
+	ctx := context.Background()
+
+	upgradedSdkProvider, err := tf5to6server.UpgradeServer(
+		ctx,
+		sdkProvider().GRPCProvider,
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	providers := []func() tfprotov6.ProviderServer{
+		providerserver.NewProtocol6(provider.New(fullVersion, *debugFlag)),
+		func() tfprotov6.ProviderServer {
+			return upgradedSdkProvider
 		},
 	}
 
-	plugin.Serve(opts)
+	muxServer, err := tf6muxserver.NewMuxServer(ctx, providers...)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var serveOpts []tf6server.ServeOpt
+	if *debugFlag {
+		serveOpts = append(serveOpts, tf6server.WithManagedDebug())
+	}
+
+	err = tf6server.Serve(
+		"registry.terraform.io/labd/contentful",
+		muxServer.ProviderServer,
+		serveOpts...,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

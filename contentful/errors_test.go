@@ -2,10 +2,11 @@ package contentful
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/labd/contentful-go"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/flaconi/contentful-go/pkgs/common"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseError_Nil(t *testing.T) {
@@ -20,7 +21,7 @@ func TestParseError_RegularErr(t *testing.T) {
 }
 
 func TestParseError_WithoutWarning(t *testing.T) {
-	d := parseError(&contentful.ErrorResponse{
+	d := parseError(&common.ErrorResponse{
 		Message: "error message",
 	})
 	assert.True(t, d.HasError())
@@ -30,10 +31,10 @@ func TestParseError_WithoutWarning(t *testing.T) {
 }
 
 func TestParseError_WithWarning_WithoutPath(t *testing.T) {
-	d := parseError(contentful.ErrorResponse{
+	d := parseError(common.ErrorResponse{
 		Message: "error message",
-		Details: &contentful.ErrorDetails{
-			Errors: []*contentful.ErrorDetail{
+		Details: &common.ErrorDetails{
+			Errors: []*common.ErrorDetail{
 				{
 					Details: "error detail",
 				},
@@ -49,10 +50,10 @@ func TestParseError_WithWarning_WithoutPath(t *testing.T) {
 }
 
 func TestParseError_WithWarning_WithPath(t *testing.T) {
-	d := parseError(contentful.ErrorResponse{
+	d := parseError(common.ErrorResponse{
 		Message: "error message",
-		Details: &contentful.ErrorDetails{
-			Errors: []*contentful.ErrorDetail{
+		Details: &common.ErrorDetails{
+			Errors: []*common.ErrorDetail{
 				{
 					Path:    []interface{}{"path", "to", "error"},
 					Details: "error detail",

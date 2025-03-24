@@ -3,20 +3,20 @@
 page_title: "contentful_asset Resource - terraform-provider-contentful"
 subcategory: ""
 description: |-
-  A Contentful Asset represents a file that can be used in entries.
+  
 ---
 
 # contentful_asset (Resource)
 
-A Contentful Asset represents a file that can be used in entries.
+
 
 ## Example Usage
 
 ```terraform
 resource "contentful_asset" "example_asset" {
-  asset_id = "test_asset"
-  locale   = "en-US"
-  space_id = "space-id"
+  asset_id    = "test_asset"
+  environment = "master"
+  space_id    = "space-id"
 
   fields {
     title {
@@ -45,8 +45,8 @@ resource "contentful_asset" "example_asset" {
 
 - `archived` (Boolean)
 - `asset_id` (String)
+- `environment` (String)
 - `fields` (Block List, Min: 1) (see [below for nested schema](#nestedblock--fields))
-- `locale` (String)
 - `published` (Boolean)
 - `space_id` (String)
 
@@ -80,6 +80,7 @@ Required:
 
 - `content_type` (String)
 - `file_name` (String)
+- `locale` (String)
 - `upload` (String)
 
 Optional:

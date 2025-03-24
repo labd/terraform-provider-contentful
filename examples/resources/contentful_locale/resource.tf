@@ -1,5 +1,6 @@
 resource "contentful_locale" "example_locale" {
-  space_id = "spaced-id"
+  space_id    = "spaced-id"
+  environment = "master"
 
   name          = "locale-name"
   code          = "de"

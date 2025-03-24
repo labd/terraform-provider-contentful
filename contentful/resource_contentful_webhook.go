@@ -2,10 +2,13 @@ package contentful
 
 import (
 	"context"
-	"errors"
+
+	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/contentful-go/pkgs/common"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/labd/contentful-go"
+
+	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
 func resourceContentfulWebhook() *schema.Resource {
@@ -62,7 +65,7 @@ func resourceContentfulWebhook() *schema.Resource {
 }
 
 func resourceCreateWebhook(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 
 	webhook := &contentful.Webhook{
@@ -90,7 +93,7 @@ func resourceCreateWebhook(ctx context.Context, d *schema.ResourceData, m interf
 }
 
 func resourceUpdateWebhook(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 	webhookID := d.Id()
 
@@ -122,13 +125,12 @@ func resourceUpdateWebhook(ctx context.Context, d *schema.ResourceData, m interf
 }
 
 func resourceReadWebhook(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 	webhookID := d.Id()
 
 	webhook, err := client.Webhooks.Get(spaceID, webhookID)
-	var notFoundError contentful.NotFoundError
-	if errors.As(err, &notFoundError) {
+	if _, ok := err.(common.NotFoundError); ok {
 		d.SetId("")
 		return nil
 	}
@@ -146,7 +148,7 @@ func resourceReadWebhook(ctx context.Context, d *schema.ResourceData, m interfac
 }
 
 func resourceDeleteWebhook(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 	webhookID := d.Id()
 
@@ -156,7 +158,7 @@ func resourceDeleteWebhook(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	err = client.Webhooks.Delete(spaceID, webhook)
-	if _, ok := err.(contentful.NotFoundError); ok {
+	if _, ok := err.(common.NotFoundError); ok {
 		return nil
 	}
 
