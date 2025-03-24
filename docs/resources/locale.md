@@ -14,7 +14,8 @@ A Contentful Locale represents a language and region combination.
 
 ```terraform
 resource "contentful_locale" "example_locale" {
-  space_id = "spaced-id"
+  space_id    = "spaced-id"
+  environment = "master"
 
   name          = "locale-name"
   code          = "de"
@@ -31,6 +32,7 @@ resource "contentful_locale" "example_locale" {
 ### Required
 
 - `code` (String)
+- `environment` (String)
 - `name` (String)
 - `space_id` (String)
 

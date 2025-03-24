@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/flaconi/contentful-go/pkgs/common"
+	"github.com/labd/terraform-provider-contentful/internal/acctest"
+
+	contentful "github.com/flaconi/contentful-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	contentful "github.com/labd/contentful-go"
 )
 
 func TestAccContentfulWebhook_Basic(t *testing.T) {
@@ -63,7 +66,7 @@ func testAccCheckContentfulWebhookExists(n string, webhook *contentful.Webhook) 
 			return fmt.Errorf("no webhook ID is set")
 		}
 
-		client := testAccProvider.Meta().(*contentful.Client)
+		client := acctest.GetClient()
 
 		contentfulWebhook, err := client.Webhooks.Get(spaceID, rs.Primary.ID)
 		if err != nil {
@@ -119,10 +122,10 @@ func testAccContentfulWebhookDestroy(s *terraform.State) error {
 		}
 
 		// sdk client
-		client := testAccProvider.Meta().(*contentful.Client)
+		client := acctest.GetClient()
 
 		_, err := client.Webhooks.Get(spaceID, rs.Primary.ID)
-		if _, ok := err.(contentful.NotFoundError); ok {
+		if _, ok := err.(common.NotFoundError); ok {
 			return nil
 		}
 

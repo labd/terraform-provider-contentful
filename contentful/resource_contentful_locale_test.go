@@ -1,17 +1,22 @@
 package contentful
 
 import (
-	"encoding/json"
+	"context"
+	"errors"
 	"fmt"
+	"os"
 	"testing"
+
+	"github.com/flaconi/contentful-go/pkgs/common"
+	"github.com/flaconi/contentful-go/pkgs/model"
+	"github.com/labd/terraform-provider-contentful/internal/acctest"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	contentful "github.com/labd/contentful-go"
 )
 
 func TestAccContentfulLocales_Basic(t *testing.T) {
-	var locale contentful.Locale
+	var locale model.Locale
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -52,7 +57,7 @@ func TestAccContentfulLocales_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckContentfulLocaleExists(n string, locale *contentful.Locale) resource.TestCheckFunc {
+func testAccCheckContentfulLocaleExists(n string, locale *model.Locale) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -69,9 +74,10 @@ func testAccCheckContentfulLocaleExists(n string, locale *contentful.Locale) res
 			return fmt.Errorf("no locale ID is set")
 		}
 
-		client := testAccProvider.Meta().(*contentful.Client)
+		client := acctest.GetCMA()
 
-		contentfulLocale, err := client.Locales.Get(spaceID, localeID)
+		contentfulLocale, err := client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).WithEnvironment("master").Locales().Get(context.Background(), localeID)
+
 		if err != nil {
 			return err
 		}
@@ -82,7 +88,7 @@ func testAccCheckContentfulLocaleExists(n string, locale *contentful.Locale) res
 	}
 }
 
-func testAccCheckContentfulLocaleAttributes(locale *contentful.Locale, attrs map[string]interface{}) resource.TestCheckFunc {
+func testAccCheckContentfulLocaleAttributes(locale *model.Locale, attrs map[string]interface{}) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		name := attrs["name"].(string)
 		if locale.Name != name {
@@ -95,8 +101,8 @@ func testAccCheckContentfulLocaleAttributes(locale *contentful.Locale, attrs map
 		}
 
 		fallbackCode := attrs["fallback_code"].(string)
-		if locale.FallbackCode != fallbackCode {
-			return fmt.Errorf("locale fallback code does not match: %s, %s", locale.FallbackCode, fallbackCode)
+		if *locale.FallbackCode != fallbackCode {
+			return fmt.Errorf("locale fallback code does not match: %s, %s", *locale.FallbackCode, fallbackCode)
 		}
 
 		isOptional := attrs["optional"].(bool)
@@ -134,13 +140,12 @@ func testAccContentfulLocaleDestroy(s *terraform.State) error {
 			return fmt.Errorf("no locale ID is set")
 		}
 
-		client := testAccProvider.Meta().(*contentful.Client)
+		client := acctest.GetCMA()
 
-		_, err := client.Locales.Get(spaceID, localeID)
+		_, err := client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).WithEnvironment("master").Locales().Get(context.Background(), localeID)
 
-		// This is caused by a bug in the client library that tries to cast
-		// error.details to a map but it is a string in this case
-		if _, ok := err.(*json.UnmarshalTypeError); ok {
+		var notFoundError common.NotFoundError
+		if errors.As(err, &notFoundError) {
 			return nil
 		}
 
@@ -153,7 +158,7 @@ func testAccContentfulLocaleDestroy(s *terraform.State) error {
 var testAccContentfulLocaleConfig = `
 resource "contentful_locale" "mylocale" {
   space_id = "` + spaceID + `"
-
+  environment = "master"
   name = "locale-name"
   code = "de"
   fallback_code = "en-US"
@@ -166,7 +171,7 @@ resource "contentful_locale" "mylocale" {
 var testAccContentfulLocaleUpdateConfig = `
 resource "contentful_locale" "mylocale" {
   space_id = "` + spaceID + `"
-
+  environment = "master"
   name = "locale-name-updated"
   code = "es"
   fallback_code = "en-US"

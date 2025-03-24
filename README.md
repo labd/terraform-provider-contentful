@@ -1,5 +1,4 @@
 ![Go](https://github.com/labd/terraform-provider-contentful/workflows/Go/badge.svg?branch=master)
-[![codecov](https://codecov.io/gh/labd/terraform-provider-contentful/branch/master/graph/badge.svg)](https://codecov.io/gh/labd/terraform-provider-contentful)
 [![license](https://img.shields.io/github/license/labd/terraform-provider-contentful.svg)](https://github.com/labd/terraform-provider-contentful/blob/master/LICENSE)
 
 Terraform Provider for [Contentful's](https://www.contentful.com) Content Management API

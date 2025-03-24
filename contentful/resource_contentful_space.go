@@ -2,10 +2,13 @@ package contentful
 
 import (
 	"context"
-	"errors"
+
+	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/contentful-go/pkgs/common"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/labd/contentful-go"
+
+	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
 func resourceContentfulSpace() *schema.Resource {
@@ -37,7 +40,7 @@ func resourceContentfulSpace() *schema.Resource {
 }
 
 func resourceSpaceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 
 	space := &contentful.Space{
 		Name:          d.Get("name").(string),
@@ -60,12 +63,11 @@ func resourceSpaceCreate(ctx context.Context, d *schema.ResourceData, m interfac
 }
 
 func resourceSpaceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Id()
 
 	_, err := client.Spaces.Get(spaceID)
-	var notFoundError contentful.NotFoundError
-	if errors.As(err, &notFoundError) {
+	if _, ok := err.(common.NotFoundError); ok {
 		d.SetId("")
 		return nil
 	}
@@ -74,7 +76,7 @@ func resourceSpaceRead(ctx context.Context, d *schema.ResourceData, m interface{
 }
 
 func resourceSpaceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Id()
 
 	space, err := client.Spaces.Get(spaceID)
@@ -98,7 +100,7 @@ func resourceSpaceUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 }
 
 func resourceSpaceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*contentful.Client)
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Id()
 
 	space, err := client.Spaces.Get(spaceID)
@@ -107,7 +109,7 @@ func resourceSpaceDelete(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	err = client.Spaces.Delete(space)
-	if _, ok := err.(contentful.NotFoundError); ok {
+	if _, ok := err.(common.NotFoundError); ok {
 		return nil
 	}
 

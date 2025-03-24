@@ -1,7 +1,7 @@
 resource "contentful_asset" "example_asset" {
-  asset_id = "test_asset"
-  locale   = "en-US"
-  space_id = "space-id"
+  asset_id    = "test_asset"
+  environment = "master"
+  space_id    = "space-id"
 
   fields {
     title {
