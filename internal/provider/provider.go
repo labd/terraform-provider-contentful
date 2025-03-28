@@ -13,7 +13,13 @@ import (
 	"github.com/labd/terraform-provider-contentful/internal/resources/api_key"
 	"github.com/labd/terraform-provider-contentful/internal/resources/app_definition"
 	"github.com/labd/terraform-provider-contentful/internal/resources/app_installation"
+	"github.com/labd/terraform-provider-contentful/internal/resources/asset"
 	"github.com/labd/terraform-provider-contentful/internal/resources/contenttype"
+	"github.com/labd/terraform-provider-contentful/internal/resources/entry"
+	"github.com/labd/terraform-provider-contentful/internal/resources/environment"
+	"github.com/labd/terraform-provider-contentful/internal/resources/locale"
+	"github.com/labd/terraform-provider-contentful/internal/resources/space"
+	"github.com/labd/terraform-provider-contentful/internal/resources/webhook"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
@@ -21,10 +27,12 @@ var (
 	_ provider.Provider = &contentfulProvider{}
 )
 
-func New(version string, debug bool) provider.Provider {
-	return &contentfulProvider{
-		version: version,
-		debug:   debug,
+func New(version string, debug bool) func() provider.Provider {
+	return func() provider.Provider {
+		return &contentfulProvider{
+			version: version,
+			debug:   debug,
+		}
 	}
 }
 
@@ -134,9 +142,15 @@ func (c contentfulProvider) DataSources(_ context.Context) []func() datasource.D
 
 func (c contentfulProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		contenttype.NewContentTypeResource,
+		api_key.NewApiKeyResource,
 		app_definition.NewAppDefinitionResource,
 		app_installation.NewAppInstallationResource,
-		api_key.NewApiKeyResource,
+		asset.NewAssetResource,
+		contenttype.NewContentTypeResource,
+		entry.NewEntryResource,
+		environment.NewEnvironmentResource,
+		locale.NewLocaleResource,
+		space.NewSpaceResource,
+		webhook.NewWebhookResource,
 	}
 }

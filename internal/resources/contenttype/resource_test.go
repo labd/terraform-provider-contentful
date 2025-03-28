@@ -29,7 +29,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 		PreCheck:     func() { acctest.TestAccPreCheck(t) },
 		CheckDestroy: testAccCheckContentfulContentTypeDestroy,
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
-			"contentful": providerserver.NewProtocol6WithError(provider.New("test", false)),
+			"contentful": providerserver.NewProtocol6WithError(provider.New("test", false)()),
 		},
 		Steps: []resource.TestStep{
 			{
@@ -264,7 +264,7 @@ func TestContentTypeResource_WithDuplicateField(t *testing.T) {
 		PreCheck:     func() { acctest.TestAccPreCheck(t) },
 		CheckDestroy: testAccCheckContentfulContentTypeDestroy,
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
-			"contentful": providerserver.NewProtocol6WithError(provider.New("test", false)),
+			"contentful": providerserver.NewProtocol6WithError(provider.New("test", false)()),
 		},
 		Steps: []resource.TestStep{
 			{

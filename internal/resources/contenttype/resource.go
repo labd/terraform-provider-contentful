@@ -3,9 +3,12 @@ package contenttype
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff/v5"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/elliotchance/pie/v2"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
@@ -402,14 +405,12 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 			response.Diagnostics.AddError("Error creating contenttype", err.Error())
 			return
 		}
-		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.ID.ValueString(), nil, *draft)
-		if err != nil {
-			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype with id "+plan.ID.ValueString()+", unexpected error: "+err.Error())
-			return
+		params := &sdk.UpdateContentTypeParams{
+			// XContentfulVersion: 1,
 		}
-
-		if resp.StatusCode() != 201 {
-			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype with id "+plan.ID.ValueString()+", unexpected status code: "+resp.Status())
+		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.ID.ValueString(), params, *draft)
+		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype with id "+plan.ID.ValueString()+", unexpected error: "+err.Error())
 			return
 		}
 		contentType = resp.JSON201
@@ -419,13 +420,12 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 			response.Diagnostics.AddError("Error creating contenttype", err.Error())
 			return
 		}
-		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.Name.ValueString(), nil, *draft)
-		if err != nil {
-			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype, unexpected error: "+err.Error())
-			return
+		params := &sdk.UpdateContentTypeParams{
+			// XContentfulVersion: 1,
 		}
-		if resp.StatusCode() != 201 {
-			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype, unexpected status code: "+resp.Status())
+		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.Name.ValueString(), params, *draft)
+		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype with name, unexpected error: "+err.Error())
 			return
 		}
 		contentType = resp.JSON201
@@ -436,8 +436,6 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 		response.Diagnostics.AddError("Error creating contenttype", "Could not activate contenttype, unexpected error: "+err.Error())
 		return
 	}
-
-	tflog.Debug(ctx, spew.Sdump(contentType))
 
 	plan.ID = types.StringValue(contentType.Sys.Id)
 	plan.Version = types.Int64Value(contentType.Sys.Version)
@@ -705,56 +703,51 @@ func (e *contentTypeResource) Delete(ctx context.Context, request resource.Delet
 	environment := state.Environment.ValueString()
 	id := state.ID.ValueString()
 
-	resp, err := e.client.DeactivateContentTypeWithResponse(
-		ctx,
-		spaceId,
-		environment,
-		id,
-		&sdk.DeactivateContentTypeParams{
-			XContentfulVersion: state.Version.ValueInt64(),
-		},
-	)
-
-	if err != nil {
-		response.Diagnostics.AddError(
-			"Error deleting contenttype",
-			"Could not deactivate contenttype, unexpected error: "+err.Error(),
+	contentType, err := backoff.Retry(ctx, func() (*sdk.ContentType, error) {
+		resp, err := e.client.DeactivateContentTypeWithResponse(
+			ctx,
+			spaceId,
+			environment,
+			id,
+			&sdk.DeactivateContentTypeParams{
+				XContentfulVersion: state.Version.ValueInt64(),
+			},
 		)
-	}
+		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 
-	if resp.StatusCode() != 200 {
-		response.Diagnostics.AddError(
-			"Error deleting contenttype",
-			"Could not deactivate contenttype, unexpected status code: "+resp.Status(),
-		)
-	}
+			if resp.StatusCode() == http.StatusBadRequest {
+				return nil, backoff.RetryAfter(5)
+			}
+			return nil, err
+		}
+		return resp.JSON200, nil
 
-	version := resp.JSON200.Sys.Version
-
-	respDelete, err := e.client.DeleteContentTypeWithResponse(
-		ctx,
-		spaceId,
-		environment,
-		id,
-		&sdk.DeleteContentTypeParams{
-			XContentfulVersion: version,
-		},
-	)
+	}, backoff.WithMaxTries(3), backoff.WithMaxElapsedTime(60*time.Second), backoff.WithBackOff(backoff.NewExponentialBackOff()))
 
 	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting contenttype",
 			"Could not delete contenttype, unexpected error: "+err.Error(),
 		)
+		return
 	}
 
-	if respDelete.StatusCode() != 204 {
+	resp, err := e.client.DeleteContentTypeWithResponse(
+		ctx,
+		spaceId,
+		environment,
+		id,
+		&sdk.DeleteContentTypeParams{
+			XContentfulVersion: contentType.Sys.Version,
+		},
+	)
+	if err := utils.CheckClientResponse(resp, err, http.StatusNoContent); err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting contenttype",
-			"Could not delete contenttype, unexpected status code: "+resp.Status(),
+			"Could not delete contenttype, unexpected error: "+err.Error(),
 		)
+		return
 	}
-
 }
 
 func (e *contentTypeResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {

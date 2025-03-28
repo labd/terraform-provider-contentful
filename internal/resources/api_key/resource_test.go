@@ -30,7 +30,7 @@ func TestApiKeyResource_Create(t *testing.T) {
 		PreCheck:     func() { acctest.TestAccPreCheck(t) },
 		CheckDestroy: testAccCheckContentfulApiKeyDestroy,
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
-			"contentful": providerserver.NewProtocol6WithError(provider.New("test", true)),
+			"contentful": providerserver.NewProtocol6WithError(provider.New("test", true)()),
 		},
 		Steps: []resource.TestStep{
 			{
@@ -76,7 +76,7 @@ func TestApiKeyResource_CreateWithEnvironmentSet(t *testing.T) {
 		PreCheck:     func() { acctest.TestAccPreCheck(t) },
 		CheckDestroy: testAccCheckContentfulApiKeyDestroy,
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
-			"contentful": providerserver.NewProtocol6WithError(provider.New("test", true)),
+			"contentful": providerserver.NewProtocol6WithError(provider.New("test", true)()),
 		},
 		Steps: []resource.TestStep{
 			{

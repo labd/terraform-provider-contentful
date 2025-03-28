@@ -321,8 +321,8 @@ paths:
       description: Creates a new entry
       operationId: createEntry
       parameters:
-        - name: content_type
-          in: query
+        - name: X-Contentful-Content-Type
+          in: header
           required: true
           schema:
             type: string
@@ -332,7 +332,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EntryCreate"
+              $ref: "#/components/schemas/EntryDraft"
       responses:
         "201":
           description: Created
@@ -364,15 +364,27 @@ paths:
       operationId: updateEntry
       parameters:
         - $ref: "#/components/parameters/resourceVersion"
+        - name: X-Contentful-Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Content type ID for the new entry
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EntryUpdate"
+              $ref: "#/components/schemas/EntryDraft"
       responses:
         "200":
           description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
+        "201":
+          description: Created
           content:
             application/json:
               schema:
@@ -392,6 +404,7 @@ paths:
       - $ref: "#/components/parameters/spaceId"
       - $ref: "#/components/parameters/environmentId"
       - $ref: "#/components/parameters/entryId"
+      - $ref: "#/components/parameters/resourceVersion"
     put:
       summary: Publish an entry
       description: Publishes an entry
@@ -420,6 +433,7 @@ paths:
       - $ref: "#/components/parameters/spaceId"
       - $ref: "#/components/parameters/environmentId"
       - $ref: "#/components/parameters/entryId"
+      - $ref: "#/components/parameters/resourceVersion"
     put:
       summary: Archive an entry
       description: Archives an entry
@@ -510,6 +524,13 @@ paths:
       responses:
         "200":
           description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+        "201":
+          description: Created
           content:
             application/json:
               schema:
@@ -1252,7 +1273,10 @@ components:
               description: Asset description by locale
               type: object
             file:
+              type: object
+              description: Asset file details by locale
               additionalProperties:
+                type: object
                 properties:
                   contentType:
                     type: string
@@ -1262,19 +1286,24 @@ components:
                         properties:
                           height:
                             type: integer
+                            format: int64
                           width:
                             type: integer
+                            format: int64
                         type: object
                       size:
                         type: integer
+                        format: int64
                     type: object
                   fileName:
                     type: string
+                  upload:
+                    type: string
                   url:
                     type: string
-                type: object
-              description: Asset file details by locale
-              type: object
+                required:
+                  - contentType
+                  - fileName
             title:
               additionalProperties:
                 type: string
@@ -1282,9 +1311,14 @@ components:
               type: object
           required:
             - file
+            - title
+            - description
           type: object
         sys:
-          $ref: '#/components/schemas/SystemProperties'
+          $ref: '#/components/schemas/SystemPropertiesContent'
+      required:
+        - fields
+        - sys
 
     AssetCollection:
       type: object
@@ -1448,8 +1482,14 @@ components:
           additionalProperties: true
           description: Content fields with values by locale
           type: object
+          x-go-type: orderedmap.OrderedMap
+          x-go-type-import:
+            path:  "github.com/iancoleman/orderedmap"
         sys:
-          $ref: '#/components/schemas/SystemProperties'
+          $ref: '#/components/schemas/SystemPropertiesEntry'
+      required:
+        - fields
+        - sys
 
     EntryCollection:
       type: object
@@ -1474,21 +1514,16 @@ components:
           description: Total number of entries
           type: integer
 
-    EntryCreate:
+    EntryDraft:
       type: object
       properties:
         fields:
           additionalProperties: true
           description: Content fields with values by locale
           type: object
-
-    EntryUpdate:
-      type: object
-      properties:
-        fields:
-          additionalProperties: true
-          description: Content fields with values by locale
-          type: object
+          x-go-type: orderedmap.OrderedMap
+          x-go-type-import:
+            path:  "github.com/iancoleman/orderedmap"
 
     Environment:
       type: object
@@ -2030,6 +2065,8 @@ components:
         type:
           description: Resource type
           type: string
+        environment:
+          $ref: '#/components/schemas/SystemPropertiesReference'
         space:
           $ref: '#/components/schemas/SystemPropertiesReference'
         createdBy:
@@ -2051,6 +2088,39 @@ components:
         - space
         - createdBy
 
+    SystemPropertiesContent:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/SystemPropertiesResource'
+        - properties:
+            publishedAt:
+              description: Publication timestamp
+              format: date-time
+              type: string
+            archivedAt:
+              description: Archival timestamp
+              format: date-time
+              type: string
+
+    SystemPropertiesEntry:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/SystemPropertiesResource'
+        - properties:
+            publishedAt:
+              description: Publication timestamp
+              format: date-time
+              type: string
+            archivedAt:
+              description: Archival timestamp
+              format: date-time
+              type: string
+            contentType:
+              $ref: '#/components/schemas/SystemPropertiesReference'
+            environment:
+              $ref: '#/components/schemas/SystemPropertiesReference'
+          required:
+            - contentType
 
     # TODO: Sync with https://www.contentful.com/developers/docs/references/content-management-api/#/introduction/common-resource-attributes
     SystemProperties:
