@@ -26,3 +26,7 @@ func GetAppFieldTypes() []string {
 func GetLinkTypes() []string {
 	return []string{"Asset", "Entry"}
 }
+
+func Pointer[T any](v T) *T {
+	return &v
+}

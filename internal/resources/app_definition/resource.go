@@ -1,8 +1,10 @@
 package app_definition
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -15,11 +17,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go"
-	"github.com/labd/contentful-go/pkgs/model"
-	"github.com/labd/contentful-go/service/cma"
+
 	"github.com/labd/terraform-provider-contentful/internal/custommodifier"
 	"github.com/labd/terraform-provider-contentful/internal/customvalidator"
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
@@ -39,9 +40,9 @@ func NewAppDefinitionResource() resource.Resource {
 
 // appDefinitionResource is the resource implementation.
 type appDefinitionResource struct {
-	client          cma.OrganizationIdClient
-	clientAppUpload *contentful.Client
-	organizationId  string
+	client         *sdk.ClientWithResponses
+	clientUpload   *sdk.ClientWithResponses
+	organizationId string
 }
 
 func (e *appDefinitionResource) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -74,6 +75,9 @@ func (e *appDefinitionResource) Schema(_ context.Context, _ resource.SchemaReque
 			},
 			"bundle_id": schema.StringAttribute{
 				Computed: true,
+				// PlanModifiers: []planmodifier.String{
+				// 	stringplanmodifier.UseStateForUnknown(),
+				// },
 			},
 			"locations": schema.ListNestedAttribute{
 				Validators: []validator.List{
@@ -161,14 +165,14 @@ func (e *appDefinitionResource) Configure(_ context.Context, request resource.Co
 	}
 
 	data := request.ProviderData.(utils.ProviderData)
-	e.client = data.CMAClient.WithOrganizationId(data.OrganizationId)
+	e.client = data.Client
+	e.clientUpload = data.ClientUpload
 	e.organizationId = data.OrganizationId
-	e.clientAppUpload = data.Client
-
 }
 
 func (e *appDefinitionResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	var plan AppDefinition
+	var state AppDefinition
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -180,15 +184,41 @@ func (e *appDefinitionResource) Create(ctx context.Context, request resource.Cre
 
 	draft := plan.Draft()
 
-	if err := e.client.AppDefinitions().Upsert(ctx, draft); err != nil {
-		response.Diagnostics.AddError("Error creating app_definition definition", err.Error())
-		return
+	var resource *sdk.AppDefinition
+	// The plan.ID is created in the setDefaultBundle() call if the use_bundle flag is set
+	if plan.ID.ValueString() == "" {
+		resp, err := e.client.CreateAppDefinitionWithResponse(ctx, e.organizationId, *draft)
+		if err != nil {
+			response.Diagnostics.AddError("Error creating app_definition", err.Error())
+			return
+		}
+
+		if resp.JSON201 == nil {
+			response.Diagnostics.AddError("Error creating app_definition", "Received unexpected response from API")
+			return
+		}
+
+		resource = resp.JSON201
+	} else {
+		resp, err := e.client.UpdateAppDefinitionWithResponse(ctx, e.organizationId, plan.ID.ValueString(), nil, *draft)
+		if err != nil {
+			response.Diagnostics.AddError("Error creating app_definition", err.Error())
+			return
+		}
+
+		if resp.JSON200 == nil {
+			response.Diagnostics.AddError("Error creating app_definition", "Received unexpected response from API")
+			return
+		}
+
+		resource = resp.JSON200
 	}
 
-	plan.ID = types.StringValue(draft.Sys.ID)
+	state = AppDefinition{}
+	state.Import(resource)
 
 	// Set state to fully populated data
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
@@ -200,31 +230,80 @@ func (e *appDefinitionResource) setDefaultBundle(ctx context.Context, plan *AppD
 		draft := plan.Draft()
 
 		locations := draft.Locations
+		draft.Locations = []sdk.AppLocation{}
 
-		draft.Locations = []model.Locations{}
+		var appDefinitionId string
 
-		if err := e.client.AppDefinitions().Upsert(ctx, draft); err != nil {
-			diagnostics.AddError("Error upsert app_definition definition", err.Error())
-			return true
+		if plan.ID.IsNull() || plan.ID.IsUnknown() {
+
+			resp, err := e.client.CreateAppDefinitionWithResponse(ctx, e.organizationId, *draft)
+			if err != nil {
+				diagnostics.AddError("Error creating temporary app_definition", err.Error())
+				return true
+			}
+
+			if resp.JSON201 == nil {
+				diagnostics.AddError("Error creating temporary app_definition", "Received unexpected response from API")
+				return true
+			}
+			appDefinitionId = resp.JSON201.Sys.Id
+		} else {
+			params := &sdk.UpdateAppDefinitionParams{}
+			resp, err := e.client.UpdateAppDefinitionWithResponse(ctx, e.organizationId, plan.ID.ValueString(), params, *draft)
+			if err != nil {
+				diagnostics.AddError("Error creating temporary app_definition", err.Error())
+				return true
+			}
+
+			if resp.JSON200 == nil {
+				diagnostics.AddError("Error creating temporary app_definition", "Received unexpected response from API")
+				return true
+			}
+			appDefinitionId = resp.JSON200.Sys.Id
+
 		}
 
-		upload, err := e.clientAppUpload.AppUpload.Create(e.organizationId, defaultDummyBundle)
-
+		respUpload, err := e.clientUpload.UploadAppWithBodyWithResponse(ctx, e.organizationId, "application/octet-stream", bytes.NewReader(defaultDummyBundle))
 		if err != nil {
 			diagnostics.AddError("Error uploading default bundle", err.Error())
 			return true
 		}
 
+		if respUpload.StatusCode() != 201 {
+			diagnostics.AddError("Error uploading default bundle", "Received unexpected response from API")
+			return true
+		}
+
 		draft.Locations = locations
 
-		bundle, err := e.clientAppUpload.AppBundle.Create(e.organizationId, draft.Sys.ID, "Default Terraform BundleId", upload.Sys.ID)
+		appBody := sdk.AppBundleDraft{
+			Comment: "Default Terraform Bundle",
+			Upload: sdk.AppBundleDraftUpload{
+				Sys: sdk.SystemPropertiesLink{
+					Type:     "Link",
+					LinkType: "AppUpload",
+					Id:       respUpload.JSON201.Sys.Id,
+				},
+			},
+		}
+
+		respBundle, err := e.client.CreateAppBundleWithResponse(
+			ctx, e.organizationId, appDefinitionId, appBody)
+
 		if err != nil {
 			diagnostics.AddError("Error creating app_bundle for app definition", err.Error())
 			return true
 		}
 
-		plan.ID = types.StringValue(draft.Sys.ID)
-		plan.BundleId = types.StringValue(bundle.Sys.ID)
+		if respBundle.JSON201 == nil {
+			diagnostics.AddError("Error creating app_bundle for app definition", "Received unexpected response from API")
+			return true
+		}
+
+		bundle := respBundle.JSON201
+
+		plan.ID = types.StringValue(appDefinitionId)
+		plan.BundleId = types.StringValue(bundle.Sys.Id)
 	}
 	return false
 }
@@ -294,32 +373,58 @@ func (e *appDefinitionResource) Update(ctx context.Context, request resource.Upd
 		}
 
 		draft := plan.Draft()
+		params := &sdk.UpdateAppDefinitionParams{
+			XContentfulVersion: appDefinition.Sys.Version,
+		}
 
-		if err = e.client.AppDefinitions().Upsert(ctx, draft); err != nil {
-			response.Diagnostics.AddError(
-				"Error updating app definition",
-				"Could not update app definition, unexpected error: "+err.Error(),
-			)
+		resp, err := e.client.UpdateAppDefinitionWithResponse(ctx, e.organizationId, plan.ID.ValueString(), params, *draft)
+		if err != nil {
+			response.Diagnostics.AddError("Error updating app_definition", err.Error())
 			return
 		}
+
+		if resp.JSON200 == nil {
+			response.Diagnostics.AddError("Error updating app_definition", "Received unexpected response from API")
+			return
+		}
+
+		plan.ID = types.StringValue(resp.JSON200.Sys.Id)
 	}
 
 	e.doRead(ctx, plan, &response.State, &response.Diagnostics)
 }
 
 func (e *appDefinitionResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
-	// Get current state
 	var state *AppDefinition
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 
-	if err := e.client.AppDefinitions().Delete(ctx, state.Draft()); err != nil {
+	current, err := e.getApp(ctx, state)
+	if err != nil {
 		response.Diagnostics.AddError(
-			"Error deleting app_definition definition",
-			"Could not delete app_definition definition, unexpected error: "+err.Error(),
+			"Error reading app_definition",
+			"Could not retrieve app_definition, unexpected error: "+err.Error(),
 		)
 		return
 	}
 
+	params := &sdk.DeleteAppDefinitionParams{
+		XContentfulVersion: current.Sys.Version,
+	}
+
+	resp, err := e.client.DeleteAppDefinitionWithResponse(ctx, e.organizationId, state.ID.ValueString(), params)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error deleting app_definition definition",
+			"Could not delete app_definition definition, unexpected error: "+err.Error())
+		return
+	}
+	if resp.StatusCode() != 204 {
+		response.Diagnostics.AddError(
+			"Error deleting app_definition",
+			"Could not delete app_definition, unexpected error: "+err.Error(),
+		)
+		return
+	}
 }
 
 func (e *appDefinitionResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -330,6 +435,15 @@ func (e *appDefinitionResource) ImportState(ctx context.Context, request resourc
 	e.doRead(ctx, futureState, &response.State, &response.Diagnostics)
 }
 
-func (e *appDefinitionResource) getApp(ctx context.Context, app *AppDefinition) (*model.AppDefinition, error) {
-	return e.client.AppDefinitions().Get(ctx, app.ID.ValueString())
+func (e *appDefinitionResource) getApp(ctx context.Context, app *AppDefinition) (*sdk.AppDefinition, error) {
+	resp, err := e.client.GetAppDefinitionWithResponse(ctx, e.organizationId, app.ID.ValueString())
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.JSON200 == nil {
+		return nil, fmt.Errorf("unexpected response from API")
+	}
+
+	return resp.JSON200, nil
 }

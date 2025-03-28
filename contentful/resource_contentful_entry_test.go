@@ -3,14 +3,14 @@ package contentful
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/labd/contentful-go/pkgs/model"
-	"github.com/labd/terraform-provider-contentful/internal/acctest"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/labd/terraform-provider-contentful/internal/acctest"
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 )
 
 func TestParseContentValue_String(t *testing.T) {
@@ -26,7 +26,7 @@ func TestParseContentValue_Json(t *testing.T) {
 func TestAccContentfulEntry_Basic(t *testing.T) {
 	//todo remove skip when entry is moved to new sdk style as content type already moved
 	t.Skip()
-	var entry model.Entry
+	var entry sdk.Entry
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -55,7 +55,7 @@ func TestAccContentfulEntry_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckContentfulEntryExists(n string, entry *model.Entry) resource.TestCheckFunc {
+func testAccCheckContentfulEntryExists(n string, entry *sdk.Entry) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -72,25 +72,28 @@ func testAccCheckContentfulEntryExists(n string, entry *model.Entry) resource.Te
 			return fmt.Errorf("no contenttype_id is set")
 		}
 
-		client := acctest.GetCMA()
-
-		contentfulEntry, err := client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).WithEnvironment("master").Entries().Get(context.Background(), rs.Primary.ID)
+		client := acctest.GetClient()
+		resp, err := client.GetEntryWithResponse(context.Background(), spaceID, "master", rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		*entry = *contentfulEntry
+		if resp.StatusCode() != 200 {
+			return fmt.Errorf("entry not found: %s", rs.Primary.ID)
+		}
+
+		*entry = *resp.JSON200
 
 		return nil
 	}
 }
 
-func testAccCheckContentfulEntryAttributes(entry *model.Entry, attrs map[string]interface{}) resource.TestCheckFunc {
+func testAccCheckContentfulEntryAttributes(entry *sdk.Entry, attrs map[string]interface{}) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		spaceIDCheck := attrs["space_id"].(string)
-		if entry.Sys.Space.Sys.ID != spaceIDCheck {
-			return fmt.Errorf("space id  does not match: %s, %s", entry.Sys.Space.Sys.ID, spaceIDCheck)
+		if entry.Sys.Space.Sys.Id != spaceIDCheck {
+			return fmt.Errorf("space id  does not match: %s, %s", entry.Sys.Space.Sys.Id, spaceIDCheck)
 		}
 
 		return nil
@@ -114,11 +117,13 @@ func testAccContentfulEntryDestroy(s *terraform.State) error {
 			return fmt.Errorf("no entry ID is set")
 		}
 
-		// sdk client
-		client := acctest.GetCMA()
+		client := acctest.GetClient()
+		resp, err := client.GetEntryWithResponse(context.Background(), spaceID, "master", rs.Primary.ID)
+		if err != nil {
+			return err
+		}
 
-		entry, _ := client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).WithEnvironment("master").Entries().Get(context.Background(), rs.Primary.ID)
-		if entry == nil {
+		if resp.StatusCode() == 404 {
 			return nil
 		}
 

@@ -6,7 +6,7 @@ import (
 
 var (
 	// Environment variables
-	spaceID  = os.Getenv("SPACE_ID")
+	spaceID  = os.Getenv("CONTENTFUL_SPACE_ID")
 	CMAToken = os.Getenv("CONTENTFUL_MANAGEMENT_TOKEN")
 	orgID    = os.Getenv("CONTENTFUL_ORGANIZATION_ID")
 

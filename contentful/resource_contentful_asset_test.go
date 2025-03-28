@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/labd/contentful-go/pkgs/model"
-	"github.com/labd/terraform-provider-contentful/internal/acctest"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	"github.com/labd/terraform-provider-contentful/internal/acctest"
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 )
 
 func TestAccContentfulAsset_Basic(t *testing.T) {
-	var asset model.Asset
+	var asset sdk.Asset
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -42,7 +42,7 @@ func TestAccContentfulAsset_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckContentfulAssetExists(n string, asset *model.Asset) resource.TestCheckFunc {
+func testAccCheckContentfulAssetExists(n string, asset *sdk.Asset) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -54,25 +54,29 @@ func testAccCheckContentfulAssetExists(n string, asset *model.Asset) resource.Te
 			return fmt.Errorf("no space_id is set")
 		}
 
-		client := acctest.GetCMA()
+		client := acctest.GetClient()
 
-		contentfulAsset, err := client.WithSpaceId(spaceID).WithEnvironment("master").Assets().Get(context.Background(), rs.Primary.ID)
+		resp, err := client.GetAssetWithResponse(context.Background(), spaceID, "master", rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		*asset = *contentfulAsset
+		if resp.StatusCode() != 200 {
+			return fmt.Errorf("asset not found: %s", rs.Primary.ID)
+		}
+
+		*asset = *resp.JSON200
 
 		return nil
 	}
 }
 
-func testAccCheckContentfulAssetAttributes(asset *model.Asset, attrs map[string]interface{}) resource.TestCheckFunc {
+func testAccCheckContentfulAssetAttributes(asset *sdk.Asset, attrs map[string]interface{}) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		spaceIDCheck := attrs["space_id"].(string)
-		if asset.Sys.Space.Sys.ID != spaceIDCheck {
-			return fmt.Errorf("space id  does not match: %s, %s", asset.Sys.Space.Sys.ID, spaceIDCheck)
+		if asset.Sys.Space.Sys.Id != spaceIDCheck {
+			return fmt.Errorf("space id  does not match: %s, %s", asset.Sys.Space.Sys.Id, spaceIDCheck)
 		}
 
 		return nil
@@ -97,10 +101,14 @@ func testAccContentfulAssetDestroy(s *terraform.State) error {
 		}
 
 		// sdk client
-		client := acctest.GetCMA()
+		client := acctest.GetClient()
 
-		asset, _ := client.WithSpaceId(spaceID).WithEnvironment("master").Assets().Get(context.Background(), rs.Primary.ID)
-		if asset == nil {
+		resp, err := client.GetAssetWithResponse(context.Background(), spaceID, "master", rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode() == 404 {
 			return nil
 		}
 

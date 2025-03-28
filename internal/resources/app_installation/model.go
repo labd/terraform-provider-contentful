@@ -2,11 +2,14 @@ package app_installation
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/elliotchance/pie/v2"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go/pkgs/model"
+
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
+	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
 // AppInstallation is the main resource schema data
@@ -19,38 +22,29 @@ type AppInstallation struct {
 	AcceptedTerms   []types.String       `tfsdk:"accepted_terms"`
 }
 
-func (a *AppInstallation) Draft() *model.AppInstallation {
-
-	app := &model.AppInstallation{}
+func (a *AppInstallation) Draft() *sdk.AppInstallationUpsert {
 
 	parameters := make(map[string]any)
-
 	a.Parameters.Unmarshal(&parameters)
 
-	if !a.AppDefinitionID.IsUnknown() || !a.AppDefinitionID.IsNull() {
-
-		appDefinitionSys := struct {
-			Sys model.BaseSys
-		}{
-			Sys: model.BaseSys{
-				ID: a.AppDefinitionID.ValueString(),
-			},
-		}
-
-		app.Sys = &model.AppInstallationSys{AppDefinition: (*struct {
-			Sys model.BaseSys `json:"sys,omitempty"`
-		})(&appDefinitionSys)}
+	app := &sdk.AppInstallationUpsert{
+		Parameters: parameters,
 	}
-
-	app.Terms = pie.Map(a.AcceptedTerms, func(t types.String) string {
-		return t.ValueString()
-	})
-	app.Parameters = parameters
 
 	return app
 }
 
-func (a *AppInstallation) Equal(n *model.AppInstallation) bool {
+func (a *AppInstallation) AcceptedTermsHeader() *string {
+	terms := pie.Map(a.AcceptedTerms, func(t types.String) string {
+		return t.ValueString()
+	})
+	if len(terms) == 0 {
+		return nil
+	}
+	return utils.Pointer(strings.Join(terms, ", "))
+}
+
+func (a *AppInstallation) Equal(n *sdk.AppInstallation) bool {
 
 	data, _ := json.Marshal(n.Parameters)
 
@@ -61,9 +55,9 @@ func (a *AppInstallation) Equal(n *model.AppInstallation) bool {
 	return true
 }
 
-func (a *AppInstallation) Import(n *model.AppInstallation) {
-	a.AppDefinitionID = types.StringValue(n.Sys.AppDefinition.Sys.ID)
-	a.ID = types.StringValue(n.Sys.AppDefinition.Sys.ID)
+func (a *AppInstallation) Import(n *sdk.AppInstallation) {
+	a.AppDefinitionID = types.StringValue(n.Sys.AppDefinition.Sys.Id)
+	a.ID = types.StringValue(n.Sys.AppDefinition.Sys.Id)
 	data, _ := json.Marshal(n.Parameters)
 	a.Parameters = jsontypes.NewNormalizedValue(string(data))
 }

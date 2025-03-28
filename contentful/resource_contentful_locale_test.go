@@ -2,21 +2,18 @@ package contentful
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"os"
 	"testing"
-
-	"github.com/labd/contentful-go/pkgs/common"
-	"github.com/labd/contentful-go/pkgs/model"
-	"github.com/labd/terraform-provider-contentful/internal/acctest"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	"github.com/labd/terraform-provider-contentful/internal/acctest"
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 )
 
 func TestAccContentfulLocales_Basic(t *testing.T) {
-	var locale model.Locale
+	var locale sdk.Locale
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -57,7 +54,7 @@ func TestAccContentfulLocales_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckContentfulLocaleExists(n string, locale *model.Locale) resource.TestCheckFunc {
+func testAccCheckContentfulLocaleExists(n string, locale *sdk.Locale) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -74,21 +71,22 @@ func testAccCheckContentfulLocaleExists(n string, locale *model.Locale) resource
 			return fmt.Errorf("no locale ID is set")
 		}
 
-		client := acctest.GetCMA()
-
-		contentfulLocale, err := client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).WithEnvironment("master").Locales().Get(context.Background(), localeID)
-
+		client := acctest.GetClient()
+		resp, err := client.GetLocaleWithResponse(context.Background(), spaceID, "master", localeID)
 		if err != nil {
 			return err
 		}
+		if resp.StatusCode() != 200 {
+			return fmt.Errorf("locale not found: %s", localeID)
+		}
 
-		*locale = *contentfulLocale
+		*locale = *resp.JSON200
 
 		return nil
 	}
 }
 
-func testAccCheckContentfulLocaleAttributes(locale *model.Locale, attrs map[string]interface{}) resource.TestCheckFunc {
+func testAccCheckContentfulLocaleAttributes(locale *sdk.Locale, attrs map[string]interface{}) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		name := attrs["name"].(string)
 		if locale.Name != name {
@@ -111,13 +109,13 @@ func testAccCheckContentfulLocaleAttributes(locale *model.Locale, attrs map[stri
 		}
 
 		isCDA := attrs["cda"].(bool)
-		if locale.CDA != isCDA {
-			return fmt.Errorf("locale cda does not match: %t, %t", locale.CDA, isCDA)
+		if locale.ContentDeliveryApi != isCDA {
+			return fmt.Errorf("locale cda does not match: %t, %t", locale.ContentDeliveryApi, isCDA)
 		}
 
 		isCMA := attrs["cma"].(bool)
-		if locale.CMA != isCMA {
-			return fmt.Errorf("locale cma does not match: %t, %t", locale.CMA, isCMA)
+		if locale.ContentManagementApi != isCMA {
+			return fmt.Errorf("locale cma does not match: %t, %t", locale.ContentManagementApi, isCMA)
 		}
 
 		return nil
@@ -140,12 +138,12 @@ func testAccContentfulLocaleDestroy(s *terraform.State) error {
 			return fmt.Errorf("no locale ID is set")
 		}
 
-		client := acctest.GetCMA()
-
-		_, err := client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).WithEnvironment("master").Locales().Get(context.Background(), localeID)
-
-		var notFoundError common.NotFoundError
-		if errors.As(err, &notFoundError) {
+		client := acctest.GetClient()
+		resp, err := client.GetLocaleWithResponse(context.Background(), spaceID, "master", localeID)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode() == 404 {
 			return nil
 		}
 

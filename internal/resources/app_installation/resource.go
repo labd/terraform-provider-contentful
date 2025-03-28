@@ -3,7 +3,6 @@ package app_installation
 import (
 	"context"
 	_ "embed"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -15,9 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go/pkgs/common"
-	"github.com/labd/contentful-go/pkgs/model"
-	"github.com/labd/contentful-go/service/cma"
+
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
@@ -34,7 +32,7 @@ func NewAppInstallationResource() resource.Resource {
 
 // appInstallationResource is the resource implementation.
 type appInstallationResource struct {
-	client         cma.SpaceIdClientBuilder
+	client         *sdk.ClientWithResponses
 	organizationId string
 }
 
@@ -89,8 +87,7 @@ func (e *appInstallationResource) Configure(_ context.Context, request resource.
 	}
 
 	data := request.ProviderData.(utils.ProviderData)
-	e.client = data.CMAClient
-	e.organizationId = data.OrganizationId
+	e.client = data.Client
 
 }
 
@@ -103,15 +100,19 @@ func (e *appInstallationResource) Create(ctx context.Context, request resource.C
 
 	draft := plan.Draft()
 
-	if err := e.client.WithSpaceId(plan.SpaceId.ValueString()).WithEnvironment(plan.Environment.ValueString()).AppInstallations().Upsert(ctx, draft); err != nil {
-		var errorResponse common.ErrorResponse
-		if errors.As(err, &errorResponse) {
-			if errorResponse.Error() == "Forbidden" {
-				response.Diagnostics.AddError("Error creating app_installation", fmt.Sprintf("%s: %s", errorResponse.Error(), errorResponse.Details.Reasons))
-			}
-		}
+	params := &sdk.UpsertAppInstallationParams{
+		XContentfulMarketplace: plan.AcceptedTermsHeader(),
+	}
+	resp, err := e.client.UpsertAppInstallationWithResponse(
+		ctx, plan.SpaceId.ValueString(), plan.Environment.ValueString(), plan.AppDefinitionID.ValueString(), params, *draft)
 
+	if err != nil {
 		response.Diagnostics.AddError("Error creating app_installation", err.Error())
+		return
+	}
+
+	if resp.StatusCode() != 200 {
+		response.Diagnostics.AddError("Error creating app_installation", fmt.Sprintf("Unexpected status code: %d", resp.StatusCode()))
 		return
 	}
 
@@ -186,11 +187,19 @@ func (e *appInstallationResource) Update(ctx context.Context, request resource.U
 
 		draft := plan.Draft()
 
-		if err = e.client.WithSpaceId(state.SpaceId.ValueString()).WithEnvironment(state.Environment.ValueString()).AppInstallations().Upsert(ctx, draft); err != nil {
-			response.Diagnostics.AddError(
-				"Error updating app installation",
-				"Could not update app installation, unexpected error: "+err.Error(),
-			)
+		params := &sdk.UpsertAppInstallationParams{
+			XContentfulMarketplace: plan.AcceptedTermsHeader(),
+		}
+		resp, err := e.client.UpsertAppInstallationWithResponse(
+			ctx, plan.SpaceId.ValueString(), plan.Environment.ValueString(), plan.AppDefinitionID.ValueString(), params, *draft)
+
+		if err != nil {
+			response.Diagnostics.AddError("Error updating app_installation", err.Error())
+			return
+		}
+
+		if resp.StatusCode() != 201 {
+			response.Diagnostics.AddError("Error updating app_installation", fmt.Sprintf("Unexpected status code: %d", resp.StatusCode()))
 			return
 		}
 	}
@@ -203,7 +212,10 @@ func (e *appInstallationResource) Delete(ctx context.Context, request resource.D
 	var state *AppInstallation
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 
-	if err := e.client.WithSpaceId(state.SpaceId.ValueString()).WithEnvironment(state.Environment.ValueString()).AppInstallations().Delete(ctx, state.Draft()); err != nil {
+	resp, err := e.client.DeleteAppInstallationWithResponse(
+		ctx, state.SpaceId.ValueString(), state.Environment.ValueString(), state.ID.ValueString(), nil)
+
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting app_installation",
 			"Could not delete app_installation, unexpected error: "+err.Error(),
@@ -211,6 +223,13 @@ func (e *appInstallationResource) Delete(ctx context.Context, request resource.D
 		return
 	}
 
+	if resp.StatusCode() != 204 {
+		response.Diagnostics.AddError(
+			"Error deleting app_installation",
+			fmt.Sprintf("Unexpected status code: %d", resp.StatusCode()),
+		)
+		return
+	}
 }
 
 func (e *appInstallationResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -233,6 +252,17 @@ func (e *appInstallationResource) ImportState(ctx context.Context, request resou
 	e.doRead(ctx, futureState, &response.State, &response.Diagnostics)
 }
 
-func (e *appInstallationResource) getAppInstallation(ctx context.Context, app *AppInstallation) (*model.AppInstallation, error) {
-	return e.client.WithSpaceId(app.SpaceId.ValueString()).WithEnvironment(app.Environment.ValueString()).AppInstallations().Get(ctx, app.AppDefinitionID.ValueString())
+func (e *appInstallationResource) getAppInstallation(ctx context.Context, app *AppInstallation) (*sdk.AppInstallation, error) {
+
+	resp, err := e.client.GetAppInstallationWithResponse(
+		ctx, app.SpaceId.ValueString(), app.Environment.ValueString(), app.ID.ValueString())
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("Unexpected status code: %d", resp.StatusCode())
+	}
+
+	return resp.JSON200, nil
 }

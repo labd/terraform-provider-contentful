@@ -1,5 +1,9 @@
 terraform-provider-contentful
 .envrc
+.env
+.terraform*
+NOTES.md
+main.tf
 
 *.backup
 /dist/*

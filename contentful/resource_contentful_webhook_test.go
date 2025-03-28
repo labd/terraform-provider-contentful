@@ -1,19 +1,19 @@
 package contentful
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
-	"github.com/labd/contentful-go/pkgs/common"
-	"github.com/labd/terraform-provider-contentful/internal/acctest"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	contentful "github.com/labd/contentful-go"
+
+	"github.com/labd/terraform-provider-contentful/internal/acctest"
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 )
 
 func TestAccContentfulWebhook_Basic(t *testing.T) {
-	var webhook contentful.Webhook
+	var webhook sdk.Webhook
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -48,7 +48,7 @@ func TestAccContentfulWebhook_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckContentfulWebhookExists(n string, webhook *contentful.Webhook) resource.TestCheckFunc {
+func testAccCheckContentfulWebhookExists(n string, webhook *sdk.Webhook) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -67,19 +67,22 @@ func testAccCheckContentfulWebhookExists(n string, webhook *contentful.Webhook) 
 		}
 
 		client := acctest.GetClient()
-
-		contentfulWebhook, err := client.Webhooks.Get(spaceID, rs.Primary.ID)
+		resp, err := client.GetWebhookWithResponse(context.Background(), rs.Primary.Attributes["space_id"], rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		*webhook = *contentfulWebhook
+		if resp.StatusCode() != 200 {
+			return fmt.Errorf("webhook not found: %s", rs.Primary.ID)
+		}
+
+		*webhook = *resp.JSON200
 
 		return nil
 	}
 }
 
-func testAccCheckContentfulWebhookAttributes(webhook *contentful.Webhook, attrs map[string]interface{}) resource.TestCheckFunc {
+func testAccCheckContentfulWebhookAttributes(webhook *sdk.Webhook, attrs map[string]interface{}) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		name := attrs["name"].(string)
 		if webhook.Name != name {
@@ -87,8 +90,8 @@ func testAccCheckContentfulWebhookAttributes(webhook *contentful.Webhook, attrs 
 		}
 
 		url := attrs["url"].(string)
-		if webhook.URL != url {
-			return fmt.Errorf("webhook url does not match: %s, %s", webhook.URL, url)
+		if webhook.Url != url {
+			return fmt.Errorf("webhook url does not match: %s, %s", webhook.Url, url)
 		}
 
 		/* topics := attrs["topics"].([]string)
@@ -96,8 +99,8 @@ func testAccCheckContentfulWebhookAttributes(webhook *contentful.Webhook, attrs 
 		headers := attrs["headers"].(map[string]string) */
 
 		httpBasicAuthUsername := attrs["http_basic_auth_username"].(string)
-		if webhook.HTTPBasicUsername != httpBasicAuthUsername {
-			return fmt.Errorf("webhook http_basic_auth_username does not match: %s, %s", webhook.HTTPBasicUsername, httpBasicAuthUsername)
+		if *webhook.HttpBasicUsername != httpBasicAuthUsername {
+			return fmt.Errorf("webhook http_basic_auth_username does not match: %s, %s", *webhook.HttpBasicUsername, httpBasicAuthUsername)
 		}
 
 		return nil
@@ -105,6 +108,7 @@ func testAccCheckContentfulWebhookAttributes(webhook *contentful.Webhook, attrs 
 }
 
 func testAccContentfulWebhookDestroy(s *terraform.State) error {
+	client := acctest.GetClient()
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "contentful_webhook" {
 			continue
@@ -122,14 +126,16 @@ func testAccContentfulWebhookDestroy(s *terraform.State) error {
 		}
 
 		// sdk client
-		client := acctest.GetClient()
+		resp, err := client.GetWebhookWithResponse(context.Background(), rs.Primary.Attributes["space_id"], rs.Primary.ID)
+		if err != nil {
+			return err
+		}
 
-		_, err := client.Webhooks.Get(spaceID, rs.Primary.ID)
-		if _, ok := err.(common.NotFoundError); ok {
+		if resp.StatusCode() == 404 {
 			return nil
 		}
 
-		return fmt.Errorf("webhook still exists with id: %s", rs.Primary.ID)
+		return fmt.Errorf("webhook still exists with id: %s (%d)", rs.Primary.ID, resp.StatusCode())
 	}
 
 	return nil

@@ -2,7 +2,6 @@ package app_installation_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -11,15 +10,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"github.com/labd/contentful-go/pkgs/common"
-	"github.com/labd/contentful-go/pkgs/model"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/labd/terraform-provider-contentful/internal/acctest"
 	"github.com/labd/terraform-provider-contentful/internal/provider"
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
-	"github.com/stretchr/testify/assert"
 )
 
-type assertFunc func(*testing.T, *model.AppInstallation)
+type assertFunc func(*testing.T, *sdk.AppInstallation)
 
 func TestAppInstallation_Create(t *testing.T) {
 	resourceName := "contentful_app_installation.acctest_app_installation"
@@ -38,10 +37,10 @@ func TestAppInstallation_Create(t *testing.T) {
 				Config: testAppInstallation("acctest_app_installation", os.Getenv("CONTENTFUL_SPACE_ID"), "master", appInstallationId),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "app_definition_id", appInstallationId),
-					testAccCheckContentfulAppInstallationExists(t, resourceName, func(t *testing.T, appInstallation *model.AppInstallation) {
+					testAccCheckContentfulAppInstallationExists(t, resourceName, func(t *testing.T, appInstallation *sdk.AppInstallation) {
 						assert.IsType(t, map[string]any{}, appInstallation.Parameters)
 						assert.Len(t, appInstallation.Parameters, 0)
-						assert.EqualValues(t, appInstallationId, appInstallation.Sys.AppDefinition.Sys.ID)
+						assert.EqualValues(t, appInstallationId, appInstallation.Sys.AppDefinition.Sys.Id)
 					}),
 				),
 			},
@@ -49,11 +48,11 @@ func TestAppInstallation_Create(t *testing.T) {
 				Config: testAppInstallationWithParameter("acctest_app_installation_2", os.Getenv("CONTENTFUL_SPACE_ID"), "master", otherId),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("contentful_app_installation.acctest_app_installation_2", "app_definition_id", otherId),
-					testAccCheckContentfulAppInstallationExists(t, "contentful_app_installation.acctest_app_installation_2", func(t *testing.T, appInstallation *model.AppInstallation) {
+					testAccCheckContentfulAppInstallationExists(t, "contentful_app_installation.acctest_app_installation_2", func(t *testing.T, appInstallation *sdk.AppInstallation) {
 						assert.IsType(t, map[string]any{}, appInstallation.Parameters)
 						assert.Len(t, appInstallation.Parameters, 1)
 						assert.EqualValues(t, "not-working-ever", appInstallation.Parameters["cpaToken"])
-						assert.EqualValues(t, otherId, appInstallation.Sys.AppDefinition.Sys.ID)
+						assert.EqualValues(t, otherId, appInstallation.Sys.AppDefinition.Sys.Id)
 					}),
 				),
 			},
@@ -61,7 +60,7 @@ func TestAppInstallation_Create(t *testing.T) {
 	})
 }
 
-func getAppInstallationFromState(s *terraform.State, resourceName string) (*model.AppInstallation, error) {
+func getAppInstallationFromState(s *terraform.State, resourceName string) (*sdk.AppInstallation, error) {
 	rs, ok := s.RootModule().Resources[resourceName]
 	if !ok {
 		return nil, fmt.Errorf("app installation not found")
@@ -71,9 +70,17 @@ func getAppInstallationFromState(s *terraform.State, resourceName string) (*mode
 		return nil, fmt.Errorf("no app installation ID found")
 	}
 
-	client := acctest.GetCMA()
+	client := acctest.GetClient()
+	resp, err := client.GetAppInstallationWithResponse(context.Background(), os.Getenv("CONTENTFUL_SPACE_ID"), "master", rs.Primary.ID)
+	if err != nil {
+		return nil, err
+	}
 
-	return client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).WithEnvironment("master").AppInstallations().Get(context.Background(), rs.Primary.ID)
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("app installation not found: %s", rs.Primary.ID)
+	}
+
+	return resp.JSON200, nil
 }
 
 func testAccCheckContentfulAppInstallationExists(t *testing.T, resourceName string, assertFunc assertFunc) resource.TestCheckFunc {
@@ -89,16 +96,19 @@ func testAccCheckContentfulAppInstallationExists(t *testing.T, resourceName stri
 }
 
 func testAccCheckContentfulAppInstallationDestroy(s *terraform.State) error {
-	client := acctest.GetCMA()
+	client := acctest.GetClient()
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "contentful_app_installation" {
 			continue
 		}
 
-		_, err := client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).WithEnvironment("master").AppInstallations().Get(context.Background(), rs.Primary.ID)
-		var notFoundError common.NotFoundError
-		if errors.As(err, &notFoundError) {
+		resp, err := client.GetAppInstallationWithResponse(context.Background(), os.Getenv("CONTENTFUL_SPACE_ID"), "master", rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode() == 404 {
 			return nil
 		}
 

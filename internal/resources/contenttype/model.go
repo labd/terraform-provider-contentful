@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"github.com/elliotchance/pie/v2"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go"
-	"github.com/labd/contentful-go/pkgs/model"
+
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
@@ -56,7 +57,7 @@ type DefaultValue struct {
 	String types.Map `tfsdk:"string"`
 }
 
-func (d *DefaultValue) Draft() map[string]any {
+func (d *DefaultValue) Draft() *map[string]any {
 	var defaultValues = map[string]any{}
 
 	if !d.String.IsNull() && !d.String.IsUnknown() {
@@ -73,7 +74,11 @@ func (d *DefaultValue) Draft() map[string]any {
 		}
 	}
 
-	return defaultValues
+	if len(defaultValues) == 0 {
+		return nil
+	}
+
+	return &defaultValues
 }
 
 type Control struct {
@@ -96,96 +101,89 @@ type Validation struct {
 	Message           types.String   `tfsdk:"message"`
 }
 
-func (v Validation) Draft() model.FieldValidation {
+func (v Validation) Draft() (*sdk.FieldValidation, error) {
+
+	base := &sdk.FieldValidation{
+		Message: v.Message.ValueStringPointer(),
+	}
 
 	if !v.Unique.IsUnknown() && !v.Unique.IsNull() {
-		return model.FieldValidationUnique{
-			Unique: v.Unique.ValueBool(),
-		}
+		base.Unique = v.Unique.ValueBoolPointer()
+		return base, nil
 	}
 
 	if v.Size != nil {
-		return model.FieldValidationSize{
-			Size: &model.MinMax{
-				Min: v.Size.Min.ValueFloat64Pointer(),
-				Max: v.Size.Max.ValueFloat64Pointer(),
-			},
-			ErrorMessage: v.Message.ValueStringPointer(),
+		base.Size = &sdk.RangeMinMax{
+			Min: v.Size.Min.ValueFloat64Pointer(),
+			Max: v.Size.Max.ValueFloat64Pointer(),
 		}
+		return base, nil
 	}
 
 	if v.Range != nil {
-		return model.FieldValidationRange{
-			Range: &model.MinMax{
-				Min: v.Range.Min.ValueFloat64Pointer(),
-				Max: v.Range.Max.ValueFloat64Pointer(),
-			},
-			ErrorMessage: v.Message.ValueString(),
+		base.Range = &sdk.RangeMinMax{
+			Min: v.Range.Min.ValueFloat64Pointer(),
+			Max: v.Range.Max.ValueFloat64Pointer(),
 		}
+		return base, nil
 	}
 
 	if v.AssetFileSize != nil {
-		return model.FieldValidationFileSize{
-			Size: &model.MinMax{
-				Min: v.AssetFileSize.Min.ValueFloat64Pointer(),
-				Max: v.AssetFileSize.Max.ValueFloat64Pointer(),
-			},
+		base.AssetFileSize = &sdk.RangeMinMax{
+			Min: v.AssetFileSize.Min.ValueFloat64Pointer(),
+			Max: v.AssetFileSize.Max.ValueFloat64Pointer(),
 		}
+		return base, nil
 	}
 
 	if v.Regexp != nil {
-		return model.FieldValidationRegex{
-			Regex: &model.Regex{
-				Pattern: v.Regexp.Pattern.ValueString(),
-			},
-			ErrorMessage: v.Message.ValueStringPointer(),
+		base.Regexp = &sdk.RegexValidationValue{
+			Pattern: v.Regexp.Pattern.ValueString(),
 		}
+		return base, nil
 	}
 
 	if len(v.LinkContentType) > 0 {
-		return model.FieldValidationLink{
-			LinkContentType: pie.Map(v.LinkContentType, func(t types.String) string {
-				return t.ValueString()
-			}),
-		}
+		value := pie.Map(v.LinkContentType, func(t types.String) string {
+			return t.ValueString()
+		})
+		base.LinkContentType = &value
+		return base, nil
 	}
 
 	if len(v.LinkMimetypeGroup) > 0 {
-		return model.FieldValidationMimeType{
-			MimeTypes: pie.Map(v.LinkMimetypeGroup, func(t types.String) string {
-				return t.ValueString()
-			}),
-			ErrorMessage: v.Message.ValueStringPointer(),
-		}
+		value := pie.Map(v.LinkMimetypeGroup, func(t types.String) string {
+			return t.ValueString()
+		})
+		base.LinkMimetypeGroup = &value
+		return base, nil
 	}
 
 	if len(v.In) > 0 {
-		return model.FieldValidationPredefinedValues{
-			In: pie.Map(v.In, func(t types.String) any {
-				return t.ValueString()
-			}),
-		}
+		value := pie.Map(v.In, func(t types.String) string {
+			return t.ValueString()
+		})
+		base.In = &value
+		return base, nil
 	}
 
 	if len(v.EnabledMarks) > 0 {
-		return model.FieldValidationEnabledMarks{
-			Marks: pie.Map(v.EnabledMarks, func(t types.String) string {
-				return t.ValueString()
-			}),
-			ErrorMessage: v.Message.ValueStringPointer(),
-		}
+		value := pie.Map(v.EnabledMarks, func(t types.String) string {
+			return t.ValueString()
+		})
+		base.EnabledMarks = &value
+		return base, nil
 	}
 
 	if len(v.EnabledNodeTypes) > 0 {
-		return model.FieldValidationEnabledNodeTypes{
-			NodeTypes: pie.Map(v.EnabledNodeTypes, func(t types.String) string {
-				return t.ValueString()
-			}),
-			ErrorMessage: v.Message.ValueStringPointer(),
-		}
+		value := pie.Map(v.EnabledNodeTypes, func(t types.String) string {
+			return t.ValueString()
+		})
+		base.EnabledNodeTypes = &value
+		return base, nil
 	}
 
-	return nil
+	return nil, fmt.Errorf("unsupported validation used, %s. Please implement", reflect.TypeOf(v).String())
 }
 
 type Size struct {
@@ -197,13 +195,13 @@ type Regexp struct {
 	Pattern types.String `tfsdk:"pattern"`
 }
 
-func (f *Field) Equal(n *model.Field) bool {
+func (f *Field) Equal(n sdk.Field) bool {
 
-	if n.Type != f.Type.ValueString() {
+	if string(n.Type) != f.Type.ValueString() {
 		return false
 	}
 
-	if n.ID != f.Id.ValueString() {
+	if n.Id != f.Id.ValueString() {
 		return false
 	}
 
@@ -211,7 +209,11 @@ func (f *Field) Equal(n *model.Field) bool {
 		return false
 	}
 
-	if n.LinkType != f.LinkType.ValueString() {
+	if n.LinkType != nil && string(*n.LinkType) != f.LinkType.ValueString() {
+		return false
+	}
+
+	if n.LinkType == nil && !f.LinkType.IsNull() {
 		return false
 	}
 
@@ -219,11 +221,11 @@ func (f *Field) Equal(n *model.Field) bool {
 		return false
 	}
 
-	if n.Omitted != f.Omitted.ValueBool() {
+	if n.Omitted != f.Omitted.ValueBoolPointer() {
 		return false
 	}
 
-	if n.Disabled != f.Disabled.ValueBool() {
+	if n.Disabled != f.Disabled.ValueBoolPointer() {
 		return false
 	}
 
@@ -239,19 +241,8 @@ func (f *Field) Equal(n *model.Field) bool {
 		return false
 	}
 
-	if len(f.Validations) != len(n.Validations) {
+	if !compareValidations(f.Validations, n.Validations) {
 		return false
-	}
-
-	for idx, validation := range pie.Map(f.Validations, func(t Validation) model.FieldValidation {
-		return t.Draft()
-	}) {
-		cfVal := n.Validations[idx]
-
-		if !reflect.DeepEqual(validation, cfVal) {
-			return false
-		}
-
 	}
 
 	if f.DefaultValue != nil && !reflect.DeepEqual(f.DefaultValue.Draft(), n.DefaultValue) {
@@ -261,26 +252,41 @@ func (f *Field) Equal(n *model.Field) bool {
 	return true
 }
 
-func (f *Field) ToNative() (*model.Field, error) {
+func createValidations(validations []Validation) ([]sdk.FieldValidation, error) {
+	var contentfulValidations []sdk.FieldValidation
+	for _, validation := range validations {
+		value, err := validation.Draft()
+		if err != nil {
+			return nil, err
+		}
+		contentfulValidations = append(contentfulValidations, *value)
+	}
+	return contentfulValidations, nil
+}
 
-	contentfulField := &model.Field{
-		ID:        f.Id.ValueString(),
-		Name:      f.Name.ValueString(),
-		Type:      f.Type.ValueString(),
-		Localized: f.Localized.ValueBool(),
-		Required:  f.Required.ValueBool(),
-		Disabled:  f.Disabled.ValueBool(),
-		Omitted:   f.Omitted.ValueBool(),
-		Validations: pie.Map(f.Validations, func(t Validation) model.FieldValidation {
-			return t.Draft()
-		}),
+func (f *Field) ToNative() (*sdk.Field, error) {
+
+	validations, err := createValidations(f.Validations)
+	if err != nil {
+		return nil, err
+	}
+
+	contentfulField := &sdk.Field{
+		Id:          f.Id.ValueString(),
+		Name:        f.Name.ValueString(),
+		Type:        sdk.FieldType(f.Type.ValueString()),
+		Localized:   f.Localized.ValueBool(),
+		Required:    f.Required.ValueBool(),
+		Disabled:    f.Disabled.ValueBoolPointer(),
+		Omitted:     f.Omitted.ValueBoolPointer(),
+		Validations: &validations,
 	}
 
 	if !f.LinkType.IsNull() && !f.LinkType.IsUnknown() {
-		contentfulField.LinkType = f.LinkType.ValueString()
+		contentfulField.LinkType = utils.Pointer(sdk.FieldLinkType(f.LinkType.ValueString()))
 	}
 
-	if contentfulField.Type == model.FieldTypeArray {
+	if contentfulField.Type == sdk.FieldTypeArray {
 		items, errItem := f.Items.ToNative()
 
 		if errItem != nil {
@@ -297,14 +303,21 @@ func (f *Field) ToNative() (*model.Field, error) {
 	return contentfulField, nil
 }
 
-func getTypeOfMap(mapValues map[string]any) (*string, error) {
-	for _, v := range mapValues {
+func getTypeOfMap(mapValues *map[string]any) (*string, error) {
+	if mapValues == nil {
+		return nil, nil
+	}
+
+	for _, v := range *mapValues {
 		switch c := v.(type) {
 		case string:
 			t := "string"
 			return &t, nil
 		case bool:
 			t := "bool"
+			return &t, nil
+		case float64:
+			t := "float64"
 			return &t, nil
 		default:
 			return nil, fmt.Errorf("The default type %T is not supported by the provider", c)
@@ -314,18 +327,22 @@ func getTypeOfMap(mapValues map[string]any) (*string, error) {
 	return nil, nil
 }
 
-func (f *Field) Import(n *model.Field, c []contentful.Controls) error {
-	f.Id = types.StringValue(n.ID)
+func (f *Field) Import(n sdk.Field, c []sdk.EditorInterfaceControl) error {
+	f.Id = types.StringValue(n.Id)
 	f.Name = types.StringValue(n.Name)
-	f.Type = types.StringValue(n.Type)
-	f.LinkType = utils.FromOptionalString(n.LinkType)
+	f.Type = types.StringValue(string(n.Type))
 	f.Required = types.BoolValue(n.Required)
-	f.Omitted = types.BoolValue(n.Omitted)
+	f.Omitted = types.BoolPointerValue(n.Omitted)
 	f.Localized = types.BoolValue(n.Localized)
-	f.Disabled = types.BoolValue(n.Disabled)
+	f.Disabled = types.BoolPointerValue(n.Disabled)
+
+	if n.LinkType == nil {
+		f.LinkType = types.StringNull()
+	} else {
+		f.LinkType = types.StringValue(string(*n.LinkType))
+	}
 
 	defaultValueType, err := getTypeOfMap(n.DefaultValue)
-
 	if err != nil {
 		return err
 	}
@@ -337,11 +354,15 @@ func (f *Field) Import(n *model.Field, c []contentful.Controls) error {
 			String: types.MapNull(types.StringType),
 		}
 
+		if n.DefaultValue == nil {
+			return fmt.Errorf("default value is nil")
+		}
+
 		switch *defaultValueType {
 		case "string":
 			stringMap := map[string]attr.Value{}
 
-			for k, v := range n.DefaultValue {
+			for k, v := range *n.DefaultValue {
 				stringMap[k] = types.StringValue(v.(string))
 			}
 
@@ -349,7 +370,7 @@ func (f *Field) Import(n *model.Field, c []contentful.Controls) error {
 		case "bool":
 			boolMap := map[string]attr.Value{}
 
-			for k, v := range n.DefaultValue {
+			for k, v := range *n.DefaultValue {
 				boolMap[k] = types.BoolValue(v.(bool))
 			}
 
@@ -366,26 +387,52 @@ func (f *Field) Import(n *model.Field, c []contentful.Controls) error {
 
 	f.Validations = validations
 
-	if n.Type == model.FieldTypeArray {
+	if n.Type == sdk.FieldTypeArray {
 
-		itemValidations, err := getValidations(n.Items.Validations)
-
+		itemType, err := n.Items.Discriminator()
 		if err != nil {
 			return err
 		}
 
-		f.Items = &Items{
-			Type:        types.StringValue(n.Items.Type),
-			LinkType:    types.StringPointerValue(n.Items.LinkType),
-			Validations: itemValidations,
+		if itemType == "FieldItemSymbol" {
+			symbolItem, err := n.Items.AsFieldItemSymbol()
+			if err != nil {
+				return err
+			}
+
+			itemValidations, err := getValidations(symbolItem.Validations)
+			if err != nil {
+				return err
+			}
+
+			f.Items = &Items{
+				Type:        types.StringValue(itemType),
+				Validations: itemValidations,
+			}
+		} else {
+			linkItem, err := n.Items.AsFieldItemLink()
+			if err != nil {
+				return err
+			}
+
+			itemValidations, err := getValidations(linkItem.Validations)
+			if err != nil {
+				return err
+			}
+
+			f.Items = &Items{
+				Type:        types.StringValue(itemType),
+				LinkType:    types.StringValue(string(linkItem.LinkType)),
+				Validations: itemValidations,
+			}
 		}
 	}
 
-	idx := pie.FindFirstUsing(c, func(control contentful.Controls) bool {
-		return n.ID == control.FieldID
+	idx := pie.FindFirstUsing(c, func(control sdk.EditorInterfaceControl) bool {
+		return n.Id == control.FieldId
 	})
 
-	if idx != -1 && c[idx].WidgetID != nil {
+	if idx != -1 && c[idx].WidgetId != nil {
 
 		var settings *Settings
 
@@ -395,9 +442,14 @@ func (f *Field) Import(n *model.Field, c []contentful.Controls) error {
 			settings.Import(c[idx].Settings)
 		}
 
+		var namespace *string = nil
+		if c[idx].WidgetNamespace != nil {
+			namespace = utils.Pointer(string(*c[idx].WidgetNamespace))
+		}
+
 		f.Control = &Control{
-			WidgetId:        types.StringPointerValue(c[idx].WidgetID),
-			WidgetNamespace: types.StringPointerValue(c[idx].WidgetNameSpace),
+			WidgetId:        types.StringPointerValue(c[idx].WidgetId),
+			WidgetNamespace: types.StringPointerValue(namespace),
 			Settings:        settings,
 		}
 	}
@@ -416,26 +468,36 @@ type Settings struct {
 	TrackingFieldId types.String `tfsdk:"tracking_field_id"`
 }
 
-func (s *Settings) Import(settings *contentful.Settings) {
+func (s *Settings) Import(settings *sdk.EditorInterfaceSettings) {
+	if settings.Stars != nil {
+		numStars, err := strconv.ParseInt(*settings.Stars, 10, 64)
+		if err != nil {
+			numStars = 0
+		}
+		s.Stars = types.Int64Value(numStars)
+	}
+
 	s.HelpText = types.StringPointerValue(settings.HelpText)
 	s.TrueLabel = types.StringPointerValue(settings.TrueLabel)
 	s.FalseLabel = types.StringPointerValue(settings.FalseLabel)
-	s.Stars = types.Int64PointerValue(settings.Stars)
 	s.Format = types.StringPointerValue(settings.Format)
-	s.TimeFormat = types.StringPointerValue(settings.AMPM)
+	s.TimeFormat = types.StringPointerValue(settings.Ampm)
 	s.BulkEditing = types.BoolPointerValue(settings.BulkEditing)
 	s.TrackingFieldId = types.StringPointerValue(settings.TrackingFieldId)
 }
 
-func (s *Settings) Draft() *contentful.Settings {
-	settings := &contentful.Settings{}
+func (s *Settings) Draft() *sdk.EditorInterfaceSettings {
+	settings := &sdk.EditorInterfaceSettings{}
+
+	if !s.Stars.IsNull() && !s.Stars.IsUnknown() {
+		settings.Stars = utils.Pointer(strconv.FormatInt(s.Stars.ValueInt64(), 10))
+	}
 
 	settings.HelpText = s.HelpText.ValueStringPointer()
 	settings.TrueLabel = s.TrueLabel.ValueStringPointer()
 	settings.FalseLabel = s.FalseLabel.ValueStringPointer()
-	settings.Stars = s.Stars.ValueInt64Pointer()
 	settings.Format = s.Format.ValueStringPointer()
-	settings.AMPM = s.TimeFormat.ValueStringPointer()
+	settings.Ampm = s.TimeFormat.ValueStringPointer()
 	settings.BulkEditing = s.BulkEditing.ValueBoolPointer()
 	settings.TrackingFieldId = s.TrackingFieldId.ValueStringPointer()
 	return settings
@@ -447,52 +509,88 @@ type Items struct {
 	Validations []Validation `tfsdk:"validations"`
 }
 
-func (i *Items) ToNative() (*model.FieldTypeArrayItem, error) {
+func (i *Items) ToNative() (*sdk.FieldItem, error) {
 
-	return &model.FieldTypeArrayItem{
-		Type: i.Type.ValueString(),
-		Validations: pie.Map(i.Validations, func(t Validation) model.FieldValidation {
-			return t.Draft()
-		}),
-		LinkType: i.LinkType.ValueStringPointer(),
-	}, nil
+	validations, err := createValidations(i.Validations)
+	if err != nil {
+		return nil, err
+	}
+
+	fieldType := i.Type.ValueString()
+
+	item := sdk.FieldItem{}
+
+	if fieldType == "Symbol" {
+		err := item.FromFieldItemSymbol(sdk.FieldItemSymbol{
+			Validations: &validations,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return &item, nil
+	}
+
+	if fieldType == "Link" || fieldType == "ResourceLink" {
+		err := item.FromFieldItemLink(sdk.FieldItemLink{
+			Validations: &validations,
+			LinkType:    sdk.FieldItemLinkLinkType(i.LinkType.ValueString()),
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &item, nil
+	}
+
+	return nil, fmt.Errorf("unsupported item type used, %s. Please implement", fieldType)
 }
 
-func (i *Items) Equal(n *model.FieldTypeArrayItem) bool {
+func (i *Items) Equal(n *sdk.FieldItem) bool {
 
 	if n == nil {
 		return false
 	}
 
-	if i.Type.ValueString() != n.Type {
+	itemType, err := n.Discriminator()
+	if err != nil {
+		panic(err)
+	}
+
+	if i.Type.ValueString() != itemType {
 		return false
 	}
 
-	if !utils.CompareStringPointer(i.LinkType, n.LinkType) {
-		return false
-	}
+	if itemType != "Symbol" {
+		linkItem, err := n.AsFieldItemLink()
+		if err != nil {
+			panic(err)
+		}
 
-	if len(i.Validations) != len(n.Validations) {
-		return false
-	}
-
-	for idx, validation := range pie.Map(i.Validations, func(t Validation) model.FieldValidation {
-		return t.Draft()
-	}) {
-		cfVal := n.Validations[idx]
-
-		if !reflect.DeepEqual(validation, cfVal) {
+		if !utils.CompareStringPointer(i.LinkType, utils.Pointer(string(linkItem.LinkType))) {
 			return false
 		}
 
+		if !compareValidations(i.Validations, linkItem.Validations) {
+			return false
+		}
+
+	} else {
+		symbolItem, err := n.AsFieldItemSymbol()
+		if err != nil {
+			panic(err)
+		}
+
+		if !compareValidations(i.Validations, symbolItem.Validations) {
+			return false
+		}
 	}
 
 	return true
 }
 
-func (c *ContentType) Draft() (*model.ContentType, error) {
-
-	var fields []*model.Field
+func (c *ContentType) Create() (*sdk.ContentTypeCreate, error) {
+	var fields []sdk.Field
 
 	for _, field := range c.Fields {
 
@@ -501,25 +599,13 @@ func (c *ContentType) Draft() (*model.ContentType, error) {
 			return nil, err
 		}
 
-		fields = append(fields, nativeField)
+		fields = append(fields, *nativeField)
 	}
 
-	contentfulType := &model.ContentType{
+	contentfulType := &sdk.ContentTypeCreate{
 		Name:         c.Name.ValueString(),
 		DisplayField: c.DisplayField.ValueString(),
 		Fields:       fields,
-	}
-
-	if !c.ID.IsUnknown() || !c.ID.IsNull() {
-		contentfulType.Sys = &model.EnvironmentSys{
-			SpaceSys: model.SpaceSys{
-				CreatedSys: model.CreatedSys{
-					BaseSys: model.BaseSys{
-						ID: c.ID.ValueString(),
-					},
-				},
-			},
-		}
 	}
 
 	if !c.Description.IsNull() && !c.Description.IsUnknown() {
@@ -527,12 +613,37 @@ func (c *ContentType) Draft() (*model.ContentType, error) {
 	}
 
 	return contentfulType, nil
-
 }
 
-func (c *ContentType) Import(n *model.ContentType, e *contentful.EditorInterface) error {
-	c.ID = types.StringValue(n.Sys.ID)
-	c.Version = types.Int64Value(int64(n.Sys.Version))
+func (c *ContentType) Update() (*sdk.ContentTypeUpdate, error) {
+	var fields []sdk.Field
+
+	for _, field := range c.Fields {
+
+		nativeField, err := field.ToNative()
+		if err != nil {
+			return nil, err
+		}
+
+		fields = append(fields, *nativeField)
+	}
+
+	contentfulType := &sdk.ContentTypeUpdate{
+		Name:         c.Name.ValueString(),
+		DisplayField: c.DisplayField.ValueString(),
+		Fields:       fields,
+	}
+
+	if !c.Description.IsNull() && !c.Description.IsUnknown() {
+		contentfulType.Description = c.Description.ValueStringPointer()
+	}
+
+	return contentfulType, nil
+}
+
+func (c *ContentType) Import(n *sdk.ContentType, e *sdk.EditorInterface) error {
+	c.ID = types.StringValue(n.Sys.Id)
+	c.Version = types.Int64Value(n.Sys.Version)
 
 	c.Description = types.StringPointerValue(n.Description)
 
@@ -541,25 +652,28 @@ func (c *ContentType) Import(n *model.ContentType, e *contentful.EditorInterface
 
 	var fields []Field
 
-	var controls []contentful.Controls
-	var sidebar []contentful.Sidebar
+	var controls []sdk.EditorInterfaceControl
+	var sidebar []sdk.EditorInterfaceSidebarItem
 	c.VersionControls = types.Int64Value(0)
 	if e != nil {
 		controls = e.Controls
-		sidebar = e.SideBar
-		c.VersionControls = types.Int64Value(int64(e.Sys.Version))
+
+		if e.Sidebar != nil {
+			sidebar = *e.Sidebar
+		}
+		c.VersionControls = types.Int64Value(int64(*e.Sys.Version))
 	}
 
 	for _, nf := range n.Fields {
 		field := &Field{}
 		err := field.Import(nf, controls)
 		if err != nil {
-			return err
+			return fmt.Errorf("field import failed: %w", err)
 		}
 		fields = append(fields, *field)
 	}
 
-	c.Sidebar = pie.Map(sidebar, func(t contentful.Sidebar) Sidebar {
+	c.Sidebar = pie.Map(sidebar, func(t sdk.EditorInterfaceSidebarItem) Sidebar {
 
 		settings := jsontypes.NewNormalizedValue("{}")
 
@@ -568,10 +682,10 @@ func (c *ContentType) Import(n *model.ContentType, e *contentful.EditorInterface
 			settings = jsontypes.NewNormalizedValue(string(data))
 		}
 		return Sidebar{
-			WidgetId:        types.StringValue(t.WidgetID),
-			WidgetNamespace: types.StringValue(t.WidgetNameSpace),
+			WidgetId:        types.StringValue(*t.WidgetId),
+			WidgetNamespace: types.StringValue(string(*t.WidgetNamespace)),
 			Settings:        settings,
-			Disabled:        types.BoolValue(t.Disabled),
+			Disabled:        types.BoolPointerValue(t.Disabled),
 		}
 	})
 
@@ -581,7 +695,7 @@ func (c *ContentType) Import(n *model.ContentType, e *contentful.EditorInterface
 
 }
 
-func (c *ContentType) Equal(n *model.ContentType) bool {
+func (c *ContentType) Equal(n *sdk.ContentType) bool {
 
 	if !utils.CompareStringPointer(c.Description, n.Description) {
 		return false
@@ -600,8 +714,8 @@ func (c *ContentType) Equal(n *model.ContentType) bool {
 	}
 
 	for idxOrg, field := range c.Fields {
-		idx := pie.FindFirstUsing(n.Fields, func(f *model.Field) bool {
-			return f.ID == field.Id.ValueString()
+		idx := pie.FindFirstUsing(n.Fields, func(f sdk.Field) bool {
+			return f.Id == field.Id.ValueString()
 		})
 
 		if idx == -1 {
@@ -621,14 +735,14 @@ func (c *ContentType) Equal(n *model.ContentType) bool {
 	return true
 }
 
-func (c *ContentType) EqualEditorInterface(n *contentful.EditorInterface) bool {
+func (c *ContentType) EqualEditorInterface(n *sdk.EditorInterface) bool {
 
 	if len(c.Fields) != len(n.Controls) {
 		return false
 	}
 
-	filteredControls := pie.Filter(n.Controls, func(c contentful.Controls) bool {
-		return c.WidgetID != nil || c.WidgetNameSpace != nil || c.Settings != nil
+	filteredControls := pie.Filter(n.Controls, func(c sdk.EditorInterfaceControl) bool {
+		return c.WidgetId != nil || c.WidgetNamespace != nil || c.Settings != nil
 	})
 
 	filteredFields := pie.Filter(c.Fields, func(f Field) bool {
@@ -640,8 +754,8 @@ func (c *ContentType) EqualEditorInterface(n *contentful.EditorInterface) bool {
 	}
 
 	for _, field := range filteredFields {
-		idx := pie.FindFirstUsing(filteredControls, func(t contentful.Controls) bool {
-			return t.FieldID == field.Id.ValueString()
+		idx := pie.FindFirstUsing(filteredControls, func(t sdk.EditorInterfaceControl) bool {
+			return t.FieldId == field.Id.ValueString()
 		})
 
 		if idx == -1 {
@@ -649,11 +763,15 @@ func (c *ContentType) EqualEditorInterface(n *contentful.EditorInterface) bool {
 		}
 		control := filteredControls[idx]
 
-		if field.Control.WidgetId.ValueString() != *control.WidgetID {
+		if field.Control.WidgetId.ValueString() != *control.WidgetId {
 			return false
 		}
 
-		if field.Control.WidgetNamespace.ValueString() != *control.WidgetNameSpace {
+		var namespace *string = nil
+		if control.WidgetNamespace != nil {
+			namespace = utils.Pointer(string(*control.WidgetNamespace))
+		}
+		if field.Control.WidgetNamespace.ValueStringPointer() != namespace {
 			return false
 		}
 
@@ -666,13 +784,19 @@ func (c *ContentType) EqualEditorInterface(n *contentful.EditorInterface) bool {
 		}
 	}
 
-	if len(c.Sidebar) != len(n.SideBar) {
+	if n.Sidebar == nil && len(c.Sidebar) > 0 {
 		return false
 	}
 
+	if len(c.Sidebar) != len(*n.Sidebar) {
+		return false
+	}
+
+	sidebar := *n.Sidebar
+
 	for idxOrg, s := range c.Sidebar {
-		idx := pie.FindFirstUsing(n.SideBar, func(t contentful.Sidebar) bool {
-			return t.WidgetID == s.WidgetId.ValueString()
+		idx := pie.FindFirstUsing(sidebar, func(t sdk.EditorInterfaceSidebarItem) bool {
+			return t.WidgetId == s.WidgetId.ValueStringPointer()
 		})
 
 		if idx == -1 {
@@ -684,17 +808,22 @@ func (c *ContentType) EqualEditorInterface(n *contentful.EditorInterface) bool {
 			return false
 		}
 
-		sidebar := n.SideBar[idx]
+		sidebar := sidebar[idx]
 
-		if sidebar.Disabled != s.Disabled.ValueBool() {
+		if sidebar.Disabled != s.Disabled.ValueBoolPointer() {
 			return false
 		}
 
-		if sidebar.WidgetID != s.WidgetId.ValueString() {
+		if sidebar.WidgetId != s.WidgetId.ValueStringPointer() {
 			return false
 		}
 
-		if sidebar.WidgetNameSpace != s.WidgetNamespace.ValueString() {
+		var namespace *string = nil
+		if !s.WidgetNamespace.IsNull() {
+			namespace = utils.Pointer(s.WidgetNamespace.ValueString())
+		}
+
+		if namespace != s.WidgetNamespace.ValueStringPointer() {
 			return false
 		}
 
@@ -710,16 +839,17 @@ func (c *ContentType) EqualEditorInterface(n *contentful.EditorInterface) bool {
 	return true
 }
 
-func (c *ContentType) DraftEditorInterface(n *contentful.EditorInterface) {
-	n.Controls = pie.Map(c.Fields, func(field Field) contentful.Controls {
+func (c *ContentType) DraftEditorInterface(n *sdk.EditorInterface) {
 
-		control := contentful.Controls{
-			FieldID: field.Id.ValueString(),
+	n.Controls = pie.Map(c.Fields, func(field Field) sdk.EditorInterfaceControl {
+
+		control := sdk.EditorInterfaceControl{
+			FieldId: field.Id.ValueString(),
 		}
 
 		if field.Control != nil {
-			control.WidgetID = field.Control.WidgetId.ValueStringPointer()
-			control.WidgetNameSpace = field.Control.WidgetNamespace.ValueStringPointer()
+			control.WidgetId = field.Control.WidgetId.ValueStringPointer()
+			control.WidgetNamespace = utils.Pointer(sdk.EditorInterfaceControlWidgetNamespace(field.Control.WidgetNamespace.ValueString()))
 
 			if field.Control.Settings != nil {
 				control.Settings = field.Control.Settings.Draft()
@@ -730,29 +860,44 @@ func (c *ContentType) DraftEditorInterface(n *contentful.EditorInterface) {
 
 	})
 
-	n.SideBar = pie.Map(c.Sidebar, func(t Sidebar) contentful.Sidebar {
+	sidebar := pie.Map(c.Sidebar, func(t Sidebar) sdk.EditorInterfaceSidebarItem {
 
-		sidebar := contentful.Sidebar{
-			WidgetNameSpace: t.WidgetNamespace.ValueString(),
-			WidgetID:        t.WidgetId.ValueString(),
-			Disabled:        t.Disabled.ValueBool(),
+		var namespace sdk.EditorInterfaceSidebarItemWidgetNamespace
+		if !t.WidgetNamespace.IsNull() {
+			namespace = sdk.EditorInterfaceSidebarItemWidgetNamespace(t.WidgetNamespace.ValueString())
 		}
 
-		if !sidebar.Disabled {
-			settings := make(map[string]string)
+		sidebar := sdk.EditorInterfaceSidebarItem{
+			WidgetNamespace: &namespace,
+			WidgetId:        t.WidgetId.ValueStringPointer(),
+			Disabled:        t.Disabled.ValueBoolPointer(),
+		}
+
+		if !*sidebar.Disabled {
+			settings := sdk.EditorInterfaceSettings{}
 
 			t.Settings.Unmarshal(settings)
-			sidebar.Settings = settings
+			sidebar.Settings = &settings
 		}
 
 		return sidebar
 	})
+
+	if len(sidebar) > 0 {
+		n.Sidebar = &sidebar
+	} else {
+		n.Sidebar = nil
+	}
 }
 
-func getValidations(contentfulValidations []model.FieldValidation) ([]Validation, error) {
+func getValidations(contentfulValidations *[]sdk.FieldValidation) ([]Validation, error) {
 	var validations []Validation
 
-	for _, validation := range contentfulValidations {
+	if contentfulValidations == nil {
+		return validations, nil
+	}
+
+	for _, validation := range *contentfulValidations {
 
 		val, err := getValidation(validation)
 
@@ -766,101 +911,115 @@ func getValidations(contentfulValidations []model.FieldValidation) ([]Validation
 	return validations, nil
 }
 
-func getValidation(cfVal model.FieldValidation) (*Validation, error) {
+func getValidation(cfVal sdk.FieldValidation) (*Validation, error) {
 
-	if v, ok := cfVal.(model.FieldValidationPredefinedValues); ok {
-
-		return &Validation{
-			In: pie.Map(v.In, func(t any) types.String {
-				return types.StringValue(t.(string))
-			}),
-		}, nil
-	}
-
-	if v, ok := cfVal.(model.FieldValidationUnique); ok {
-
-		return &Validation{
-			Unique: types.BoolValue(v.Unique),
-		}, nil
-	}
-
-	if v, ok := cfVal.(model.FieldValidationRegex); ok {
-
-		return &Validation{
-			Regexp: &Regexp{
-				Pattern: types.StringValue(v.Regex.Pattern),
-			},
-			Message: types.StringPointerValue(v.ErrorMessage),
-		}, nil
-	}
-
-	if v, ok := cfVal.(model.FieldValidationSize); ok {
-
-		return &Validation{
-			Size: &Size{
-				Max: types.Float64PointerValue(v.Size.Max),
-				Min: types.Float64PointerValue(v.Size.Min),
-			},
-		}, nil
-	}
-
-	if v, ok := cfVal.(model.FieldValidationLink); ok {
-
-		return &Validation{
-			LinkContentType: pie.Map(v.LinkContentType, func(t string) types.String {
-				return types.StringValue(t)
-			}),
-		}, nil
-	}
-
-	if v, ok := cfVal.(model.FieldValidationMimeType); ok {
-
-		return &Validation{
-			LinkMimetypeGroup: pie.Map(v.MimeTypes, func(t string) types.String {
-				return types.StringValue(t)
-			}),
-			Message: types.StringPointerValue(v.ErrorMessage),
-		}, nil
-	}
-
-	if v, ok := cfVal.(model.FieldValidationRange); ok {
-
+	if cfVal.AssetFileSize != nil {
 		return &Validation{
 			Range: &Size{
-				Max: types.Float64PointerValue(v.Range.Max),
-				Min: types.Float64PointerValue(v.Range.Min),
+				Max: types.Float64PointerValue(cfVal.AssetFileSize.Max),
+				Min: types.Float64PointerValue(cfVal.AssetFileSize.Min),
 			},
+			Message: types.StringPointerValue(cfVal.Message),
 		}, nil
 	}
 
-	if v, ok := cfVal.(model.FieldValidationEnabledNodeTypes); ok {
-
+	if cfVal.Regexp != nil {
 		return &Validation{
-			EnabledNodeTypes: pie.Map(v.NodeTypes, func(t string) types.String {
+			Regexp: &Regexp{
+				Pattern: types.StringValue(cfVal.Regexp.Pattern),
+			},
+			Message: types.StringPointerValue(cfVal.Message),
+		}, nil
+	}
+
+	if cfVal.LinkContentType != nil {
+		return &Validation{
+			LinkContentType: pie.Map(*cfVal.LinkContentType, func(t string) types.String {
 				return types.StringValue(t)
 			}),
-			Message: types.StringPointerValue(v.ErrorMessage),
+			Message: types.StringPointerValue(cfVal.Message),
 		}, nil
 	}
 
-	if v, ok := cfVal.(model.FieldValidationEnabledMarks); ok {
-
+	if cfVal.LinkMimetypeGroup != nil {
 		return &Validation{
-			EnabledMarks: pie.Map(v.Marks, func(t string) types.String {
+			LinkMimetypeGroup: pie.Map(*cfVal.LinkMimetypeGroup, func(t string) types.String {
 				return types.StringValue(t)
 			}),
-			Message: types.StringPointerValue(v.ErrorMessage),
+			Message: types.StringPointerValue(cfVal.Message),
 		}, nil
 	}
 
-	if v, ok := cfVal.(model.FieldValidationFileSize); ok {
+	if cfVal.In != nil {
+		return &Validation{
+			In: pie.Map(*cfVal.In, func(t string) types.String {
+				return types.StringValue(t)
+			}),
+			Message: types.StringPointerValue(cfVal.Message),
+		}, nil
+	}
+
+	if cfVal.EnabledMarks != nil {
+		return &Validation{
+			EnabledMarks: pie.Map(*cfVal.EnabledMarks, func(t string) types.String {
+				return types.StringValue(t)
+			}),
+			Message: types.StringPointerValue(cfVal.Message),
+		}, nil
+	}
+
+	if cfVal.EnabledNodeTypes != nil {
+		return &Validation{
+			EnabledNodeTypes: pie.Map(*cfVal.EnabledNodeTypes, func(t string) types.String {
+				return types.StringValue(t)
+			}),
+			Message: types.StringPointerValue(cfVal.Message),
+		}, nil
+	}
+
+	if cfVal.AssetFileSize != nil {
 		return &Validation{
 			AssetFileSize: &Size{
-				Max: types.Float64PointerValue(v.Size.Max),
-				Min: types.Float64PointerValue(v.Size.Min),
+				Max: types.Float64PointerValue(cfVal.AssetFileSize.Max),
+				Min: types.Float64PointerValue(cfVal.AssetFileSize.Min),
 			},
+			Message: types.StringPointerValue(cfVal.Message),
+		}, nil
+	}
+
+	if cfVal.Unique != nil {
+		return &Validation{
+			Unique:  types.BoolPointerValue(cfVal.Unique),
+			Message: types.StringPointerValue(cfVal.Message),
 		}, nil
 	}
 
 	return nil, fmt.Errorf("unsupported validation used, %s. Please implement", reflect.TypeOf(cfVal).String())
+}
+
+func compareValidations(a []Validation, b *[]sdk.FieldValidation) bool {
+	if b == nil {
+		return len(a) == 0
+	}
+
+	other := *b
+
+	if len(a) != len(other) {
+		return false
+	}
+
+	validations, err := createValidations(a)
+	if err != nil {
+		panic(err)
+	}
+
+	for idx, validation := range validations {
+		cfVal := other[idx]
+
+		if !reflect.DeepEqual(validation, cfVal) {
+			return false
+		}
+	}
+
+	return true
 }

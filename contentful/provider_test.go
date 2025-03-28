@@ -35,6 +35,6 @@ func testAccPreCheck(t *testing.T) {
 		t.Fatal("CONTENTFUL_ORGANIZATION_ID must set with a valid Contentful Organization ID for acceptance tests")
 	}
 	if sId = spaceID; sId == "" {
-		t.Fatal("SPACE_ID must set with a valid Space ID for acceptance tests")
+		t.Fatal("CONTENTFUL_SPACE_ID must set with a valid Space ID for acceptance tests")
 	}
 }

@@ -5,9 +5,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	contentful "github.com/labd/contentful-go"
-	client2 "github.com/labd/contentful-go/pkgs/client"
-	"github.com/labd/contentful-go/pkgs/util"
 
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
@@ -62,31 +59,16 @@ func Provider() func() *schema.Provider {
 
 // providerConfigure sets the configuration for the Terraform Provider
 func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	cma := contentful.NewCMA(d.Get("cma_token").(string))
-	cma.SetOrganization(d.Get("organization_id").(string))
-	cma.BaseURL = d.Get("base_url").(string)
-	cma.SetEnvironment(d.Get("environment").(string))
+	baseURL := d.Get("base_url").(string)
+	token := d.Get("cma_token").(string)
 
-	debug := false
-
-	if logBoolean != "" {
-		cma.Debug = true
-		debug = true
-	}
-
-	client, err := contentful.NewCMAV2(client2.ClientConfig{
-		Debug:     debug,
-		UserAgent: util.ToPointer("terraform-provider-contentful"),
-		Token:     d.Get("cma_token").(string),
-	})
-
+	client, err := utils.CreateClient(baseURL, token)
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}
 
 	data := utils.ProviderData{
-		Client:         cma,
-		CMAClient:      client,
+		Client:         client,
 		OrganizationId: d.Get("organization_id").(string),
 	}
 
