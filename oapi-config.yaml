@@ -1,0 +1,7 @@
+package: sdk
+generate:
+  models: true
+  client: true
+output: internal/sdk/main.gen.go
+output-options:
+  skip-prune: true

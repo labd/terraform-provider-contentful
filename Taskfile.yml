@@ -11,6 +11,7 @@ tasks:
 
   generate:
     cmds:
+      - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=oapi-config.yaml ./openapi.yaml
       - go generate ./...
 
   build-local:
