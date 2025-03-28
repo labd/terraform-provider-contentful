@@ -1,21 +1,19 @@
 module github.com/labd/terraform-provider-contentful
 
-go 1.23.0
-
-toolchain go1.23.7
+go 1.24.1
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/deepmap/oapi-codegen v1.16.3
 	github.com/elliotchance/pie/v2 v2.9.1
+	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/terraform-plugin-docs v0.19.0
 	github.com/hashicorp/terraform-plugin-framework v1.14.1
 	github.com/hashicorp/terraform-plugin-framework-jsontypes v0.2.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.17.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
-	github.com/hashicorp/terraform-plugin-mux v0.18.0
 	github.com/hashicorp/terraform-plugin-testing v1.12.0
-	github.com/labd/contentful-go v0.5.4-0.20250324140149-2fdab88b69c2
-	github.com/oapi-codegen/nullable v1.1.0
+	github.com/iancoleman/orderedmap v0.3.0
 	github.com/oapi-codegen/oapi-codegen/v2 v2.4.1
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/stretchr/testify v1.9.0
@@ -34,14 +32,12 @@ require (
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dprotaso/go-yit v0.0.0-20220510233725-9ba8df137936 // indirect
 	github.com/getkin/kin-openapi v0.127.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/cli v1.1.6 // indirect
-	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/hashicorp/hc-install v0.9.1 // indirect
 	github.com/hashicorp/terraform-registry-address v0.2.4 // indirect
 	github.com/hashicorp/terraform-svchost v0.1.1 // indirect
@@ -75,6 +71,7 @@ require (
 
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect
+	github.com/cenkalti/backoff/v5 v5.0.2
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
@@ -112,5 +109,6 @@ require (
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/grpc v1.69.4 // indirect
 	google.golang.org/protobuf v1.36.3 // indirect
-	moul.io/http2curl v1.0.1-0.20190925090545-5cd742060b0e // indirect
 )
+
+tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen

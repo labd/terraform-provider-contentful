@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iancoleman/orderedmap"
 	"github.com/oapi-codegen/runtime"
 )
 
@@ -449,28 +450,29 @@ type AppNavigationItem struct {
 
 // Asset defines model for Asset.
 type Asset struct {
-	Fields *struct {
+	Fields struct {
 		// Description Asset description by locale
-		Description *map[string]string `json:"description,omitempty"`
+		Description map[string]string `json:"description"`
 
 		// File Asset file details by locale
 		File map[string]struct {
-			ContentType *string `json:"contentType,omitempty"`
+			ContentType string `json:"contentType"`
 			Details     *struct {
 				Image *struct {
-					Height *int `json:"height,omitempty"`
-					Width  *int `json:"width,omitempty"`
+					Height *int64 `json:"height,omitempty"`
+					Width  *int64 `json:"width,omitempty"`
 				} `json:"image,omitempty"`
-				Size *int `json:"size,omitempty"`
+				Size *int64 `json:"size,omitempty"`
 			} `json:"details,omitempty"`
-			FileName *string `json:"fileName,omitempty"`
+			FileName string  `json:"fileName"`
+			Upload   *string `json:"upload,omitempty"`
 			Url      *string `json:"url,omitempty"`
 		} `json:"file"`
 
 		// Title Asset title by locale
-		Title *map[string]string `json:"title,omitempty"`
-	} `json:"fields,omitempty"`
-	Sys *SystemProperties `json:"sys,omitempty"`
+		Title map[string]string `json:"title"`
+	} `json:"fields"`
+	Sys SystemPropertiesContent `json:"sys"`
 }
 
 // AssetCollection defines model for AssetCollection.
@@ -659,8 +661,8 @@ type EditorInterfaceSidebarItemWidgetNamespace string
 // Entry defines model for Entry.
 type Entry struct {
 	// Fields Content fields with values by locale
-	Fields *map[string]interface{} `json:"fields,omitempty"`
-	Sys    *SystemProperties       `json:"sys,omitempty"`
+	Fields orderedmap.OrderedMap `json:"fields"`
+	Sys    SystemPropertiesEntry `json:"sys"`
 }
 
 // EntryCollection defines model for EntryCollection.
@@ -683,16 +685,10 @@ type EntryCollection struct {
 // EntryCollectionSysType defines model for EntryCollection.Sys.Type.
 type EntryCollectionSysType string
 
-// EntryCreate defines model for EntryCreate.
-type EntryCreate struct {
+// EntryDraft defines model for EntryDraft.
+type EntryDraft struct {
 	// Fields Content fields with values by locale
-	Fields *map[string]interface{} `json:"fields,omitempty"`
-}
-
-// EntryUpdate defines model for EntryUpdate.
-type EntryUpdate struct {
-	// Fields Content fields with values by locale
-	Fields *map[string]interface{} `json:"fields,omitempty"`
+	Fields *orderedmap.OrderedMap `json:"fields,omitempty"`
 }
 
 // Environment defines model for Environment.
@@ -1136,6 +1132,57 @@ type SystemPropertiesBase struct {
 	Type string `json:"type"`
 }
 
+// SystemPropertiesContent defines model for SystemPropertiesContent.
+type SystemPropertiesContent struct {
+	// ArchivedAt Archival timestamp
+	ArchivedAt  *time.Time                 `json:"archivedAt,omitempty"`
+	CreatedBy   SystemPropertiesReference  `json:"createdBy"`
+	Environment *SystemPropertiesReference `json:"environment,omitempty"`
+
+	// Id Resource ID
+	Id string `json:"id"`
+
+	// PublishedAt Publication timestamp
+	PublishedAt *time.Time                `json:"publishedAt,omitempty"`
+	Space       SystemPropertiesReference `json:"space"`
+
+	// Type Resource type
+	Type string `json:"type"`
+
+	// UpdatedAt Last update timestamp
+	UpdatedAt *time.Time                 `json:"updatedAt,omitempty"`
+	UpdatedBy *SystemPropertiesReference `json:"updatedBy,omitempty"`
+
+	// Version Resource version
+	Version int64 `json:"version"`
+}
+
+// SystemPropertiesEntry defines model for SystemPropertiesEntry.
+type SystemPropertiesEntry struct {
+	// ArchivedAt Archival timestamp
+	ArchivedAt  *time.Time                 `json:"archivedAt,omitempty"`
+	ContentType SystemPropertiesReference  `json:"contentType"`
+	CreatedBy   SystemPropertiesReference  `json:"createdBy"`
+	Environment *SystemPropertiesReference `json:"environment,omitempty"`
+
+	// Id Resource ID
+	Id string `json:"id"`
+
+	// PublishedAt Publication timestamp
+	PublishedAt *time.Time                `json:"publishedAt,omitempty"`
+	Space       SystemPropertiesReference `json:"space"`
+
+	// Type Resource type
+	Type string `json:"type"`
+
+	// UpdatedAt Last update timestamp
+	UpdatedAt *time.Time                 `json:"updatedAt,omitempty"`
+	UpdatedBy *SystemPropertiesReference `json:"updatedBy,omitempty"`
+
+	// Version Resource version
+	Version int64 `json:"version"`
+}
+
 // SystemPropertiesLink defines model for SystemPropertiesLink.
 type SystemPropertiesLink struct {
 	// Id Resource ID
@@ -1155,7 +1202,8 @@ type SystemPropertiesReference struct {
 
 // SystemPropertiesResource defines model for SystemPropertiesResource.
 type SystemPropertiesResource struct {
-	CreatedBy SystemPropertiesReference `json:"createdBy"`
+	CreatedBy   SystemPropertiesReference  `json:"createdBy"`
+	Environment *SystemPropertiesReference `json:"environment,omitempty"`
 
 	// Id Resource ID
 	Id    string                    `json:"id"`
@@ -1524,8 +1572,8 @@ type GetAllEntriesParams struct {
 
 // CreateEntryParams defines parameters for CreateEntry.
 type CreateEntryParams struct {
-	// ContentType Content type ID for the new entry
-	ContentType string `form:"content_type" json:"content_type"`
+	// XContentfulContentType Content type ID for the new entry
+	XContentfulContentType string `json:"X-Contentful-Content-Type"`
 }
 
 // DeleteEntryParams defines parameters for DeleteEntry.
@@ -1536,6 +1584,33 @@ type DeleteEntryParams struct {
 
 // UpdateEntryParams defines parameters for UpdateEntry.
 type UpdateEntryParams struct {
+	// XContentfulVersion The version of the locale to update.
+	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
+
+	// XContentfulContentType Content type ID for the new entry
+	XContentfulContentType string `json:"X-Contentful-Content-Type"`
+}
+
+// UnarchiveEntryParams defines parameters for UnarchiveEntry.
+type UnarchiveEntryParams struct {
+	// XContentfulVersion The version of the locale to update.
+	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
+}
+
+// ArchiveEntryParams defines parameters for ArchiveEntry.
+type ArchiveEntryParams struct {
+	// XContentfulVersion The version of the locale to update.
+	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
+}
+
+// UnpublishEntryParams defines parameters for UnpublishEntry.
+type UnpublishEntryParams struct {
+	// XContentfulVersion The version of the locale to update.
+	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
+}
+
+// PublishEntryParams defines parameters for PublishEntry.
+type PublishEntryParams struct {
 	// XContentfulVersion The version of the locale to update.
 	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
 }
@@ -1631,10 +1706,10 @@ type UpdateContentTypeJSONRequestBody = ContentTypeUpdate
 type UpdateEditorInterfaceJSONRequestBody = EditorInterface
 
 // CreateEntryJSONRequestBody defines body for CreateEntry for application/json ContentType.
-type CreateEntryJSONRequestBody = EntryCreate
+type CreateEntryJSONRequestBody = EntryDraft
 
 // UpdateEntryJSONRequestBody defines body for UpdateEntry for application/json ContentType.
-type UpdateEntryJSONRequestBody = EntryUpdate
+type UpdateEntryJSONRequestBody = EntryDraft
 
 // CreateLocaleJSONRequestBody defines body for CreateLocale for application/json ContentType.
 type CreateLocaleJSONRequestBody = LocaleCreate
@@ -2168,16 +2243,16 @@ type ClientInterface interface {
 	UpdateEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *UpdateEntryParams, body UpdateEntryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UnarchiveEntry request
-	UnarchiveEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UnarchiveEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *UnarchiveEntryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ArchiveEntry request
-	ArchiveEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ArchiveEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *ArchiveEntryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UnpublishEntry request
-	UnpublishEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UnpublishEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *UnpublishEntryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PublishEntry request
-	PublishEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PublishEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *PublishEntryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAllLocales request
 	GetAllLocales(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *GetAllLocalesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3028,8 +3103,8 @@ func (c *Client) UpdateEntry(ctx context.Context, spaceId SpaceId, environmentId
 	return c.Client.Do(req)
 }
 
-func (c *Client) UnarchiveEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUnarchiveEntryRequest(c.Server, spaceId, environmentId, entryId)
+func (c *Client) UnarchiveEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *UnarchiveEntryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveEntryRequest(c.Server, spaceId, environmentId, entryId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3040,8 +3115,8 @@ func (c *Client) UnarchiveEntry(ctx context.Context, spaceId SpaceId, environmen
 	return c.Client.Do(req)
 }
 
-func (c *Client) ArchiveEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewArchiveEntryRequest(c.Server, spaceId, environmentId, entryId)
+func (c *Client) ArchiveEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *ArchiveEntryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewArchiveEntryRequest(c.Server, spaceId, environmentId, entryId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3052,8 +3127,8 @@ func (c *Client) ArchiveEntry(ctx context.Context, spaceId SpaceId, environmentI
 	return c.Client.Do(req)
 }
 
-func (c *Client) UnpublishEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUnpublishEntryRequest(c.Server, spaceId, environmentId, entryId)
+func (c *Client) UnpublishEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *UnpublishEntryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnpublishEntryRequest(c.Server, spaceId, environmentId, entryId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3064,8 +3139,8 @@ func (c *Client) UnpublishEntry(ctx context.Context, spaceId SpaceId, environmen
 	return c.Client.Do(req)
 }
 
-func (c *Client) PublishEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPublishEntryRequest(c.Server, spaceId, environmentId, entryId)
+func (c *Client) PublishEntry(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *PublishEntryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPublishEntryRequest(c.Server, spaceId, environmentId, entryId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -6038,30 +6113,25 @@ func NewCreateEntryRequestWithBody(server string, spaceId SpaceId, environmentId
 		return nil, err
 	}
 
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "content_type", runtime.ParamLocationQuery, params.ContentType); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
 	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Contentful-Content-Type", runtime.ParamLocationHeader, params.XContentfulContentType)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Contentful-Content-Type", headerParam0)
+
+	}
 
 	return req, nil
 }
@@ -6244,13 +6314,22 @@ func NewUpdateEntryRequestWithBody(server string, spaceId SpaceId, environmentId
 
 		req.Header.Set("X-Contentful-Version", headerParam0)
 
+		var headerParam1 string
+
+		headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Contentful-Content-Type", runtime.ParamLocationHeader, params.XContentfulContentType)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Contentful-Content-Type", headerParam1)
+
 	}
 
 	return req, nil
 }
 
 // NewUnarchiveEntryRequest generates requests for UnarchiveEntry
-func NewUnarchiveEntryRequest(server string, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId) (*http.Request, error) {
+func NewUnarchiveEntryRequest(server string, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *UnarchiveEntryParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6292,13 +6371,26 @@ func NewUnarchiveEntryRequest(server string, spaceId SpaceId, environmentId Envi
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Contentful-Version", runtime.ParamLocationHeader, params.XContentfulVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Contentful-Version", headerParam0)
+
 	}
 
 	return req, nil
 }
 
 // NewArchiveEntryRequest generates requests for ArchiveEntry
-func NewArchiveEntryRequest(server string, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId) (*http.Request, error) {
+func NewArchiveEntryRequest(server string, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *ArchiveEntryParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6342,11 +6434,24 @@ func NewArchiveEntryRequest(server string, spaceId SpaceId, environmentId Enviro
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Contentful-Version", runtime.ParamLocationHeader, params.XContentfulVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Contentful-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUnpublishEntryRequest generates requests for UnpublishEntry
-func NewUnpublishEntryRequest(server string, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId) (*http.Request, error) {
+func NewUnpublishEntryRequest(server string, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *UnpublishEntryParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6390,11 +6495,24 @@ func NewUnpublishEntryRequest(server string, spaceId SpaceId, environmentId Envi
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Contentful-Version", runtime.ParamLocationHeader, params.XContentfulVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Contentful-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewPublishEntryRequest generates requests for PublishEntry
-func NewPublishEntryRequest(server string, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId) (*http.Request, error) {
+func NewPublishEntryRequest(server string, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *PublishEntryParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6436,6 +6554,19 @@ func NewPublishEntryRequest(server string, spaceId SpaceId, environmentId Enviro
 	req, err := http.NewRequest("PUT", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Contentful-Version", runtime.ParamLocationHeader, params.XContentfulVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Contentful-Version", headerParam0)
+
 	}
 
 	return req, nil
@@ -7366,16 +7497,16 @@ type ClientWithResponsesInterface interface {
 	UpdateEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *UpdateEntryParams, body UpdateEntryJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateEntryResponse, error)
 
 	// UnarchiveEntryWithResponse request
-	UnarchiveEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*UnarchiveEntryResponse, error)
+	UnarchiveEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *UnarchiveEntryParams, reqEditors ...RequestEditorFn) (*UnarchiveEntryResponse, error)
 
 	// ArchiveEntryWithResponse request
-	ArchiveEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*ArchiveEntryResponse, error)
+	ArchiveEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *ArchiveEntryParams, reqEditors ...RequestEditorFn) (*ArchiveEntryResponse, error)
 
 	// UnpublishEntryWithResponse request
-	UnpublishEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*UnpublishEntryResponse, error)
+	UnpublishEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *UnpublishEntryParams, reqEditors ...RequestEditorFn) (*UnpublishEntryResponse, error)
 
 	// PublishEntryWithResponse request
-	PublishEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*PublishEntryResponse, error)
+	PublishEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *PublishEntryParams, reqEditors ...RequestEditorFn) (*PublishEntryResponse, error)
 
 	// GetAllLocalesWithResponse request
 	GetAllLocalesWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *GetAllLocalesParams, reqEditors ...RequestEditorFn) (*GetAllLocalesResponse, error)
@@ -8085,6 +8216,7 @@ type UpdateAssetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *Asset
+	JSON201      *Asset
 }
 
 // Status returns HTTPResponse.Status
@@ -8501,6 +8633,7 @@ type UpdateEntryResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *Entry
+	JSON201      *Entry
 }
 
 // Status returns HTTPResponse.Status
@@ -9456,8 +9589,8 @@ func (c *ClientWithResponses) UpdateEntryWithResponse(ctx context.Context, space
 }
 
 // UnarchiveEntryWithResponse request returning *UnarchiveEntryResponse
-func (c *ClientWithResponses) UnarchiveEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*UnarchiveEntryResponse, error) {
-	rsp, err := c.UnarchiveEntry(ctx, spaceId, environmentId, entryId, reqEditors...)
+func (c *ClientWithResponses) UnarchiveEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *UnarchiveEntryParams, reqEditors ...RequestEditorFn) (*UnarchiveEntryResponse, error) {
+	rsp, err := c.UnarchiveEntry(ctx, spaceId, environmentId, entryId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -9465,8 +9598,8 @@ func (c *ClientWithResponses) UnarchiveEntryWithResponse(ctx context.Context, sp
 }
 
 // ArchiveEntryWithResponse request returning *ArchiveEntryResponse
-func (c *ClientWithResponses) ArchiveEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*ArchiveEntryResponse, error) {
-	rsp, err := c.ArchiveEntry(ctx, spaceId, environmentId, entryId, reqEditors...)
+func (c *ClientWithResponses) ArchiveEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *ArchiveEntryParams, reqEditors ...RequestEditorFn) (*ArchiveEntryResponse, error) {
+	rsp, err := c.ArchiveEntry(ctx, spaceId, environmentId, entryId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -9474,8 +9607,8 @@ func (c *ClientWithResponses) ArchiveEntryWithResponse(ctx context.Context, spac
 }
 
 // UnpublishEntryWithResponse request returning *UnpublishEntryResponse
-func (c *ClientWithResponses) UnpublishEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*UnpublishEntryResponse, error) {
-	rsp, err := c.UnpublishEntry(ctx, spaceId, environmentId, entryId, reqEditors...)
+func (c *ClientWithResponses) UnpublishEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *UnpublishEntryParams, reqEditors ...RequestEditorFn) (*UnpublishEntryResponse, error) {
+	rsp, err := c.UnpublishEntry(ctx, spaceId, environmentId, entryId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -9483,8 +9616,8 @@ func (c *ClientWithResponses) UnpublishEntryWithResponse(ctx context.Context, sp
 }
 
 // PublishEntryWithResponse request returning *PublishEntryResponse
-func (c *ClientWithResponses) PublishEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, reqEditors ...RequestEditorFn) (*PublishEntryResponse, error) {
-	rsp, err := c.PublishEntry(ctx, spaceId, environmentId, entryId, reqEditors...)
+func (c *ClientWithResponses) PublishEntryWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, entryId EntryId, params *PublishEntryParams, reqEditors ...RequestEditorFn) (*PublishEntryResponse, error) {
+	rsp, err := c.PublishEntry(ctx, spaceId, environmentId, entryId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -10383,6 +10516,13 @@ func ParseUpdateAssetResponse(rsp *http.Response) (*UpdateAssetResponse, error) 
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Asset
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
 	}
 
 	return response, nil
@@ -10853,6 +10993,13 @@ func ParseUpdateEntryResponse(rsp *http.Response) (*UpdateEntryResponse, error) 
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Entry
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
 
 	}
 

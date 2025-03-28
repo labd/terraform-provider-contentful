@@ -27,7 +27,7 @@ func TestAppDefinitionResource_Create(t *testing.T) {
 		PreCheck:     func() { acctest.TestAccPreCheck(t) },
 		CheckDestroy: testAccCheckContentfulAppDefinitionDestroy,
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
-			"contentful": providerserver.NewProtocol6WithError(provider.New("test", true)),
+			"contentful": providerserver.NewProtocol6WithError(provider.New("test", true)()),
 		},
 		Steps: []resource.TestStep{
 			{

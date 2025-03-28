@@ -61,27 +61,27 @@ resource "contentful_entry" "example_entry" {
 
 ### Required
 
-- `archived` (Boolean)
-- `contenttype_id` (String)
-- `entry_id` (String)
-- `environment` (String)
-- `field` (Block List, Min: 1) (see [below for nested schema](#nestedblock--field))
-- `published` (Boolean)
-- `space_id` (String)
+- `archived` (Boolean) Whether the entry is archived
+- `contenttype_id` (String) Content Type ID
+- `entry_id` (String) Entry identifier
+- `environment` (String) Environment ID
+- `published` (Boolean) Whether the entry is published
+- `space_id` (String) Space ID
+
+### Optional
+
+- `field` (Block List) Content fields (see [below for nested schema](#nestedblock--field))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
-- `version` (Number)
+- `id` (String) Entry ID
+- `version` (Number) The current version of the entry
 
 <a id="nestedblock--field"></a>
 ### Nested Schema for `field`
 
 Required:
 
-- `content` (String) The content of the field. If the field type is Richtext the content can be passed as stringified JSON (see example).
-- `locale` (String)
-
-Read-Only:
-
-- `id` (String) The ID of this resource.
+- `content` (String) Field content. If the field type is Richtext the content can be passed as stringified JSON.
+- `id` (String) Field ID
+- `locale` (String) Locale code

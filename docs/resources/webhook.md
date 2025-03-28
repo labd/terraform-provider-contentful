@@ -36,18 +36,18 @@ resource "contentful_webhook" "example_webhook" {
 
 ### Required
 
-- `name` (String)
-- `space_id` (String)
-- `topics` (List of String)
-- `url` (String)
+- `name` (String) Name of the webhook
+- `space_id` (String) Space ID
+- `topics` (List of String) List of topics this webhook should be triggered for
+- `url` (String) URL to notify
 
 ### Optional
 
-- `headers` (Map of String)
-- `http_basic_auth_password` (String)
-- `http_basic_auth_username` (String)
+- `headers` (Map of String) HTTP headers to send with the webhook request
+- `http_basic_auth_password` (String, Sensitive) HTTP basic auth password
+- `http_basic_auth_username` (String) HTTP basic auth username
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
-- `version` (Number)
+- `id` (String) Webhook ID
+- `version` (Number) The current version of the webhook

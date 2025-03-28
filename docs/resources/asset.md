@@ -3,12 +3,12 @@
 page_title: "contentful_asset Resource - terraform-provider-contentful"
 subcategory: ""
 description: |-
-  
+  Contentful Asset represents a media file in Contentful.
 ---
 
 # contentful_asset (Resource)
 
-
+Contentful Asset represents a media file in Contentful.
 
 ## Example Usage
 
@@ -43,34 +43,37 @@ resource "contentful_asset" "example_asset" {
 
 ### Required
 
-- `archived` (Boolean)
-- `asset_id` (String)
-- `environment` (String)
-- `fields` (Block List, Min: 1) (see [below for nested schema](#nestedblock--fields))
-- `published` (Boolean)
-- `space_id` (String)
+- `archived` (Boolean) Whether the asset is archived
+- `asset_id` (String) Asset identifier
+- `environment` (String) Environment ID
+- `published` (Boolean) Whether the asset is published
+- `space_id` (String) Space ID
+
+### Optional
+
+- `fields` (Block, Optional) Asset fields (see [below for nested schema](#nestedblock--fields))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
-- `version` (Number)
+- `id` (String) Asset ID
+- `version` (Number) The current version of the asset
 
 <a id="nestedblock--fields"></a>
 ### Nested Schema for `fields`
 
-Required:
+Optional:
 
-- `description` (Block List, Min: 1) (see [below for nested schema](#nestedblock--fields--description))
-- `file` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--fields--file))
-- `title` (Block List, Min: 1) (see [below for nested schema](#nestedblock--fields--title))
+- `description` (Block List) Asset description in different locales (see [below for nested schema](#nestedblock--fields--description))
+- `file` (Block List) Asset file information (see [below for nested schema](#nestedblock--fields--file))
+- `title` (Block List) Asset title in different locales (see [below for nested schema](#nestedblock--fields--title))
 
 <a id="nestedblock--fields--description"></a>
 ### Nested Schema for `fields.description`
 
 Required:
 
-- `content` (String)
-- `locale` (String)
+- `content` (String) The description content
+- `locale` (String) The locale code
 
 
 <a id="nestedblock--fields--file"></a>
@@ -78,37 +81,20 @@ Required:
 
 Required:
 
-- `content_type` (String)
-- `file_name` (String)
-- `locale` (String)
-- `upload` (String)
+- `file_name` (String) File name
+- `locale` (String) The locale code
+- `upload` (String) Upload URL or ID
 
 Optional:
 
-- `details` (Block Set) (see [below for nested schema](#nestedblock--fields--file--details))
+- `content_type` (String) Content type of the file
 
 Read-Only:
 
-- `upload_from` (String)
-- `url` (String)
-
-<a id="nestedblock--fields--file--details"></a>
-### Nested Schema for `fields.file.details`
-
-Required:
-
-- `image` (Block Set, Min: 1) (see [below for nested schema](#nestedblock--fields--file--details--image))
-- `size` (Number)
-
-<a id="nestedblock--fields--file--details--image"></a>
-### Nested Schema for `fields.file.details.image`
-
-Required:
-
-- `height` (Number)
-- `width` (Number)
-
-
+- `filesize` (Number) File size in bytes
+- `image_height` (Number) Image height in pixels
+- `image_width` (Number) Image width in pixels
+- `url` (String) URL of the uploaded file
 
 
 <a id="nestedblock--fields--title"></a>
@@ -116,5 +102,5 @@ Required:
 
 Required:
 
-- `content` (String)
-- `locale` (String)
+- `content` (String) The title content
+- `locale` (String) The locale code

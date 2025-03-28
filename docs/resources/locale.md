@@ -31,19 +31,19 @@ resource "contentful_locale" "example_locale" {
 
 ### Required
 
-- `code` (String)
-- `environment` (String)
-- `name` (String)
-- `space_id` (String)
+- `code` (String) Locale code (e.g., en-US, de-DE)
+- `environment` (String) Environment ID
+- `name` (String) Name of the locale
+- `space_id` (String) Space ID
 
 ### Optional
 
-- `cda` (Boolean)
-- `cma` (Boolean)
-- `fallback_code` (String)
-- `optional` (Boolean)
+- `cda` (Boolean) Whether this locale is available in the content delivery API
+- `cma` (Boolean) Whether this locale is available in the content management API
+- `fallback_code` (String) Code of the fallback locale
+- `optional` (Boolean) Whether this locale is optional for content
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
-- `version` (Number)
+- `id` (String) Locale ID
+- `version` (Number) The current version of the locale

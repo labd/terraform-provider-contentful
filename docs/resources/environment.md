@@ -24,10 +24,10 @@ resource "contentful_environment" "example_environment" {
 
 ### Required
 
-- `name` (String)
-- `space_id` (String)
+- `name` (String) Name of the environment
+- `space_id` (String) Space ID
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
-- `version` (Number)
+- `id` (String) Environment ID
+- `version` (Number) The current version of the environment

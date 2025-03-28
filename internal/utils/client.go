@@ -42,5 +42,26 @@ func CreateClient(url string, token string) (*sdk.ClientWithResponses, error) {
 	}
 
 	return client, nil
+}
 
+type Response interface {
+	StatusCode() int
+}
+
+// Use a generic constraint on the value type, not a pointer
+func CheckClientResponse(resp Response, err error, statusCode int) error {
+
+	if err != nil {
+		return fmt.Errorf("Error while interacting with Contentful API: %w", err)
+	}
+
+	if resp.StatusCode() == http.StatusConflict {
+		return fmt.Errorf("Conflict while interacting with Contentful API: 409 Conflict")
+	}
+
+	if resp.StatusCode() != statusCode {
+		return fmt.Errorf("Unexpected HTTP status code, expected %d, got %d", statusCode, resp.StatusCode())
+	}
+
+	return nil
 }

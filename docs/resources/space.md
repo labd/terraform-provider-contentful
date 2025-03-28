@@ -23,13 +23,13 @@ resource "contentful_space" "example_space" {
 
 ### Required
 
-- `name` (String)
+- `name` (String) Name of the space
 
 ### Optional
 
-- `default_locale` (String)
+- `default_locale` (String) Default locale for the space
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
-- `version` (Number)
+- `id` (String) Space ID
+- `version` (Number) The current version of the space
