@@ -5,9 +5,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/labd/contentful-go/pkgs/common"
-	"github.com/labd/contentful-go/pkgs/model"
 
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
@@ -18,6 +17,9 @@ func resourceContentfulEnvironment() *schema.Resource {
 		ReadContext:   resourceReadEnvironment,
 		UpdateContext: resourceUpdateEnvironment,
 		DeleteContext: resourceDeleteEnvironment,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"version": {
@@ -36,66 +38,85 @@ func resourceContentfulEnvironment() *schema.Resource {
 	}
 }
 
-func resourceCreateEnvironment(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(utils.ProviderData).CMAClient
+func resourceCreateEnvironment(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(utils.ProviderData).Client
+	spaceID := d.Get("space_id").(string)
 
-	environment := &model.Environment{
+	body := sdk.EnvironmentCreate{
 		Name: d.Get("name").(string),
 	}
 
-	err := client.WithSpaceId(spaceID).Environments().Upsert(context.Background(), environment, nil)
+	resp, err := client.CreateEnvironmentWithResponse(ctx, spaceID, body)
 	if err != nil {
 		return parseError(err)
 	}
 
+	if resp.StatusCode() != 201 {
+		return diag.Errorf("Failed to create environment")
+	}
+
+	environment := resp.JSON201
 	if err := setEnvironmentProperties(d, environment); err != nil {
 		return parseError(err)
 	}
 
-	d.SetId(environment.Name)
+	d.SetId(environment.Sys.Id)
 
 	return nil
 }
 
-func resourceUpdateEnvironment(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(utils.ProviderData).CMAClient
+func resourceUpdateEnvironment(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 	environmentID := d.Id()
 
-	envClient := client.WithSpaceId(spaceID).Environments()
+	body := sdk.EnvironmentUpdate{
+		Name: d.Get("name").(string),
+	}
 
-	environment, err := envClient.Get(context.Background(), environmentID)
+	params := &sdk.UpdateEnvironmentParams{
+		XContentfulVersion: int64(d.Get("version").(int)),
+	}
+
+	resp, err := client.UpdateEnvironmentWithResponse(ctx, spaceID, environmentID, params, body)
 	if err != nil {
 		return parseError(err)
 	}
 
-	environment.Name = d.Get("name").(string)
-
-	err = envClient.Upsert(context.Background(), environment, nil)
-	if err != nil {
-		return parseError(err)
+	if resp.StatusCode() != 200 {
+		return diag.Errorf("Failed to update environment")
 	}
 
+	environment := resp.JSON200
 	if err := setEnvironmentProperties(d, environment); err != nil {
 		return parseError(err)
 	}
 
-	d.SetId(environment.Sys.ID)
+	d.SetId(environment.Sys.Id)
 
 	return nil
 }
 
-func resourceReadEnvironment(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(utils.ProviderData).CMAClient
+func resourceReadEnvironment(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 	environmentID := d.Id()
 
-	environment, err := client.WithSpaceId(spaceID).Environments().Get(context.Background(), environmentID)
-	if _, ok := err.(common.NotFoundError); ok {
+	resp, err := client.GetEnvironmentWithResponse(ctx, spaceID, environmentID)
+	if err != nil {
+		return parseError(err)
+	}
+
+	if resp.StatusCode() == 404 {
 		d.SetId("")
 		return nil
 	}
 
+	if resp.StatusCode() != 200 {
+		return diag.Errorf("Failed to read environment")
+	}
+
+	environment := resp.JSON200
 	err = setEnvironmentProperties(d, environment)
 	if err != nil {
 		return parseError(err)
@@ -104,28 +125,29 @@ func resourceReadEnvironment(_ context.Context, d *schema.ResourceData, m interf
 	return nil
 }
 
-func resourceDeleteEnvironment(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(utils.ProviderData).CMAClient
+func resourceDeleteEnvironment(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 	environmentID := d.Id()
 
-	envClient := client.WithSpaceId(spaceID).Environments()
+	params := &sdk.DeleteEnvironmentParams{
+		XContentfulVersion: int64(d.Get("version").(int)),
+	}
 
-	environment, err := envClient.Get(context.Background(), environmentID)
+	resp, err := client.DeleteEnvironmentWithResponse(ctx, spaceID, environmentID, params)
 	if err != nil {
 		return parseError(err)
 	}
 
-	err = envClient.Delete(context.Background(), environment)
-	if err != nil {
-		return parseError(err)
+	if resp.StatusCode() != 204 {
+		return diag.Errorf("Failed to delete environment")
 	}
 
 	return nil
 }
 
-func setEnvironmentProperties(d *schema.ResourceData, environment *model.Environment) error {
-	if err := d.Set("space_id", environment.Sys.Space.Sys.ID); err != nil {
+func setEnvironmentProperties(d *schema.ResourceData, environment *sdk.Environment) error {
+	if err := d.Set("space_id", environment.Sys.Space.Sys.Id); err != nil {
 		return err
 	}
 

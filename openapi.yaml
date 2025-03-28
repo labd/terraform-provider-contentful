@@ -1,0 +1,2763 @@
+openapi: 3.0.3
+info:
+  title: Contentful Content Management API
+  description: |
+    The Contentful Content Management API (CMA) is a RESTful API for managing content in Contentful.
+    It allows you to create, update, delete and retrieve content from your Contentful spaces.
+  version: "1.0.0"
+  contact:
+    name: Contentful Support
+    url: https://www.contentful.com/support/
+
+servers:
+  - url: https://api.contentful.com
+    description: Contentful Content Management API
+
+security:
+  - bearerAuth: []
+
+paths:
+  /spaces:
+    get:
+      summary: Get all spaces
+      description: Retrieves all spaces the authorized user has access to
+      operationId: getAllSpaces
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpaceCollection"
+    post:
+      summary: Create a space
+      description: Creates a new space
+      operationId: createSpace
+      parameters:
+        - $ref: "#/components/parameters/contentTypeHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpaceCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Space"
+
+  /spaces/{spaceId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+    get:
+      summary: Get a space
+      description: Retrieves a specific space by ID
+      operationId: getSpace
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Space"
+    put:
+      summary: Update a space
+      description: Updates a space
+      operationId: updateSpace
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpaceUpdate"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Space"
+    delete:
+      summary: Delete a space
+      description: Deletes a space
+      operationId: deleteSpace
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
+  /spaces/{spaceId}/environments:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+    get:
+      summary: Get all environments
+      description: Retrieves all environments in a space
+      operationId: getAllEnvironments
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentCollection"
+    post:
+      summary: Create an environment
+      description: Creates a new environment in a space
+      operationId: createEnvironment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnvironmentCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+
+  /spaces/{spaceId}/environments/{environmentId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+    get:
+      summary: Get an environment
+      description: Retrieves a specific environment by ID
+      operationId: getEnvironment
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+    put:
+      summary: Update an environment
+      description: Updates an environment
+      operationId: updateEnvironment
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnvironmentUpdate"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+    delete:
+      summary: Delete an environment
+      description: Deletes an environment
+      operationId: deleteEnvironment
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
+  /spaces/{spaceId}/environments/{environmentId}/content_types:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+    get:
+      summary: Get all content types
+      description: Retrieves all content types in an environment
+      operationId: getAllContentTypes
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentTypeCollection"
+    post:
+      summary: Create a content type
+      description: Creates a new content type
+      operationId: createContentType
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentTypeCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentType"
+
+  /spaces/{spaceId}/environments/{environmentId}/content_types/{contentTypeId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/contentTypeId"
+    get:
+      summary: Get a content type
+      description: Retrieves a specific content type by ID
+      operationId: getContentType
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentType"
+    put:
+      summary: Update a content type
+      description: Updates a content type
+      operationId: updateContentType
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentTypeUpdate"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentType"
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentType"
+    delete:
+      summary: Delete a content type
+      description: Deletes a content type
+      operationId: deleteContentType
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
+  /spaces/{spaceId}/environments/{environmentId}/content_types/{contentTypeId}/published:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/contentTypeId"
+    put:
+      summary: Activate a content type
+      description: Activates (publishes) a content type
+      operationId: activateContentType
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentType"
+    delete:
+      summary: Deactivate a content type
+      description: Deactivates a content type
+      operationId: deactivateContentType
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentType"
+
+  /spaces/{spaceId}/environments/{environmentId}/entries:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+    get:
+      summary: Get all entries
+      description: Retrieves all entries in an environment
+      operationId: getAllEntries
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+        - name: content_type
+          in: query
+          schema:
+            type: string
+          description: Filter by content type
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntryCollection"
+    post:
+      summary: Create an entry
+      description: Creates a new entry
+      operationId: createEntry
+      parameters:
+        - name: content_type
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Content type ID for the new entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntryCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
+
+  /spaces/{spaceId}/environments/{environmentId}/entries/{entryId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/entryId"
+
+    get:
+      summary: Get an entry
+      description: Retrieves a specific entry by ID
+      operationId: getEntry
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
+    put:
+      summary: Update an entry
+      description: Updates an entry
+      operationId: updateEntry
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntryUpdate"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
+    delete:
+      summary: Delete an entry
+      description: Deletes an entry
+      operationId: deleteEntry
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
+  /spaces/{spaceId}/environments/{environmentId}/entries/{entryId}/published:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/entryId"
+    put:
+      summary: Publish an entry
+      description: Publishes an entry
+      operationId: publishEntry
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
+    delete:
+      summary: Unpublish an entry
+      description: Unpublishes an entry
+      operationId: unpublishEntry
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
+
+  /spaces/{spaceId}/environments/{environmentId}/entries/{entryId}/archived:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/entryId"
+    put:
+      summary: Archive an entry
+      description: Archives an entry
+      operationId: archiveEntry
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
+    delete:
+      summary: Unarchive an entry
+      description: Unarchives an entry
+      operationId: unarchiveEntry
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
+
+  /spaces/{spaceId}/environments/{environmentId}/assets:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+    get:
+      summary: Get all assets
+      description: Retrieves all assets in an environment
+      operationId: getAllAssets
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetCollection"
+    post:
+      summary: Create an asset
+      description: Creates a new asset
+      operationId: createAsset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+  /spaces/{spaceId}/environments/{environmentId}/assets/{resourceId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/resourceId"
+    get:
+      summary: Get an asset
+      description: Retrieves a specific asset by ID
+      operationId: getAsset
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+    put:
+      summary: Create an asset
+      description: Creates a new asset
+      operationId: updateAsset
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetCreate"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+    delete:
+      summary: Delete an asset
+      description: Deletes an asset
+      operationId: deleteAsset
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
+  /spaces/{spaceId}/environments/{environmentId}/assets/{resourceId}/files/{localeCode}/process:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/resourceId"
+      - $ref: "#/components/parameters/localeCode"
+    put:
+      summary: Process an asset
+      description: Processes an asset
+      operationId: processAsset
+      responses:
+        "204":
+          description: No Content
+
+
+  /spaces/{spaceId}/environments/{environmentId}/assets/{resourceId}/published:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/resourceId"
+    put:
+      summary: Publish an asset
+      description: Publishes an asset
+      operationId: publishAsset
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+    delete:
+      summary: Unpublish an asset
+      description: Unpublishes an asset
+      operationId: unpublishAsset
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+
+  /spaces/{spaceId}/environments/{environmentId}/assets/{resourceId}/archived:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/resourceId"
+    put:
+      summary: Archive an asset
+      description: Archives an asset
+      operationId: archiveAsset
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+    delete:
+      summary: Unarchive an asset
+      description: Unarchives an asset
+      operationId: unarchiveAsset
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+  /spaces/{spaceId}/webhook_definitions:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+    get:
+      summary: Get all webhooks
+      description: Retrieves all webhooks in a space
+      operationId: getAllWebhooks
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookCollection"
+    post:
+      summary: Create a webhook
+      description: Creates a new webhook in a space
+      operationId: createWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Webhook"
+
+  /spaces/{spaceId}/webhook_definitions/{webhookId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/webhookId"
+    get:
+      summary: Get a webhook
+      description: Retrieves a specific webhook by ID
+      operationId: getWebhook
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Webhook"
+    put:
+      summary: Update a webhook
+      description: Updates a webhook
+      operationId: updateWebhook
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookUpdate"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Webhook"
+    delete:
+      summary: Delete a webhook
+      description: Deletes a webhook
+      operationId: deleteWebhook
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
+  /spaces/{spaceId}/environments/{environmentId}/locales:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+    get:
+      summary: Get all locales
+      description: Retrieves all locales in an environment
+      operationId: getAllLocales
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocaleCollection"
+    post:
+      summary: Create a locale
+      description: Creates a new locale in an environment
+      operationId: createLocale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocaleCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Locale"
+
+  /spaces/{spaceId}/environments/{environmentId}/locales/{localeId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/localeId"
+    get:
+      summary: Get a locale
+      description: Retrieves a specific locale by ID
+      operationId: getLocale
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Locale"
+    put:
+      summary: Update a locale
+      description: Updates a locale
+      operationId: updateLocale
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocaleUpdate"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Locale"
+    delete:
+      summary: Delete a locale
+      description: Deletes a locale
+      operationId: deleteLocale
+      responses:
+        "204":
+          description: No Content
+
+  /spaces/{spaceId}/environments/{environmentId}/content_types/{contentTypeId}/editor_interface:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/contentTypeId"
+    get:
+      summary: Get the editor interface
+      description: Retrieves the editor interface for a content type
+      operationId: getEditorInterface
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorInterface"
+    put:
+      summary: Update the editor interface
+      description: Updates the editor interface for a content type
+      operationId: updateEditorInterface
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditorInterface"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorInterface"
+
+  /spaces/{spaceId}/api_keys:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+    get:
+      summary: Get all API keys
+      description: Retrieves all API keys in a space
+      operationId: getAllApiKeys
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyCollection"
+    post:
+      summary: Create an API key
+      description: Creates a new API key in a space
+      operationId: createApiKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyDraft"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKey"
+
+  /spaces/{spaceId}/api_keys/{apiKeyId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/apiKeyId"
+    get:
+      summary: Get an API key
+      description: Retrieves a specific API key by ID
+      operationId: getApiKey
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKey"
+    put:
+      summary: Update an API key
+      description: Updates an API key
+      operationId: updateApiKey
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyDraft"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKey"
+    delete:
+      summary: Delete an API key
+      description: Deletes an API key
+      operationId: deleteApiKey
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
+  /spaces/{spaceId}/preview_api_keys:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+    get:
+      summary: Get all preview API keys
+      description: Retrieves all preview API keys in a space
+      operationId: getAllPreviewApiKeys
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviewApiKeyCollection"
+
+  /spaces/{spaceId}/preview_api_keys/{resourceId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/resourceId"
+    get:
+      summary: Get a preview API key
+      description: Retrieves a specific preview API key by ID
+      operationId: getPreviewApiKey
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviewApiKey"
+
+
+  /spaces/{spaceId}/environments/{environmentId}/app_installations:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+    get:
+      summary: Get all app installations
+      description: Retrieves all app installations in an environment
+      operationId: getAllAppInstallations
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppInstallationCollection"
+
+  /spaces/{spaceId}/environments/{environmentId}/app_installations/{resourceId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/resourceId"
+    get:
+      summary: Get an app installation
+      description: Retrieves a specific app installation by definition ID
+      operationId: getAppInstallation
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppInstallation"
+    put:
+      summary: Create or update an app installation
+      description: Creates or updates an app installation
+      operationId: upsertAppInstallation
+      parameters:
+        - in: header
+          name: X-Contentful-Marketplace
+          schema:
+            type: string
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppInstallationUpsert"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppInstallation"
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppInstallation"
+    delete:
+      summary: Delete an app installation
+      description: Deletes an app installation
+      operationId: deleteAppInstallation
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
+  /organizations/{organizationId}/app_uploads:
+    servers:
+      - url: https://upload.contentful.com
+        description: Contentful Upload API
+
+    parameters:
+      - $ref: "#/components/parameters/organizationId"
+    post:
+      summary: Upload an app
+      description: Uploads a new app
+      operationId: uploadApp
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sys:
+                    $ref: "#/components/schemas/SystemPropertiesBase"
+                required:
+                  - sys
+
+  /organizations/{organizationId}/app_definitions:
+    parameters:
+      - $ref: "#/components/parameters/organizationId"
+    get:
+      summary: Get all app definitions
+      description: Retrieves all app definitions in an organization
+      operationId: getAllAppDefinitions
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppDefinitionCollection"
+    post:
+      summary: Create an app definition
+      description: Creates a new app definition in an organization
+      operationId: createAppDefinition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppDefinitionDraft"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppDefinition"
+
+  /organizations/{organizationId}/app_definitions/{resourceId}:
+    parameters:
+      - $ref: "#/components/parameters/organizationId"
+      - $ref: "#/components/parameters/resourceId"
+    get:
+      summary: Get an app definition
+      description: Retrieves a specific app definition by ID
+      operationId: getAppDefinition
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppDefinition"
+    put:
+      summary: Update an app definition
+      description: Updates an app definition
+      operationId: updateAppDefinition
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppDefinitionDraft"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppDefinition"
+    delete:
+      summary: Delete an app definition
+      description: Deletes an app definition
+      operationId: deleteAppDefinition
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
+  /organizations/{organizationId}/app_definitions/{resourceId}/app_bundles:
+    parameters:
+      - $ref: "#/components/parameters/organizationId"
+      - $ref: "#/components/parameters/resourceId"
+
+    post:
+      summary: Create an app bundle
+      description: Creates a new app bundle
+      operationId: createAppBundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppBundleDraft"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sys:
+                    $ref: "#/components/schemas/SystemPropertiesBase"
+                required:
+                  - sys
+
+components:
+  parameters:
+    spaceId:
+      name: spaceId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID of the space
+    environmentId:
+      name: environmentId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID of the environment
+    organizationId:
+      name: organizationId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID of the organization
+    localeCode:
+      name: localeCode
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Locale
+    resourceId:
+      name: resourceId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID of the resource
+    limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 100
+      description: Maximum number of items to return
+    skip:
+      name: skip
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Number of items to skip
+    localeId:
+      name: localeId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID of the locale
+    webhookId:
+      name: webhookId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID of the webhook
+    contentTypeHeader:
+      name: Content-Type
+      in: header
+      required: true
+      schema:
+        type: string
+        default: application/vnd.contentful.management.v1+json
+      description: Contentful Management API version header
+    apiKeyId:
+      name: apiKeyId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID of the API key
+    entryId:
+      name: entryId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID of the environment
+    contentTypeId:
+      name: contentTypeId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID of the content type
+    resourceVersion:
+      name: X-Contentful-Version
+      in: header
+      required: true
+      description: The version of the locale to update.
+      schema:
+        type: integer
+        format: int64
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Use your Contentful personal access token
+
+  schemas:
+    Asset:
+      type: object
+      properties:
+        fields:
+          properties:
+            description:
+              additionalProperties:
+                type: string
+              description: Asset description by locale
+              type: object
+            file:
+              additionalProperties:
+                properties:
+                  contentType:
+                    type: string
+                  details:
+                    properties:
+                      image:
+                        properties:
+                          height:
+                            type: integer
+                          width:
+                            type: integer
+                        type: object
+                      size:
+                        type: integer
+                    type: object
+                  fileName:
+                    type: string
+                  url:
+                    type: string
+                type: object
+              description: Asset file details by locale
+              type: object
+            title:
+              additionalProperties:
+                type: string
+              description: Asset title by locale
+              type: object
+          required:
+            - file
+          type: object
+        sys:
+          $ref: '#/components/schemas/SystemProperties'
+
+    AssetCollection:
+      type: object
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Asset'
+          type: array
+        limit:
+          description: Maximum number of assets returned
+          type: integer
+        skip:
+          description: Number of assets skipped
+          type: integer
+        sys:
+          properties:
+            type:
+              enum: [Array]
+              type: string
+          type: object
+        total:
+          description: Total number of assets
+          type: integer
+
+    AssetCreate:
+      type: object
+      properties:
+        fields:
+          $ref: '#/components/schemas/AssetField'
+
+    AssetField:
+      properties:
+        description:
+          type: object
+          additionalProperties:
+            type: string
+          description: Asset description by locale
+        file:
+          additionalProperties:
+            $ref: '#/components/schemas/AssetFile'
+        title:
+          type: object
+          additionalProperties:
+            type: string
+          description: Asset title by locale
+      required:
+        - title
+        - description
+        - file
+
+    AssetFile:
+      type: object
+      description: Asset file details by locale
+      properties:
+        contentType:
+          type: string
+        fileName:
+          type: string
+        upload:
+          description: Upload URL
+          type: string
+      required:
+        - contentType
+        - fileName
+        - upload
+
+    ContentType:
+      type: object
+      properties:
+        description:
+          description: Description of the content type
+          type: string
+        displayField:
+          description: ID of the field to use as the display field
+          type: string
+        fields:
+          items:
+            $ref: '#/components/schemas/Field'
+          type: array
+        name:
+          description: Name of the content type
+          type: string
+        sys:
+          $ref: '#/components/schemas/SystemPropertiesResource'
+      required:
+        - name
+        - displayField
+        - fields
+        - sys
+
+    ContentTypeCollection:
+      type: object
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ContentType'
+          type: array
+        limit:
+          description: Maximum number of content types returned
+          type: integer
+        skip:
+          description: Number of content types skipped
+          type: integer
+        sys:
+          properties:
+            type:
+              enum: [Array]
+              type: string
+          type: object
+        total:
+          description: Total number of content types
+          type: integer
+
+    ContentTypeCreate:
+      type: object
+      properties:
+        description:
+          description: Description of the content type
+          type: string
+        displayField:
+          description: ID of the field to use as the display field
+          type: string
+        fields:
+          items:
+            $ref: '#/components/schemas/Field'
+          type: array
+        name:
+          description: Name of the content type
+          type: string
+      required:
+        - name
+        - displayField
+        - fields
+
+    ContentTypeUpdate:
+      type: object
+      properties:
+        description:
+          description: Description of the content type
+          type: string
+        displayField:
+          description: ID of the field to use as the display field
+          type: string
+        fields:
+          items:
+            $ref: '#/components/schemas/Field'
+          type: array
+        name:
+          description: Name of the content type
+          type: string
+      required:
+        - name
+        - displayField
+        - fields
+
+
+    Entry:
+      type: object
+      properties:
+        fields:
+          additionalProperties: true
+          description: Content fields with values by locale
+          type: object
+        sys:
+          $ref: '#/components/schemas/SystemProperties'
+
+    EntryCollection:
+      type: object
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Entry'
+          type: array
+        limit:
+          description: Maximum number of entries returned
+          type: integer
+        skip:
+          description: Number of entries skipped
+          type: integer
+        sys:
+          properties:
+            type:
+              enum: [Array]
+              type: string
+          type: object
+        total:
+          description: Total number of entries
+          type: integer
+
+    EntryCreate:
+      type: object
+      properties:
+        fields:
+          additionalProperties: true
+          description: Content fields with values by locale
+          type: object
+
+    EntryUpdate:
+      type: object
+      properties:
+        fields:
+          additionalProperties: true
+          description: Content fields with values by locale
+          type: object
+
+    Environment:
+      type: object
+      properties:
+        name:
+          description: Name of the environment
+          type: string
+        sys:
+          $ref: '#/components/schemas/SystemPropertiesResource'
+      required:
+        - name
+        - sys
+
+    EnvironmentCollection:
+      type: object
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Environment'
+          type: array
+        limit:
+          description: Maximum number of environments returned
+          type: integer
+        skip:
+          description: Number of environments skipped
+          type: integer
+        sys:
+          properties:
+            type:
+              enum: [Array]
+              type: string
+          type: object
+        total:
+          description: Total number of environments
+          type: integer
+
+    EnvironmentCreate:
+      type: object
+      properties:
+        name:
+          description: Name of the environment to create
+          type: string
+      required:
+        - name
+
+    EnvironmentSystemProperties:
+      type: object
+      properties:
+        sys:
+          $ref: "#/components/schemas/EnvironmentSystemPropertiesSys"
+
+    EnvironmentSystemPropertiesSys:
+      type: object
+      properties:
+        id:
+          description: Environment ID
+          type: string
+        linkType:
+          enum: [Environment]
+          type: string
+        type:
+          enum: [Link]
+          type: string
+      required:
+        - id
+        - linkType
+        - type
+
+    EnvironmentUpdate:
+      type: object
+      properties:
+        name:
+          description: Updated name for the environment
+          type: string
+      required:
+        - name
+
+
+    FieldItem:
+      type: object
+      anyOf:
+        - $ref: '#/components/schemas/FieldItemSymbol'
+        - $ref: '#/components/schemas/FieldItemLink'
+      discriminator:
+        propertyName: type
+        mapping:
+          Symbol: '#/components/schemas/FieldItemSymbol'
+          Link: '#/components/schemas/FieldItemLink'
+
+    FieldItemSymbol:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - Symbol
+        validations:
+          items:
+            $ref: '#/components/schemas/FieldValidation'
+          type: array
+      required:
+        - type
+
+    FieldItemLink:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - Link
+        linkType:
+          type: string
+          enum:
+            - Entry
+            - Asset
+        validations:
+          items:
+            $ref: '#/components/schemas/FieldValidation'
+          type: array
+      required:
+        - type
+        - linkType
+
+
+    Field:
+      type: object
+      properties:
+        id:
+          description: ID of the field
+          type: string
+        items:
+          description: Used for Array fields to define the items type
+          $ref: '#/components/schemas/FieldItem'
+        linkType:
+          description: For Link fields, defines what type of resource it links to
+          enum: [Entry, Asset]
+          type: string
+        localized:
+          description: Whether the field is localized
+          type: boolean
+        name:
+          description: Name of the field
+          type: string
+        required:
+          description: Whether the field is required
+          type: boolean
+        defaultValue:
+          description: Default value for the field
+          type: object
+          additionalProperties: true
+        type:
+          description: Type of the field
+          type: string
+          enum:
+            - Symbol
+            - Text
+            - Integer
+            - Number
+            - Date
+            - Location
+            - Boolean
+            - Link
+            - Array
+            - Object
+        omitted:
+          description: Whether the field is omitted
+          type: boolean
+        disabled:
+          description: Whether the field is disabled
+          type: boolean
+        validations:
+          description: Validations that can be applied to the field
+          items:
+            $ref: '#/components/schemas/FieldValidation'
+          type: array
+      required:
+        - id
+        - name
+        - localized
+        - required
+        - type
+
+
+    FieldValidation:
+      type: object
+      description: Validations that can be applied to fields
+      properties:
+        size:
+          type: object
+          $ref: '#/components/schemas/RangeMinMax'
+        linkContentType:
+          type: array
+          items:
+            type: string
+          description: Array of content type IDs that the link can point to
+        linkMimetypeGroup:
+          type: array
+          items:
+            type: string
+          description: Array of mime types that the link can point to
+        in:
+          type: array
+          items:
+            type: string
+          description: Array of allowed values
+        regexp:
+          type: object
+          $ref: '#/components/schemas/RegexValidationValue'
+        unique:
+          type: boolean
+          description: Whether the field value must be unique
+        range:
+          type: object
+          $ref: '#/components/schemas/RangeMinMax'
+          minProperties:
+        dateRange:
+          type: object
+          $ref: '#/components/schemas/RangeDate'
+          minProperties: 1
+        assetImageDimensions:
+          type: object
+          $ref: '#/components/schemas/RangeImageDimensions'
+          minProperties: 1
+        assetFileSize:
+          type: object
+          $ref: '#/components/schemas/RangeMinMax'
+          minProperties: 1
+        assetFileType:
+          type: object
+          properties:
+            includes:
+              type: array
+              items:
+                type: string
+              description: Array of allowed MIME types
+            excludes:
+              type: array
+              items:
+                type: string
+              description: Array of disallowed MIME types
+          minProperties: 1
+        enabledNodeTypes:
+          type: array
+          items:
+            type: string
+          description: Array of allowed node types
+        enabledMarks:
+          type: array
+          items:
+            type: string
+          description: Array of allowed marks
+        message:
+          type: string
+          description: Custom error message
+
+    RangeDate:
+      type: object
+      properties:
+        min:
+          type: string
+          format: date-time
+          description: Minimum date
+        max:
+          type: string
+          format: date-time
+          description: Maximum date
+
+    RangeMinMax:
+      type: object
+      properties:
+        min:
+          type: number
+          format: double
+          description: Minimum size
+        max:
+          type: number
+          format: double
+          description: Maximum size
+
+    RangeMinMaxInteger:
+      type: object
+      properties:
+        min:
+          type: number
+          format: double
+          description: Minimum size
+        max:
+          type: number
+          format: double
+          description: Maximum size
+
+    RangeImageDimensions:
+      type: object
+      properties:
+        width:
+          $ref: "#/components/schemas/RangeMinMaxInteger"
+        height:
+          $ref: "#/components/schemas/RangeMinMaxInteger"
+
+    RegexValidationValue:
+      type: object
+      properties:
+        pattern:
+          type: string
+          description: Regular expression pattern
+        flags:
+          type: string
+          description: Regular expression flags
+      required:
+        - pattern
+
+    Locale:
+      type: object
+      properties:
+        code:
+          description: Locale code (e.g., en-US, de-DE)
+          type: string
+        contentDeliveryApi:
+          description: Whether this locale is available in the content delivery API
+          type: boolean
+        contentManagementApi:
+          description: Whether this locale is available in the content management API
+          type: boolean
+        default:
+          description: Whether this is the default locale
+          type: boolean
+        fallbackCode:
+          description: Code of the locale to use as a fallback
+          type: string
+        name:
+          description: Human readable name of the locale
+          type: string
+        optional:
+          description: Whether this locale is optional for content
+          type: boolean
+        sys:
+          $ref: '#/components/schemas/SystemProperties'
+      required:
+        - code
+        - name
+        - optional
+        - contentDeliveryApi
+        - contentManagementApi
+        - sys
+
+    LocaleCollection:
+      type: object
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Locale'
+          type: array
+        limit:
+          description: Maximum number of locales returned
+          type: integer
+        skip:
+          description: Number of locales skipped
+          type: integer
+        sys:
+          properties:
+            type:
+              enum: [Array]
+              type: string
+          type: object
+        total:
+          description: Total number of locales
+          type: integer
+
+    LocaleCreate:
+      type: object
+      properties:
+        code:
+          description: Locale code (e.g., en-US, de-DE)
+          type: string
+        contentDeliveryApi:
+          default: true
+          description: Whether this locale is available in the content delivery API
+          type: boolean
+        contentManagementApi:
+          default: true
+          description: Whether this locale is available in the content management API
+          type: boolean
+        default:
+          default: false
+          description: Whether this is the default locale
+          type: boolean
+        fallbackCode:
+          description: Code of the locale to use as a fallback
+          nullable: true
+          type: string
+        name:
+          description: Human readable name of the locale
+          type: string
+        optional:
+          default: false
+          description: Whether this locale is optional for content
+          type: boolean
+      required:
+        - name
+        - code
+
+    LocaleUpdate:
+      type: object
+      properties:
+        code:
+          description: Locale code (e.g., en-US, de-DE)
+          type: string
+        contentDeliveryApi:
+          description: Whether this locale is available in the content delivery API
+          type: boolean
+        contentManagementApi:
+          description: Whether this locale is available in the content management API
+          type: boolean
+        fallbackCode:
+          description: Code of the locale to use as a fallback
+          nullable: true
+          type: string
+        name:
+          description: Human readable name of the locale
+          type: string
+        optional:
+          description: Whether this locale is optional for content
+          type: boolean
+      required:
+        - name
+        - code
+
+    Space:
+      type: object
+      properties:
+        defaultLocale:
+          description: Default locale of the space
+          type: string
+        name:
+          description: Name of the space
+          type: string
+        sys:
+          $ref: '#/components/schemas/SystemPropertiesSpace'
+      required:
+        - name
+        - sys
+
+    SpaceCollection:
+      type: object
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Space'
+          type: array
+        limit:
+          description: Maximum number of spaces returned
+          type: integer
+        skip:
+          description: Number of spaces skipped
+          type: integer
+        sys:
+          properties:
+            type:
+              enum: [Array]
+              type: string
+          type: object
+        total:
+          description: Total number of spaces
+          type: integer
+
+    SpaceCreate:
+      type: object
+      properties:
+        defaultLocale:
+          default: en-US
+          description: Default locale for the space
+          type: string
+        name:
+          description: Name of the space to create
+          type: string
+      required:
+        - name
+
+    SpaceUpdate:
+      type: object
+      properties:
+        name:
+          description: Updated name for the space
+          type: string
+      required:
+        - name
+
+    SystemPropertiesBase:
+      type: object
+      properties:
+        id:
+          description: Resource ID
+          type: string
+        type:
+          description: Resource type
+          type: string
+      required:
+        - id
+        - type
+
+    SystemPropertiesAppDefinition:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/SystemPropertiesBase'
+        - properties:
+            appDefinition:
+              type: object
+              properties:
+                sys:
+                  $ref: '#/components/schemas/SystemPropertiesLink'
+              required:
+                - sys
+            version:
+              description: Resource version
+              type: integer
+              format: int64
+          required:
+            - appDefinition
+            - version
+
+    SystemPropertiesSpace:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/SystemPropertiesBase'
+        - properties:
+            version:
+              description: Resource version
+              type: integer
+              format: int64
+          required:
+            - version
+
+    SystemPropertiesResource:
+      type: object
+      properties:
+        id:
+          description: Resource ID
+          type: string
+        type:
+          description: Resource type
+          type: string
+        space:
+          $ref: '#/components/schemas/SystemPropertiesReference'
+        createdBy:
+          $ref: '#/components/schemas/SystemPropertiesReference'
+        updatedBy:
+          $ref: '#/components/schemas/SystemPropertiesReference'
+        updatedAt:
+          description: Last update timestamp
+          format: date-time
+          type: string
+        version:
+          description: Resource version
+          type: integer
+          format: int64
+      required:
+        - id
+        - type
+        - version
+        - space
+        - createdBy
+
+
+    # TODO: Sync with https://www.contentful.com/developers/docs/references/content-management-api/#/introduction/common-resource-attributes
+    SystemProperties:
+      type: object
+      properties:
+        id:
+          description: Resource ID
+          type: string
+        archivedAt:
+          description: Archival timestamp
+          format: date-time
+          type: string
+        contentType:
+          properties:
+            sys:
+              properties:
+                id:
+                  description: Content type ID
+                  type: string
+                linkType:
+                  enum: [ContentType]
+                  type: string
+                type:
+                  enum: [Link]
+                  type: string
+              type: object
+          type: object
+        createdAt:
+          description: Creation timestamp
+          format: date-time
+          type: string
+        environment:
+          $ref: '#/components/schemas/EnvironmentSystemProperties'
+        publishedAt:
+          description: Publication timestamp
+          format: date-time
+          type: string
+        space:
+          $ref: '#/components/schemas/EnvironmentSystemProperties'
+          type: object
+        type:
+          description: Resource type
+          type: string
+        updatedAt:
+          description: Last update timestamp
+          format: date-time
+          type: string
+        version:
+          description: Resource version
+          type: integer
+          format: int64
+
+    SystemPropertiesReference:
+      type: object
+      properties:
+        sys:
+          $ref: '#/components/schemas/SystemPropertiesLink'
+      required:
+        - sys
+
+    SystemPropertiesLink:
+      type: object
+      properties:
+        id:
+          description: Resource ID
+          type: string
+        type:
+          description: Resource type
+          type: string
+        linkType:
+          description: Link type
+          type: string
+      required:
+        - id
+        - type
+        - linkType
+
+    Webhook:
+      type: object
+      properties:
+        headers:
+          description: HTTP headers to send with the webhook request
+          items:
+            $ref: '#/components/schemas/WebhookHeader'
+            type: object
+          type: array
+        httpBasicPassword:
+          description: Password for HTTP basic authentication
+          type: string
+        httpBasicUsername:
+          description: Username for HTTP basic authentication
+          type: string
+        name:
+          description: Name of the webhook
+          type: string
+        sys:
+          $ref: '#/components/schemas/SystemProperties'
+        topics:
+          description: Events that trigger the webhook
+          items:
+            type: string
+          type: array
+        url:
+          description: URL to call when the webhook is triggered
+          type: string
+      required:
+        - name
+        - url
+        - topics
+        - headers
+
+    WebhookCollection:
+      type: object
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Webhook'
+          type: array
+        limit:
+          description: Maximum number of webhooks returned
+          type: integer
+        skip:
+          description: Number of webhooks skipped
+          type: integer
+        sys:
+          properties:
+            type:
+              enum: [Array]
+              type: string
+          type: object
+        total:
+          description: Total number of webhooks
+          type: integer
+
+    WebhookCreate:
+      type: object
+      properties:
+        headers:
+          description: HTTP headers to send with the webhook request
+          items:
+            $ref: '#/components/schemas/WebhookHeader'
+            type: object
+          type: array
+        httpBasicPassword:
+          description: Password for HTTP basic authentication
+          type: string
+        httpBasicUsername:
+          description: Username for HTTP basic authentication
+          type: string
+        name:
+          description: Name of the webhook
+          type: string
+        topics:
+          description: Events that trigger the webhook
+          items:
+            type: string
+          type: array
+        url:
+          description: URL to call when the webhook is triggered
+          type: string
+      required:
+        - name
+        - url
+        - topics
+
+    WebhookHeader:
+      type: object
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+      required:
+        - key
+        - value
+
+    WebhookUpdate:
+      type: object
+      properties:
+        headers:
+          description: HTTP headers to send with the webhook request
+          items:
+            $ref: '#/components/schemas/WebhookHeader'
+            type: object
+          type: array
+        httpBasicPassword:
+          description: Password for HTTP basic authentication
+          type: string
+        httpBasicUsername:
+          description: Username for HTTP basic authentication
+          type: string
+        name:
+          description: Name of the webhook
+          type: string
+        topics:
+          description: Events that trigger the webhook
+          items:
+            type: string
+          type: array
+        url:
+          description: URL to call when the webhook is triggered
+          type: string
+      required:
+        - name
+        - url
+        - topics
+
+    EditorInterface:
+      type: object
+      properties:
+        sys:
+          $ref: '#/components/schemas/SystemProperties'
+        controls:
+          type: array
+          description: Controls for each field in the content type
+          items:
+            $ref: '#/components/schemas/EditorInterfaceControl'
+        sidebar:
+          type: array
+          items:
+            $ref: '#/components/schemas/EditorInterfaceSidebarItem'
+        editorLayout:
+          type: array
+          description: To be implemented
+          items:
+            type: object
+            additionalProperties: true
+        groupControls:
+          type: array
+          description: To be implemented
+          items:
+            type: object
+            additionalProperties: true
+      required:
+       - controls
+
+
+    EditorInterfaceControl:
+      type: object
+      properties:
+        fieldId:
+          type: string
+          description: ID of the field this control is for
+        widgetId:
+          type: string
+          description: ID of the widget to use for this field (optional)
+        widgetNamespace:
+          type: string
+          description: Namespace of the widget (optional)
+          enum: [builtin, app, extension]
+        disabled:
+          type: boolean
+          description: Whether the field is disabled
+        settings:
+          $ref: '#/components/schemas/EditorInterfaceSettings'
+      required:
+        - fieldId
+
+    EditorInterfaceSidebarItem:
+      type: object
+      properties:
+        widgetId:
+          type: string
+          description: ID of the widget to use for this field (optional)
+        widgetNamespace:
+          type: string
+          description: Namespace of the widget (optional)
+          enum: [builtin, app, extension]
+        disabled:
+          type: boolean
+          description: Whether the field is disabled
+        settings:
+          $ref: '#/components/schemas/EditorInterfaceSettings'
+      required:
+        - fieldId
+
+    EditorInterfaceSettings:
+      type: object
+      description: Widget-specific settings (optional)
+      properties:
+        helpText:
+          type: string
+        stars:
+          description: Number of stars to show in the 'rating' widget
+          type: string
+        trueLabel:
+          description: Label for the 'boolean' widget when true
+          type: string
+        falseLabel:
+          description: Label for the 'boolean' widget when false
+          type: string
+        ampm:
+          description: Whether to use 12-hour time in the 'date' widget
+          type: string
+        format:
+          description: Date format for the 'date' widget
+          type: string
+        bulkEditing:
+          description: Whether bulk editing is enabled for the field (reference fields only)
+          type: boolean
+        trackingFieldId:
+          description: ID of the field to track when field is slug
+          type: string
+      additionalProperties: true
+
+    ApiKey:
+      type: object
+      properties:
+        sys:
+          $ref: '#/components/schemas/SystemProperties'
+        name:
+          type: string
+          description: Name of the API key
+        description:
+          type: string
+          description: Description of the API key
+        accessToken:
+          type: string
+          description: The Content Delivery API access token
+        preview_api_key:
+          type: object
+          properties:
+            sys:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: ID of the preview API key
+                type:
+                  type: string
+                  enum: [PreviewApiKey]
+        environments:
+          type: array
+          items:
+            type: object
+            $ref: '#/components/schemas/EnvironmentSystemProperties'
+          description: List of environments this API key can access
+      required:
+        - sys
+        - name
+        - description
+        - accessToken
+        - environments
+        - PreviewApiKey
+
+    ApiKeyCollection:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of API keys
+        skip:
+          type: integer
+          description: Number of API keys skipped
+        limit:
+          type: integer
+          description: Maximum number of API keys returned
+        sys:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [Array]
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiKey'
+
+    ApiKeyDraft:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the API key
+        description:
+          type: string
+          description: Description of the API key
+        environments:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnvironmentSystemProperties'
+          description: List of environments this API key can access
+      required:
+        - name
+        - description
+
+    PreviewApiKey:
+      type: object
+      properties:
+        sys:
+          $ref: '#/components/schemas/SystemProperties'
+        name:
+          type: string
+          description: Name of the preview API key
+        description:
+          type: string
+          description: Description of the preview API key
+        accessToken:
+          type: string
+          description: The Preview API access token
+        environments:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnvironmentSystemProperties'
+          description: List of environments this preview API key can access
+      required:
+        - sys
+        - name
+        - description
+        - accessToken
+        - environments
+
+    PreviewApiKeyCollection:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of preview API keys
+        skip:
+          type: integer
+          description: Number of preview API keys skipped
+        limit:
+          type: integer
+          description: Maximum number of preview API keys returned
+        sys:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [Array]
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PreviewApiKey'
+
+
+    AppInstallation:
+      type: object
+      properties:
+        sys:
+          $ref: "#/components/schemas/SystemPropertiesAppDefinition"
+        appDefinition:
+          $ref: "#/components/schemas/AppDefinitionLink"
+        parameters:
+          type: object
+          description: Configuration parameters for the app installation
+          additionalProperties: true
+        srcdoc:
+          type: string
+          description: HTML source code for custom apps
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppLocation"
+          description: Locations where the app is installed
+      required:
+        - sys
+        - appDefinition
+        - parameters
+
+    AppDefinitionLink:
+      type: object
+      properties:
+        sys:
+          type: object
+          properties:
+            id:
+              type: string
+              description: ID of the app definition
+            type:
+              type: string
+              enum: [Link]
+            linkType:
+              type: string
+              enum: [AppDefinition]
+      required:
+        - sys
+
+    AppInstallationUpsert:
+      type: object
+      properties:
+        parameters:
+          type: object
+          description: Configuration parameters for the app installation
+          additionalProperties: true
+        srcdoc:
+          type: string
+          description: HTML source code for custom apps
+      required:
+        - parameters
+
+    AppInstallationCollection:
+      type: object
+      properties:
+        sys:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [Array]
+        total:
+          type: integer
+          description: Total number of app installations
+        skip:
+          type: integer
+          description: Number of app installations skipped
+        limit:
+          type: integer
+          description: Maximum number of app installations returned
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppInstallation"
+
+    AppDefinition:
+      properties:
+        sys:
+          $ref: "#/components/schemas/SystemPropertiesAppDefinition"
+        name:
+          type: string
+          description: Name of the app
+        src:
+          type: string
+          description: URL of the app
+        bundle:
+          $ref: "#/components/schemas/AppDefinitionBundle"
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppLocation"
+          description: Locations where the app can be installed
+        parameters:
+          type: object
+          properties:
+            instanceParameter:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [Symbol, Boolean, Number, Object]
+                name:
+                  type: string
+                  description: Name of the parameter
+                description:
+                  type: string
+                  description: Description of the parameter
+                required:
+                  type: boolean
+                  description: Whether the parameter is required
+                default:
+                  type: object
+                  description: Default value of the parameter
+                  additionalProperties: true
+              required:
+                - type
+                - name
+            installationParameter:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [Symbol, Boolean, Number, Object]
+                name:
+                  type: string
+                  description: Name of the parameter
+                description:
+                  type: string
+                  description: Description of the parameter
+                required:
+                  type: boolean
+                  description: Whether the parameter is required
+                default:
+                  type: object
+                  description: Default value of the parameter
+                  additionalProperties: true
+              required:
+                - type
+                - name
+      required:
+        - sys
+        - name
+        - locations
+
+    AppDefinitionBundle:
+      type: object
+      properties:
+        sys:
+          $ref: "#/components/schemas/SystemPropertiesLink"
+
+    AppDefinitionDraft:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the app
+        src:
+          type: string
+          description: URL of the app
+        bundle:
+          type: object
+          $ref: "#/components/schemas/AppDefinitionBundle"
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppLocation"
+          description: Locations where the app can be installed
+        parameters:
+          type: object
+          additionalProperties: true
+      required:
+        - name
+        - locations
+        - parameters
+
+    AppDefinitionCollection:
+      type: object
+      properties:
+        sys:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [Array]
+        total:
+          type: integer
+          description: Total number of app definitions
+        skip:
+          type: integer
+          description: Number of app definitions skipped
+        limit:
+          type: integer
+          description: Maximum number of app definitions returned
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppDefinition"
+
+    AppNavigationItem:
+      type: object
+      properties:
+        name:
+          type: string
+        path:
+          type: string
+      required:
+        - name
+        - path
+
+    AppLocation:
+      type: object
+      properties:
+        location:
+          type: string
+          description: Location where the app can be installed
+        fieldTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppFieldType"
+          description: Field types that this app can be installed on (for entry-field location)
+        navigationItem:
+          $ref: "#/components/schemas/AppNavigationItem"
+          description: Navigation item for the app (for navigation location)
+      required:
+        - location
+        - fieldTypes
+
+    AppFieldType:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - Symbol
+            - Text
+            - Integer
+            - Number
+            - Date
+            - Location
+            - Boolean
+            - Link
+            - Object
+        linkType:
+          type: string
+          enum:
+            - Entry
+            - Asset
+        items:
+          $ref: '#/components/schemas/FieldItem'
+      required:
+        - type
+
+    AppBundleDraftUpload:
+      type: object
+      properties:
+        sys:
+          $ref: "#/components/schemas/SystemPropertiesLink"
+      required:
+        - sys
+
+    AppBundleDraft:
+      type: object
+      properties:
+        comment:
+          type: string
+          description: Name of the app bundle
+        upload:
+          $ref: "#/components/schemas/AppBundleDraftUpload"
+      required:
+        - comment
+        - upload

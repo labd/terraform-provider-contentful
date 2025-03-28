@@ -1,12 +1,11 @@
 package utils
 
 import (
-	"github.com/labd/contentful-go"
-	"github.com/labd/contentful-go/service/cma"
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 )
 
 type ProviderData struct {
-	Client         *contentful.Client
-	CMAClient      cma.SpaceIdClientBuilder
+	Client         *sdk.ClientWithResponses
+	ClientUpload   *sdk.ClientWithResponses
 	OrganizationId string
 }

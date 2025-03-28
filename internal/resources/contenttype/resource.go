@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/elliotchance/pie/v2"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
@@ -21,11 +22,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go"
-	"github.com/labd/contentful-go/pkgs/model"
-	"github.com/labd/contentful-go/service/cma"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
 	"github.com/labd/terraform-provider-contentful/internal/custommodifier"
 	"github.com/labd/terraform-provider-contentful/internal/customvalidator"
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
@@ -48,8 +49,7 @@ func NewContentTypeResource() resource.Resource {
 
 // contentTypeResource is the resource implementation.
 type contentTypeResource struct {
-	client    cma.SpaceIdClientBuilder
-	clientOld *contentful.Client
+	client *sdk.ClientWithResponses
 }
 
 func (e *contentTypeResource) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -380,8 +380,7 @@ func (e *contentTypeResource) Configure(_ context.Context, request resource.Conf
 	}
 
 	data := request.ProviderData.(utils.ProviderData)
-	e.client = data.CMAClient
-	e.clientOld = data.Client
+	e.client = data.Client
 
 }
 
@@ -392,28 +391,57 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 		return
 	}
 
-	draft, err := plan.Draft()
+	spaceId := plan.SpaceId.ValueString()
+	environment := plan.Environment.ValueString()
 
+	var contentType *sdk.ContentType
+
+	if !plan.ID.IsUnknown() && !plan.ID.IsNull() {
+		draft, err := plan.Update()
+		if err != nil {
+			response.Diagnostics.AddError("Error creating contenttype", err.Error())
+			return
+		}
+		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.ID.ValueString(), nil, *draft)
+		if err != nil {
+			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype with id "+plan.ID.ValueString()+", unexpected error: "+err.Error())
+			return
+		}
+
+		if resp.StatusCode() != 201 {
+			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype with id "+plan.ID.ValueString()+", unexpected status code: "+resp.Status())
+			return
+		}
+		contentType = resp.JSON201
+	} else {
+		draft, err := plan.Update()
+		if err != nil {
+			response.Diagnostics.AddError("Error creating contenttype", err.Error())
+			return
+		}
+		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.Name.ValueString(), nil, *draft)
+		if err != nil {
+			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype, unexpected error: "+err.Error())
+			return
+		}
+		if resp.StatusCode() != 201 {
+			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype, unexpected status code: "+resp.Status())
+			return
+		}
+		contentType = resp.JSON201
+	}
+
+	contentType, err := e.activateContentType(ctx, spaceId, environment, contentType.Sys.Id, contentType.Sys.Version)
 	if err != nil {
-		response.Diagnostics.AddError("Error creating contenttype", err.Error())
+		response.Diagnostics.AddError("Error creating contenttype", "Could not activate contenttype, unexpected error: "+err.Error())
 		return
 	}
 
-	envClient := e.client.WithSpaceId(plan.SpaceId.ValueString()).WithEnvironment(plan.Environment.ValueString())
+	tflog.Debug(ctx, spew.Sdump(contentType))
 
-	if err = envClient.ContentTypes().Upsert(ctx, draft); err != nil {
-		response.Diagnostics.AddError("Error creating contenttype", err.Error())
-		return
-	}
-
-	if err = envClient.ContentTypes().Activate(ctx, draft); err != nil {
-		response.Diagnostics.AddError("Error activating contenttype", err.Error())
-		return
-	}
-
-	plan.Version = types.Int64Value(int64(draft.Sys.Version))
+	plan.ID = types.StringValue(contentType.Sys.Id)
+	plan.Version = types.Int64Value(contentType.Sys.Version)
 	plan.VersionControls = types.Int64Value(0)
-	plan.ID = types.StringValue(draft.Sys.ID)
 
 	// Set state to fully populated data
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
@@ -445,10 +473,10 @@ func (e *contentTypeResource) doRead(ctx context.Context, contentType *ContentTy
 		return
 	}
 
-	var editorInterface *contentful.EditorInterface
+	var editorInterface *sdk.EditorInterface
 
 	if contentType.ManageFieldControls.ValueBool() {
-		editorInterface, err = e.getEditorInterface(contentType)
+		editorInterface, err = e.getEditorInterface(ctx, contentType)
 		if err != nil {
 			d.AddError(
 				"Error reading contenttype",
@@ -458,20 +486,22 @@ func (e *contentTypeResource) doRead(ctx context.Context, contentType *ContentTy
 		}
 
 		if u, ok := ctx.Value(OnlyControlVersion).(bool); ok && u {
-			contentType.VersionControls = types.Int64Value(int64(editorInterface.Sys.Version))
+			contentType.VersionControls = types.Int64Value(*editorInterface.Sys.Version)
 
-			ei := &contentful.EditorInterface{}
+			ei := &sdk.EditorInterface{}
 			contentType.DraftEditorInterface(ei)
+
 			// remove all controls which are not in the plan for an easier import
-			editorInterface.Controls = pie.Filter(editorInterface.Controls, func(c contentful.Controls) bool {
-				return pie.Any(ei.Controls, func(value contentful.Controls) bool {
-					return value.FieldID == c.FieldID && value.WidgetID != nil && reflect.DeepEqual(value.WidgetID, c.WidgetID)
+			editorInterface.Controls = pie.Filter(editorInterface.Controls, func(c sdk.EditorInterfaceControl) bool {
+				return pie.Any(ei.Controls, func(value sdk.EditorInterfaceControl) bool {
+					return value.FieldId == c.FieldId && value.WidgetId != nil && reflect.DeepEqual(value.WidgetId, c.WidgetId)
 				})
 			})
 		}
 	}
 
 	err = contentType.Import(contentfulContentType, editorInterface)
+	tflog.Debug(ctx, spew.Sdump(editorInterface))
 
 	if err != nil {
 		d.AddError(
@@ -513,26 +543,26 @@ func (e *contentTypeResource) Update(ctx context.Context, request resource.Updat
 		)
 		return
 	}
+	plan.Version = types.Int64Value(contentfulContentType.Sys.Version)
 
-	deletedFields := pie.Of(pie.FilterNot(contentfulContentType.Fields, func(cf *model.Field) bool {
+	// Mark the fields as omitted that are no longer in the plan
+	deletedFields := pie.Of(pie.FilterNot(contentfulContentType.Fields, func(cf sdk.Field) bool {
 		return pie.FindFirstUsing(plan.Fields, func(f Field) bool {
-			return cf.ID == f.Id.ValueString()
+			return cf.Id == f.Id.ValueString()
 		}) != -1
 
-	})).Map(func(f *model.Field) *model.Field {
-		f.Omitted = true
+	})).Map(func(f sdk.Field) sdk.Field {
+		f.Omitted = utils.Pointer(true)
 
 		return f
 	}).Result
 
-	draft, err := plan.Draft()
+	draft, err := plan.Update()
 
 	if err != nil {
 		response.Diagnostics.AddError("Error updating contenttype", err.Error())
 		return
 	}
-
-	draft.Sys = contentfulContentType.Sys
 
 	if len(deletedFields) > 0 {
 		draft.Fields = append(draft.Fields, deletedFields...)
@@ -543,7 +573,7 @@ func (e *contentTypeResource) Update(ctx context.Context, request resource.Updat
 	// followed by the field removal and final publish.
 
 	if !plan.Equal(contentfulContentType) {
-		err = e.doUpdate(ctx, plan, draft)
+		contentType, err := e.doUpdate(ctx, plan, draft)
 		if err != nil {
 			response.Diagnostics.AddError(
 				"Error updating contenttype",
@@ -551,19 +581,19 @@ func (e *contentTypeResource) Update(ctx context.Context, request resource.Updat
 			)
 			return
 		}
+		plan.Version = types.Int64Value(contentType.Sys.Version)
 
+		// Now generate a new plan, to remove the fields that we previously marked
+		// as omitted
 		if len(deletedFields) > 0 {
-			sys := draft.Sys
-			draft, err = plan.Draft()
+			draft, err = plan.Update()
 
 			if err != nil {
 				response.Diagnostics.AddError("Error updating contenttype", err.Error())
 				return
 			}
 
-			draft.Sys = sys
-
-			err = e.doUpdate(ctx, plan, draft)
+			contentType, err = e.doUpdate(ctx, plan, draft)
 			if err != nil {
 				response.Diagnostics.AddError(
 					"Error updating contenttype",
@@ -571,6 +601,7 @@ func (e *contentTypeResource) Update(ctx context.Context, request resource.Updat
 				)
 				return
 			}
+			plan.Version = types.Int64Value(contentType.Sys.Version)
 		}
 	}
 
@@ -586,7 +617,7 @@ func (e *contentTypeResource) updateEditorInterface(ctx context.Context, state *
 			return context.WithValue(ctx, OnlyControlVersion, true)
 		}
 
-		editorInterface, err := e.getEditorInterface(plan)
+		editorInterface, err := e.getEditorInterface(ctx, plan)
 		if err != nil {
 			d.AddError(
 				"Error reading contenttype",
@@ -598,9 +629,14 @@ func (e *contentTypeResource) updateEditorInterface(ctx context.Context, state *
 		if !plan.EqualEditorInterface(editorInterface) {
 
 			plan.DraftEditorInterface(editorInterface)
-			e.clientOld.SetEnvironment(plan.Environment.ValueString())
 
-			if err = e.clientOld.EditorInterfaces.Update(plan.SpaceId.ValueString(), plan.ID.ValueString(), editorInterface); err != nil {
+			params := &sdk.UpdateEditorInterfaceParams{
+				XContentfulVersion: *editorInterface.Sys.Version,
+			}
+			resp, err := e.client.UpdateEditorInterfaceWithResponse(
+				ctx, plan.SpaceId.ValueString(), plan.Environment.ValueString(), plan.ID.ValueString(), params, *editorInterface)
+
+			if err != nil {
 				d.AddError(
 					"Error updating contenttype editorInterface",
 					"Could not update contenttype editorInterface, unexpected error: "+err.Error(),
@@ -608,21 +644,56 @@ func (e *contentTypeResource) updateEditorInterface(ctx context.Context, state *
 
 				return ctx
 			}
-		}
 
+			if resp.StatusCode() != 200 {
+				d.AddError(
+					"Error updating contenttype editorInterface",
+					"Could not update contenttype editorInterface, unexpected status code: "+resp.Status(),
+				)
+				return ctx
+			}
+		}
 	}
 
 	return ctx
 }
 
-func (e *contentTypeResource) doUpdate(ctx context.Context, plan *ContentType, draft *model.ContentType) error {
-	envClient := e.client.WithSpaceId(plan.SpaceId.ValueString()).WithEnvironment(plan.Environment.ValueString())
+func (e *contentTypeResource) doUpdate(ctx context.Context, plan *ContentType, draft *sdk.ContentTypeUpdate) (*sdk.ContentType, error) {
+	spaceId := plan.SpaceId.ValueString()
+	environment := plan.Environment.ValueString()
+	id := plan.ID.ValueString()
 
-	if err := envClient.ContentTypes().Upsert(ctx, draft); err != nil {
-		return err
+	params := &sdk.UpdateContentTypeParams{
+		XContentfulVersion: plan.Version.ValueInt64(),
 	}
 
-	return envClient.ContentTypes().Activate(ctx, draft)
+	resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, id, params, *draft)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("unexpected status code: %s", resp.Status())
+	}
+
+	contentType := resp.JSON200
+
+	return e.activateContentType(ctx, spaceId, environment, id, contentType.Sys.Version)
+}
+
+func (e *contentTypeResource) activateContentType(ctx context.Context, spaceId, environment, id string, version int64) (*sdk.ContentType, error) {
+	params := &sdk.ActivateContentTypeParams{
+		XContentfulVersion: version,
+	}
+	resp, err := e.client.ActivateContentTypeWithResponse(ctx, spaceId, environment, id, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("unexpected status code: %s", resp.Status())
+	}
+	return resp.JSON200, nil
 }
 
 func (e *contentTypeResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
@@ -630,35 +701,60 @@ func (e *contentTypeResource) Delete(ctx context.Context, request resource.Delet
 	var state *ContentType
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 
-	contentfulContentType, err := e.getContentType(ctx, state)
+	spaceId := state.SpaceId.ValueString()
+	environment := state.Environment.ValueString()
+	id := state.ID.ValueString()
+
+	resp, err := e.client.DeactivateContentTypeWithResponse(
+		ctx,
+		spaceId,
+		environment,
+		id,
+		&sdk.DeactivateContentTypeParams{
+			XContentfulVersion: state.Version.ValueInt64(),
+		},
+	)
 
 	if err != nil {
 		response.Diagnostics.AddError(
-			"Error reading contenttype",
-			"Could not retrieve contenttype, unexpected error: "+err.Error(),
+			"Error deleting contenttype",
+			"Could not deactivate contenttype, unexpected error: "+err.Error(),
 		)
-		return
 	}
 
-	err = e.doDelete(ctx, state, contentfulContentType)
+	if resp.StatusCode() != 200 {
+		response.Diagnostics.AddError(
+			"Error deleting contenttype",
+			"Could not deactivate contenttype, unexpected status code: "+resp.Status(),
+		)
+	}
+
+	version := resp.JSON200.Sys.Version
+
+	respDelete, err := e.client.DeleteContentTypeWithResponse(
+		ctx,
+		spaceId,
+		environment,
+		id,
+		&sdk.DeleteContentTypeParams{
+			XContentfulVersion: version,
+		},
+	)
+
 	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting contenttype",
 			"Could not delete contenttype, unexpected error: "+err.Error(),
 		)
-		return
 	}
 
-}
-
-func (e *contentTypeResource) doDelete(ctx context.Context, data *ContentType, draft *model.ContentType) error {
-	envClient := e.client.WithSpaceId(data.SpaceId.ValueString()).WithEnvironment(data.Environment.ValueString())
-
-	if err := envClient.ContentTypes().Deactivate(ctx, draft); err != nil {
-		return err
+	if respDelete.StatusCode() != 204 {
+		response.Diagnostics.AddError(
+			"Error deleting contenttype",
+			"Could not delete contenttype, unexpected status code: "+resp.Status(),
+		)
 	}
 
-	return envClient.ContentTypes().Delete(ctx, draft)
 }
 
 func (e *contentTypeResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -681,21 +777,36 @@ func (e *contentTypeResource) ImportState(ctx context.Context, request resource.
 	e.doRead(ctx, futureState, &response.State, &response.Diagnostics)
 }
 
-func (e *contentTypeResource) getContentType(ctx context.Context, editor *ContentType) (*model.ContentType, error) {
-	envClient := e.client.WithSpaceId(editor.SpaceId.ValueString()).WithEnvironment(editor.Environment.ValueString())
+func (e *contentTypeResource) getContentType(ctx context.Context, editor *ContentType) (*sdk.ContentType, error) {
+	spaceId := editor.SpaceId.ValueString()
+	environment := editor.Environment.ValueString()
+	id := editor.ID.ValueString()
 
-	return envClient.ContentTypes().Get(ctx, editor.ID.ValueString())
+	tflog.Debug(ctx, fmt.Sprintf("spaceId: %s, environment: %s, id: %s", spaceId, environment, id))
+	resp, err := e.client.GetContentTypeWithResponse(ctx, spaceId, environment, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("unexpected status code: %s", resp.Status())
+	}
+
+	return resp.JSON200, nil
 }
 
-func (e *contentTypeResource) getEditorInterface(editor *ContentType) (*contentful.EditorInterface, error) {
+func (e *contentTypeResource) getEditorInterface(ctx context.Context, editor *ContentType) (*sdk.EditorInterface, error) {
+	spaceId := editor.SpaceId.ValueString()
+	environment := editor.Environment.ValueString()
 
-	env := &contentful.Environment{Sys: &contentful.Sys{
-		ID: editor.Environment.ValueString(),
-		Space: &contentful.Space{
-			Sys: &contentful.Sys{ID: editor.SpaceId.ValueString()},
-		},
-	}}
+	resp, err := e.client.GetEditorInterfaceWithResponse(ctx, spaceId, environment, editor.ID.ValueString())
+	if err != nil {
+		return nil, err
+	}
 
-	return e.clientOld.EditorInterfaces.GetWithEnv(env, editor.ID.ValueString())
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("unexpected status code: %s", resp.Status())
+	}
 
+	return resp.JSON200, nil
 }

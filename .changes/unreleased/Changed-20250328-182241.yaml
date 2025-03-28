@@ -1,0 +1,4 @@
+kind: Changed
+body: Implement a new SDK based on a custom written OpenAPI spec to make future maintance
+  easier and unify all calls
+time: 2025-03-28T18:22:41.46343+01:00

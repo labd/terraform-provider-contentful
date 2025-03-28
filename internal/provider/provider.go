@@ -9,9 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go"
-	client2 "github.com/labd/contentful-go/pkgs/client"
-	"github.com/labd/contentful-go/pkgs/util"
 
 	"github.com/labd/terraform-provider-contentful/internal/resources/api_key"
 	"github.com/labd/terraform-provider-contentful/internal/resources/app_definition"
@@ -99,9 +96,6 @@ func (c contentfulProvider) Configure(ctx context.Context, request provider.Conf
 		organizationId = config.OrganizationId.ValueString()
 	}
 
-	cma := contentful.NewCMA(cmaToken)
-	cma.SetOrganization(organizationId)
-
 	var baseURL string
 	if config.BaseURL.IsUnknown() || config.BaseURL.IsNull() {
 		value, isSet := os.LookupEnv("CONTENTFUL_BASE_URL")
@@ -114,32 +108,19 @@ func (c contentfulProvider) Configure(ctx context.Context, request provider.Conf
 		baseURL = config.BaseURL.ValueString()
 	}
 
-	debug := c.debug
-
-	if os.Getenv("TF_LOG") != "" {
-		debug = true
+	clientNew, err := utils.CreateClient(baseURL, cmaToken)
+	if err != nil {
+		panic(err)
 	}
 
-	cma.Debug = debug
-
-	client, err := contentful.NewCMAV2(client2.ClientConfig{
-		URL:       &baseURL,
-		Debug:     debug,
-		UserAgent: util.ToPointer("terraform-provider-contentful"),
-		Token:     cmaToken,
-	})
-
+	clientUpload, err := utils.CreateClient("https://upload.contentful.com", cmaToken)
 	if err != nil {
-		response.Diagnostics.AddError(
-			"error during creation of cma client",
-			err.Error(),
-		)
-		return
+		panic(err)
 	}
 
 	data := utils.ProviderData{
-		Client:         cma,
-		CMAClient:      client,
+		Client:         clientNew,
+		ClientUpload:   clientUpload,
 		OrganizationId: organizationId,
 	}
 

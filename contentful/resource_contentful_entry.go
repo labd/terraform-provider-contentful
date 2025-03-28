@@ -3,12 +3,12 @@ package contentful
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/labd/contentful-go/pkgs/common"
-	"github.com/labd/contentful-go/pkgs/model"
 
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
@@ -75,8 +75,10 @@ func resourceContentfulEntry() *schema.Resource {
 	}
 }
 
-func resourceCreateEntry(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(utils.ProviderData).CMAClient
+func resourceCreateEntry(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(utils.ProviderData).Client
+	spaceID := d.Get("space_id").(string)
+	environmentID := d.Get("environment").(string)
 
 	fieldProperties := map[string]interface{}{}
 	rawField := d.Get("field").([]interface{})
@@ -86,114 +88,155 @@ func resourceCreateEntry(_ context.Context, d *schema.ResourceData, m interface{
 		fieldProperties[field["id"].(string)].(map[string]interface{})[field["locale"].(string)] = parseContentValue(field["content"].(string))
 	}
 
-	entry := &model.Entry{
-		Fields: fieldProperties,
-		Sys: &model.PublishSys{
-			EnvironmentSys: model.EnvironmentSys{
-				SpaceSys: model.SpaceSys{
-					CreatedSys: model.CreatedSys{
-						BaseSys: model.BaseSys{
-							ID: d.Get("entry_id").(string),
-						},
-					},
-				},
-			},
-		},
+	body := sdk.EntryCreate{
+		Fields: &fieldProperties,
 	}
 
-	err := client.WithSpaceId(d.Get("space_id").(string)).WithEnvironment(d.Get("environment").(string)).Entries().Upsert(context.Background(), d.Get("contenttype_id").(string), entry)
+	resp, err := client.CreateEntryWithResponse(ctx, spaceID, environmentID, nil, body)
 	if err != nil {
 		return parseError(err)
 	}
 
+	if resp.StatusCode() != 201 {
+		return diag.Errorf("Failed to create entry")
+	}
+
+	entry := resp.JSON201
 	if err := setEntryProperties(d, entry); err != nil {
 		return parseError(err)
 	}
 
-	d.SetId(entry.Sys.ID)
+	d.SetId(*entry.Sys.Id)
 
-	if err := setEntryState(d, m); err != nil {
+	if err := setEntryState(ctx, d, m); err != nil {
 		return parseError(err)
 	}
 
 	return parseError(err)
 }
 
-func resourceUpdateEntry(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(utils.ProviderData).CMAClient
+func resourceUpdateEntry(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
+	environmentID := d.Get("environment").(string)
 	entryID := d.Id()
 
-	entryClient := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Entries()
-
-	entry, err := entryClient.Get(context.Background(), entryID)
-	if err != nil {
-		return parseError(err)
-	}
-
-	fieldProperties := map[string]interface{}{}
-	rawField := d.Get("field").([]interface{})
+	fieldProperties := map[string]any{}
+	rawField := d.Get("field").([]any)
 	for i := 0; i < len(rawField); i++ {
-		field := rawField[i].(map[string]interface{})
-		fieldProperties[field["id"].(string)] = map[string]interface{}{}
-		fieldProperties[field["id"].(string)].(map[string]interface{})[field["locale"].(string)] = parseContentValue(field["content"].(string))
+		field := rawField[i].(map[string]any)
+		fieldProperties[field["id"].(string)] = map[string]any{}
+		fieldProperties[field["id"].(string)].(map[string]any)[field["locale"].(string)] = parseContentValue(field["content"].(string))
 	}
 
-	entry.Fields = fieldProperties
+	body := sdk.EntryUpdate{
+		Fields: &fieldProperties,
+	}
 
-	err = entryClient.Upsert(context.Background(), d.Get("contenttype_id").(string), entry)
+	params := &sdk.UpdateEntryParams{
+		XContentfulVersion: int64(d.Get("version").(int)),
+	}
+
+	resp, err := client.UpdateEntryWithResponse(ctx, spaceID, environmentID, entryID, params, body)
 	if err != nil {
 		return parseError(err)
 	}
 
-	d.SetId(entry.Sys.ID)
+	if resp.StatusCode() != 200 {
+		return diag.Errorf("Failed to update entry")
+	}
+
+	entry := resp.JSON200
+	d.SetId(*entry.Sys.Id)
 
 	if err := setEntryProperties(d, entry); err != nil {
 		return parseError(err)
 	}
 
-	if err := setEntryState(d, m); err != nil {
+	if err := setEntryState(ctx, d, m); err != nil {
 		return parseError(err)
 	}
 
 	return nil
 }
 
-func setEntryState(d *schema.ResourceData, m interface{}) (err error) {
-	client := m.(utils.ProviderData).CMAClient
+func setEntryState(ctx context.Context, d *schema.ResourceData, m interface{}) (err error) {
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 	entryID := d.Id()
+	environmentID := d.Get("environment").(string)
 
-	entryClient := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Entries()
+	published := d.Get("published").(bool)
+	archived := d.Get("archived").(bool)
 
-	entry, _ := entryClient.Get(context.Background(), entryID)
-
-	if d.Get("published").(bool) && entry.Sys.PublishedAt == "" {
-		err = entryClient.Publish(context.Background(), entry)
-	} else if !d.Get("published").(bool) && entry.Sys.PublishedAt != "" {
-		err = entryClient.Unpublish(context.Background(), entry)
+	resp, err := client.GetEntryWithResponse(ctx, spaceID, environmentID, entryID)
+	if err != nil {
+		return err
 	}
 
-	if d.Get("archived").(bool) && entry.Sys.ArchivedAt == "" {
-		err = entryClient.Archive(context.Background(), entry)
-	} else if !d.Get("archived").(bool) && entry.Sys.ArchivedAt != "" {
-		err = entryClient.Unarchive(context.Background(), entry)
+	if resp.StatusCode() != 200 {
+		return fmt.Errorf("Failed to get entry")
+	}
+
+	entry := resp.JSON200
+
+	if published && entry.Sys.PublishedAt == nil {
+		resp, err := client.PublishEntryWithResponse(ctx, spaceID, environmentID, entryID)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode() != 200 {
+			return fmt.Errorf("Failed to publish entry")
+		}
+	} else if !published && entry.Sys.PublishedAt != nil {
+		resp, err := client.UnpublishEntryWithResponse(ctx, spaceID, environmentID, entryID)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode() != 200 {
+			return fmt.Errorf("Failed to unpublish entry")
+		}
+	}
+
+	if archived && entry.Sys.ArchivedAt == nil {
+		resp, err := client.ArchiveEntryWithResponse(ctx, spaceID, environmentID, entryID)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode() != 200 {
+			return fmt.Errorf("Failed to archive entry")
+		}
+
+	} else if !archived && entry.Sys.ArchivedAt != nil {
+		resp, err := client.UnarchiveEntryWithResponse(ctx, spaceID, environmentID, entryID)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode() != 200 {
+			return fmt.Errorf("Failed to unarchive entry")
+		}
 	}
 
 	return err
 }
 
-func resourceReadEntry(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(utils.ProviderData).CMAClient
+func resourceReadEntry(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 	entryID := d.Id()
+	environmentID := d.Get("environment").(string)
 
-	entry, err := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Entries().Get(context.Background(), entryID)
-	if _, ok := err.(common.NotFoundError); ok {
+	resp, err := client.GetEntryWithResponse(ctx, spaceID, environmentID, entryID)
+	if err != nil {
+		return parseError(err)
+	}
+
+	if resp.StatusCode() != 200 {
 		d.SetId("")
 		return nil
 	}
 
+	entry := resp.JSON200
 	err = setEntryProperties(d, entry)
 	if err != nil {
 		return parseError(err)
@@ -201,28 +244,39 @@ func resourceReadEntry(_ context.Context, d *schema.ResourceData, m interface{})
 
 	return nil
 }
-func resourceDeleteEntry(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(utils.ProviderData).CMAClient
+func resourceDeleteEntry(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
+	environmentID := d.Get("environment").(string)
 	entryID := d.Id()
 
-	entryClient := client.WithSpaceId(spaceID).WithEnvironment(d.Get("environment").(string)).Entries()
-
-	entry, err := entryClient.Get(context.Background(), entryID)
+	resp, err := client.GetEntryWithResponse(ctx, spaceID, environmentID, entryID)
 	if err != nil {
 		return parseError(err)
 	}
 
-	err = entryClient.Delete(context.Background(), entry)
+	if resp.StatusCode() != 200 {
+		return diag.Errorf("Failed to get entry")
+	}
+
+	params := &sdk.DeleteEntryParams{
+		XContentfulVersion: *resp.JSON200.Sys.Version,
+	}
+
+	respDelete, err := client.DeleteEntryWithResponse(ctx, spaceID, environmentID, entryID, params)
 	if err != nil {
 		return parseError(err)
+	}
+
+	if respDelete.StatusCode() != 204 {
+		return diag.Errorf("Failed to delete entry")
 	}
 
 	return nil
 }
 
-func setEntryProperties(d *schema.ResourceData, entry *model.Entry) (err error) {
-	if err = d.Set("space_id", entry.Sys.Space.Sys.ID); err != nil {
+func setEntryProperties(d *schema.ResourceData, entry *sdk.Entry) (err error) {
+	if err = d.Set("space_id", entry.Sys.Space.Sys.Id); err != nil {
 		return err
 	}
 
@@ -230,7 +284,7 @@ func setEntryProperties(d *schema.ResourceData, entry *model.Entry) (err error) 
 		return err
 	}
 
-	if err = d.Set("contenttype_id", entry.Sys.ContentType.Sys.ID); err != nil {
+	if err = d.Set("contenttype_id", entry.Sys.ContentType.Sys.Id); err != nil {
 		return err
 	}
 

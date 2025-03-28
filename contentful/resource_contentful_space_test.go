@@ -1,12 +1,14 @@
 package contentful
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	contentful "github.com/labd/contentful-go"
+
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 )
 
 func TestAccContentfulSpace_Basic(t *testing.T) {
@@ -31,16 +33,17 @@ func TestAccContentfulSpace_Basic(t *testing.T) {
 }
 
 func testAccCheckContentfulSpaceDestroy(s *terraform.State) error {
-	client := testAccProvider.Meta().(*contentful.Client)
+	client := testAccProvider.Meta().(*sdk.ClientWithResponses)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "contentful_space" {
 			continue
 		}
 
-		space, err := client.Spaces.Get(rs.Primary.ID)
+		resp, err := client.GetSpaceWithResponse(context.Background(), rs.Primary.ID)
 		if err == nil {
-			return fmt.Errorf("space %s still exists after destroy", space.Sys.ID)
+			space := resp.JSON200
+			return fmt.Errorf("space %s still exists after destroy", space.Sys.Id)
 		}
 	}
 

@@ -3,19 +3,17 @@ package contentful
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
-
-	"github.com/labd/contentful-go/pkgs/common"
-	"github.com/labd/contentful-go/pkgs/model"
-	"github.com/labd/terraform-provider-contentful/internal/acctest"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	"github.com/labd/terraform-provider-contentful/internal/acctest"
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 )
 
 func TestAccContentfulEnvironment_Basic(t *testing.T) {
-	var environment model.Environment
+	var environment sdk.Environment
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -46,8 +44,9 @@ func TestAccContentfulEnvironment_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckContentfulEnvironmentExists(n string, environment *model.Environment) resource.TestCheckFunc {
+func testAccCheckContentfulEnvironmentExists(n string, environment *sdk.Environment) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		ctx := context.Background()
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("not Found: %s", n)
@@ -63,21 +62,24 @@ func testAccCheckContentfulEnvironmentExists(n string, environment *model.Enviro
 			return fmt.Errorf("no name is set")
 		}
 
-		client := acctest.GetCMA()
+		client := acctest.GetClient()
 
-		contentfulEnvironment, err := client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).Environments().Get(context.Background(), rs.Primary.ID)
-
+		resp, err := client.GetEnvironmentWithResponse(ctx, spaceID, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		*environment = *contentfulEnvironment
+		if resp.StatusCode() != 200 {
+			return fmt.Errorf("environment not found: %s", rs.Primary.ID)
+		}
+
+		*environment = *resp.JSON200
 
 		return nil
 	}
 }
 
-func testAccCheckContentfulEnvironmentAttributes(environment *model.Environment, attrs map[string]interface{}) resource.TestCheckFunc {
+func testAccCheckContentfulEnvironmentAttributes(environment *sdk.Environment, attrs map[string]interface{}) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		name := attrs["name"].(string)
 		if environment.Name != name {
@@ -103,11 +105,14 @@ func testAccContentfulEnvironmentDestroy(s *terraform.State) error {
 			return fmt.Errorf("no environment ID is set")
 		}
 
-		client := acctest.GetCMA()
+		client := acctest.GetClient()
 
-		_, err := client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).Environments().Get(context.Background(), environmentID)
+		resp, err := client.GetEnvironmentWithResponse(context.Background(), spaceID, rs.Primary.ID)
+		if err != nil {
+			return err
+		}
 
-		if _, ok := err.(common.NotFoundError); ok {
+		if resp.StatusCode() == 404 {
 			return nil
 		}
 

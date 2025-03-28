@@ -5,9 +5,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/labd/contentful-go"
-	"github.com/labd/contentful-go/pkgs/common"
 
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
@@ -68,26 +67,31 @@ func resourceCreateWebhook(ctx context.Context, d *schema.ResourceData, m interf
 	client := m.(utils.ProviderData).Client
 	spaceID := d.Get("space_id").(string)
 
-	webhook := &contentful.Webhook{
+	body := sdk.WebhookCreate{
 		Name:              d.Get("name").(string),
-		URL:               d.Get("url").(string),
-		Topics:            transformTopicsToContentfulFormat(d.Get("topics").([]interface{})),
+		Url:               d.Get("url").(string),
+		Topics:            transformTopicsToContentfulFormat(d.Get("topics").([]any)),
 		Headers:           transformHeadersToContentfulFormat(d.Get("headers")),
-		HTTPBasicUsername: d.Get("http_basic_auth_username").(string),
-		HTTPBasicPassword: d.Get("http_basic_auth_password").(string),
+		HttpBasicUsername: utils.Pointer(d.Get("http_basic_auth_username").(string)),
+		HttpBasicPassword: utils.Pointer(d.Get("http_basic_auth_password").(string)),
 	}
 
-	err := client.Webhooks.Upsert(spaceID, webhook)
+	resp, err := client.CreateWebhookWithResponse(ctx, spaceID, body)
 	if err != nil {
 		return parseError(err)
 	}
 
+	if resp.StatusCode() != 201 {
+		return diag.Errorf("Failed to create webhook")
+	}
+
+	webhook := resp.JSON201
 	err = setWebhookProperties(d, webhook)
 	if err != nil {
 		return parseError(err)
 	}
 
-	d.SetId(webhook.Sys.ID)
+	d.SetId(*webhook.Sys.Id)
 
 	return nil
 }
@@ -97,29 +101,44 @@ func resourceUpdateWebhook(ctx context.Context, d *schema.ResourceData, m interf
 	spaceID := d.Get("space_id").(string)
 	webhookID := d.Id()
 
-	webhook, err := client.Webhooks.Get(spaceID, webhookID)
+	resp, err := client.GetWebhookWithResponse(ctx, spaceID, webhookID)
 	if err != nil {
 		return parseError(err)
 	}
 
-	webhook.Name = d.Get("name").(string)
-	webhook.URL = d.Get("url").(string)
-	webhook.Topics = transformTopicsToContentfulFormat(d.Get("topics").([]interface{}))
-	webhook.Headers = transformHeadersToContentfulFormat(d.Get("headers"))
-	webhook.HTTPBasicUsername = d.Get("http_basic_auth_username").(string)
-	webhook.HTTPBasicPassword = d.Get("http_basic_auth_password").(string)
+	if resp.StatusCode() != 200 {
+		return diag.Errorf("Webhook not found")
+	}
 
-	err = client.Webhooks.Upsert(spaceID, webhook)
+	params := &sdk.UpdateWebhookParams{
+		XContentfulVersion: int64(d.Get("version").(int)),
+	}
+
+	update := sdk.WebhookUpdate{
+		Name:              d.Get("name").(string),
+		Url:               d.Get("url").(string),
+		Topics:            transformTopicsToContentfulFormat(d.Get("topics").([]any)),
+		Headers:           transformHeadersToContentfulFormat(d.Get("headers")),
+		HttpBasicUsername: utils.Pointer(d.Get("http_basic_auth_username").(string)),
+		HttpBasicPassword: utils.Pointer(d.Get("http_basic_auth_password").(string)),
+	}
+
+	updateResp, err := client.UpdateWebhookWithResponse(ctx, spaceID, webhookID, params, update)
 	if err != nil {
 		return parseError(err)
 	}
 
+	if updateResp.StatusCode() != 200 {
+		return diag.Errorf("Failed to update webhook")
+	}
+
+	webhook := updateResp.JSON200
 	err = setWebhookProperties(d, webhook)
 	if err != nil {
 		return parseError(err)
 	}
 
-	d.SetId(webhook.Sys.ID)
+	d.SetId(*webhook.Sys.Id)
 
 	return nil
 }
@@ -129,16 +148,17 @@ func resourceReadWebhook(ctx context.Context, d *schema.ResourceData, m interfac
 	spaceID := d.Get("space_id").(string)
 	webhookID := d.Id()
 
-	webhook, err := client.Webhooks.Get(spaceID, webhookID)
-	if _, ok := err.(common.NotFoundError); ok {
-		d.SetId("")
-		return nil
-	}
-
+	resp, err := client.GetWebhookWithResponse(ctx, spaceID, webhookID)
 	if err != nil {
 		return parseError(err)
 	}
 
+	if resp.StatusCode() != 200 {
+		d.SetId("")
+		return nil
+	}
+
+	webhook := resp.JSON200
 	err = setWebhookProperties(d, webhook)
 	if err != nil {
 		return parseError(err)
@@ -152,20 +172,23 @@ func resourceDeleteWebhook(ctx context.Context, d *schema.ResourceData, m interf
 	spaceID := d.Get("space_id").(string)
 	webhookID := d.Id()
 
-	webhook, err := client.Webhooks.Get(spaceID, webhookID)
+	params := &sdk.DeleteWebhookParams{
+		XContentfulVersion: int64(d.Get("version").(int)),
+	}
+
+	resp, err := client.DeleteWebhookWithResponse(ctx, spaceID, webhookID, params)
 	if err != nil {
 		return parseError(err)
 	}
 
-	err = client.Webhooks.Delete(spaceID, webhook)
-	if _, ok := err.(common.NotFoundError); ok {
-		return nil
+	if resp.StatusCode() != 204 {
+		return diag.Errorf("Failed to delete webhook")
 	}
 
-	return parseError(err)
+	return nil
 }
 
-func setWebhookProperties(d *schema.ResourceData, webhook *contentful.Webhook) (err error) {
+func setWebhookProperties(d *schema.ResourceData, webhook *sdk.Webhook) (err error) {
 	headers := make(map[string]string)
 	for _, entry := range webhook.Headers {
 		headers[entry.Key] = entry.Value
@@ -176,7 +199,7 @@ func setWebhookProperties(d *schema.ResourceData, webhook *contentful.Webhook) (
 		return err
 	}
 
-	err = d.Set("space_id", webhook.Sys.Space.Sys.ID)
+	err = d.Set("space_id", webhook.Sys.Space.Sys.Id)
 	if err != nil {
 		return err
 	}
@@ -191,12 +214,12 @@ func setWebhookProperties(d *schema.ResourceData, webhook *contentful.Webhook) (
 		return err
 	}
 
-	err = d.Set("url", webhook.URL)
+	err = d.Set("url", webhook.Url)
 	if err != nil {
 		return err
 	}
 
-	err = d.Set("http_basic_auth_username", webhook.HTTPBasicUsername)
+	err = d.Set("http_basic_auth_username", webhook.HttpBasicUsername)
 	if err != nil {
 		return err
 	}
@@ -209,17 +232,20 @@ func setWebhookProperties(d *schema.ResourceData, webhook *contentful.Webhook) (
 	return nil
 }
 
-func transformHeadersToContentfulFormat(headersTerraform interface{}) []*contentful.WebhookHeader {
-	var headers []*contentful.WebhookHeader
+func transformHeadersToContentfulFormat(headersTerraform any) *[]sdk.WebhookHeader {
+	var headers []sdk.WebhookHeader
 
 	for k, v := range headersTerraform.(map[string]interface{}) {
-		headers = append(headers, &contentful.WebhookHeader{
+		headers = append(headers, sdk.WebhookHeader{
 			Key:   k,
 			Value: v.(string),
 		})
 	}
+	if len(headers) == 0 {
+		return nil
+	}
 
-	return headers
+	return &headers
 }
 
 func transformTopicsToContentfulFormat(topicsTerraform []interface{}) []string {

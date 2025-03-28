@@ -13,9 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go/pkgs/model"
-	"github.com/labd/contentful-go/service/cma"
+
 	"github.com/labd/terraform-provider-contentful/internal/custommodifier"
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
@@ -32,7 +32,7 @@ func NewApiKeyResource() resource.Resource {
 
 // apiKeyResource is the resource implementation.
 type apiKeyResource struct {
-	client cma.SpaceIdClientBuilder
+	client *sdk.ClientWithResponses
 }
 
 func (e *apiKeyResource) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -101,7 +101,7 @@ func (e *apiKeyResource) Configure(_ context.Context, request resource.Configure
 	}
 
 	data := request.ProviderData.(utils.ProviderData)
-	e.client = data.CMAClient
+	e.client = data.Client
 }
 
 func (e *apiKeyResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
@@ -113,12 +113,22 @@ func (e *apiKeyResource) Create(ctx context.Context, request resource.CreateRequ
 
 	draft := plan.Draft()
 
-	if err := e.client.WithSpaceId(plan.SpaceId.ValueString()).ApiKeys().Upsert(ctx, draft); err != nil {
+	resp, err := e.client.CreateApiKeyWithResponse(ctx, plan.SpaceId.ValueString(), *draft)
+	if err != nil {
 		response.Diagnostics.AddError("Error creating api_key", err.Error())
 		return
 	}
 
-	plan.Import(draft)
+	if resp.StatusCode() != 201 {
+		response.Diagnostics.AddError(
+			"Error creating api_key",
+			"Could not create api_key, unexpected status code: "+resp.Status(),
+		)
+		return
+	}
+
+	apiKey := resp.JSON201
+	plan.Import(apiKey)
 
 	previewApiKeyContentful, err := e.getPreviewApiKey(ctx, plan)
 	if err != nil {
@@ -169,7 +179,12 @@ func (e *apiKeyResource) Update(ctx context.Context, request resource.UpdateRequ
 
 	draft := plan.Draft()
 
-	if err := e.client.WithSpaceId(state.SpaceId.ValueString()).ApiKeys().Upsert(ctx, draft); err != nil {
+	params := &sdk.UpdateApiKeyParams{
+		XContentfulVersion: state.Version.ValueInt64(),
+	}
+
+	resp, err := e.client.UpdateApiKeyWithResponse(ctx, state.SpaceId.ValueString(), state.ID.ValueString(), params, *draft)
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error updating api key",
 			"Could not update api key, unexpected error: "+err.Error(),
@@ -177,7 +192,16 @@ func (e *apiKeyResource) Update(ctx context.Context, request resource.UpdateRequ
 		return
 	}
 
-	plan.Import(draft)
+	if resp.StatusCode() != 200 {
+		response.Diagnostics.AddError(
+			"Error updating api key",
+			"Could not update api key, unexpected status code: "+resp.Status(),
+		)
+		return
+	}
+
+	apiKey := resp.JSON200
+	plan.Import(apiKey)
 
 	previewApiKeyContentful, err := e.getPreviewApiKey(ctx, plan)
 	if err != nil {
@@ -202,10 +226,23 @@ func (e *apiKeyResource) Delete(ctx context.Context, request resource.DeleteRequ
 	var state *ApiKey
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 
-	if err := e.client.WithSpaceId(state.SpaceId.ValueString()).ApiKeys().Delete(ctx, state.Draft()); err != nil {
+	params := &sdk.DeleteApiKeyParams{
+		XContentfulVersion: state.Version.ValueInt64(),
+	}
+
+	resp, err := e.client.DeleteApiKeyWithResponse(ctx, state.SpaceId.ValueString(), state.ID.ValueString(), params)
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting api_key",
 			"Could not delete api_key, unexpected error: "+err.Error(),
+		)
+		return
+	}
+
+	if resp.StatusCode() != 204 {
+		response.Diagnostics.AddError(
+			"Error deleting api_key",
+			"Could not delete api_key, unexpected status code: "+resp.Status(),
 		)
 		return
 	}
@@ -261,10 +298,29 @@ func (e *apiKeyResource) doRead(ctx context.Context, apiKey *ApiKey, state *tfsd
 	}
 }
 
-func (e *apiKeyResource) getApiKey(ctx context.Context, apiKey *ApiKey) (*model.APIKey, error) {
-	return e.client.WithSpaceId(apiKey.SpaceId.ValueString()).ApiKeys().Get(ctx, apiKey.ID.ValueString())
+func (e *apiKeyResource) getApiKey(ctx context.Context, apiKey *ApiKey) (*sdk.ApiKey, error) {
+	resp, err := e.client.GetApiKeyWithResponse(ctx, apiKey.SpaceId.ValueString(), apiKey.ID.ValueString())
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("Could not retrieve api key, unexpected status code: %s", resp.Status())
+	}
+	return resp.JSON200, nil
 }
 
-func (e *apiKeyResource) getPreviewApiKey(ctx context.Context, apiKey *ApiKey) (*model.PreviewAPIKey, error) {
-	return e.client.WithSpaceId(apiKey.SpaceId.ValueString()).PreviewApiKeys().Get(ctx, apiKey.PreviewID.ValueString())
+func (e *apiKeyResource) getPreviewApiKey(ctx context.Context, apiKey *ApiKey) (*sdk.PreviewApiKey, error) {
+
+	resp, err := e.client.GetPreviewApiKeyWithResponse(ctx, apiKey.SpaceId.ValueString(), apiKey.PreviewID.ValueString())
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("Could not retrieve preview api key, unexpected status code: %s", resp.Status())
+	}
+
+	return resp.JSON200, nil
+
 }

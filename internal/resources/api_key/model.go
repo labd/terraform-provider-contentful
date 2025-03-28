@@ -3,7 +3,8 @@ package api_key
 import (
 	"github.com/elliotchance/pie/v2"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/labd/contentful-go/pkgs/model"
+
+	"github.com/labd/terraform-provider-contentful/internal/sdk"
 )
 
 // ApiKey is the main resource schema data
@@ -19,45 +20,41 @@ type ApiKey struct {
 	Environments []types.String `tfsdk:"environments"`
 }
 
-func (a *ApiKey) Import(n *model.APIKey) {
-	a.ID = types.StringValue(n.Sys.ID)
-	a.PreviewID = types.StringValue(n.PreviewAPIKey.Sys.ID)
-	a.SpaceId = types.StringValue(n.Sys.Space.Sys.ID)
-	a.Version = types.Int64Value(int64(n.Sys.Version))
+func (a *ApiKey) Import(n *sdk.ApiKey) {
+	a.ID = types.StringValue(*n.Sys.Id)
+	a.PreviewID = types.StringValue(*n.PreviewApiKey.Sys.Id)
+	a.SpaceId = types.StringValue(n.Sys.Space.Sys.Id)
+	a.Version = types.Int64Value(int64(*n.Sys.Version))
 	a.Name = types.StringValue(n.Name)
 	a.Description = types.StringNull()
 	if n.Description != "" {
 		a.Description = types.StringValue(n.Description)
 	}
 
-	a.Environments = pie.Map(n.Environments, func(t model.Environments) types.String {
-		return types.StringValue(t.Sys.ID)
+	a.Environments = pie.Map(n.Environments, func(t sdk.EnvironmentSystemProperties) types.String {
+		return types.StringValue(t.Sys.Id)
 	})
 
 	a.AccessToken = types.StringValue(n.AccessToken)
 }
 
-func (a *ApiKey) Draft() *model.APIKey {
-	draft := &model.APIKey{}
-
-	if !a.ID.IsUnknown() || !a.ID.IsNull() {
-		draft.Sys = &model.SpaceSys{CreatedSys: model.CreatedSys{BaseSys: model.BaseSys{ID: a.ID.ValueString(), Version: int(a.Version.ValueInt64())}}}
-
-	}
+func (a *ApiKey) Draft() *sdk.ApiKeyDraft {
+	draft := &sdk.ApiKeyDraft{}
 
 	if !a.Description.IsNull() && !a.Description.IsUnknown() {
 		draft.Description = a.Description.ValueString()
 	}
 
-	draft.Environments = pie.Map(a.Environments, func(t types.String) model.Environments {
-		return model.Environments{
-			Sys: model.BaseSys{
-				ID:       t.ValueString(),
+	envs := pie.Map(a.Environments, func(t types.String) sdk.EnvironmentSystemProperties {
+		return sdk.EnvironmentSystemProperties{
+			Sys: &sdk.EnvironmentSystemPropertiesSys{
+				Id:       t.ValueString(),
 				Type:     "Link",
 				LinkType: "Environment",
 			},
 		}
 	})
+	draft.Environments = &envs
 
 	draft.Name = a.Name.ValueString()
 
