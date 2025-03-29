@@ -1860,7 +1860,7 @@ components:
           description: Whether this locale is optional for content
           type: boolean
         sys:
-          $ref: '#/components/schemas/SystemProperties'
+          $ref: '#/components/schemas/SystemPropertiesResource'
       required:
         - code
         - name

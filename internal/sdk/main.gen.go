@@ -875,8 +875,8 @@ type Locale struct {
 	Name string `json:"name"`
 
 	// Optional Whether this locale is optional for content
-	Optional bool             `json:"optional"`
-	Sys      SystemProperties `json:"sys"`
+	Optional bool                     `json:"optional"`
+	Sys      SystemPropertiesResource `json:"sys"`
 }
 
 // LocaleCollection defines model for LocaleCollection.

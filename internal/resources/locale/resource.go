@@ -5,15 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
@@ -112,7 +108,6 @@ func (e *localeResource) Configure(_ context.Context, request resource.Configure
 }
 
 func (e *localeResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
-	// Get plan values
 	var plan Locale
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
@@ -123,7 +118,7 @@ func (e *localeResource) Create(ctx context.Context, request resource.CreateRequ
 	draft := plan.DraftForCreate()
 
 	resp, err := e.client.CreateLocaleWithResponse(ctx, plan.SpaceID.ValueString(), plan.Environment.ValueString(), draft)
-	if err != nil {
+	if err := utils.CheckClientResponse(resp, err, 201); err != nil {
 		response.Diagnostics.AddError(
 			"Error creating locale",
 			"Could not create locale: "+err.Error(),
@@ -131,23 +126,12 @@ func (e *localeResource) Create(ctx context.Context, request resource.CreateRequ
 		return
 	}
 
-	if resp.StatusCode() != 201 {
-		response.Diagnostics.AddError(
-			"Error creating locale",
-			fmt.Sprintf("Received unexpected status code: %d", resp.StatusCode()),
-		)
-		return
-	}
-
-	// Map response to state
-	plan.Import(resp.JSON201)
-
-	// Set state
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	state := &Locale{}
+	state.Import(resp.JSON201)
+	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 
 func (e *localeResource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
-	// Get current state
 	var state Locale
 	diags := request.State.Get(ctx, &state)
 	response.Diagnostics.Append(diags...)
@@ -155,7 +139,27 @@ func (e *localeResource) Read(ctx context.Context, request resource.ReadRequest,
 		return
 	}
 
-	e.doRead(ctx, &state, &response.State, &response.Diagnostics)
+	resp, err := e.client.GetLocaleWithResponse(
+		ctx,
+		state.SpaceID.ValueString(),
+		state.Environment.ValueString(),
+		state.ID.ValueString(),
+	)
+
+	if err := utils.CheckClientResponse(resp, err, 200); err != nil {
+		if resp.StatusCode() == 404 {
+			response.State.RemoveResource(ctx)
+			return
+		}
+		response.Diagnostics.AddError(
+			"Error reading locale",
+			"Could not read locale: "+err.Error(),
+		)
+		return
+	}
+
+	state.Import(resp.JSON200)
+	response.Diagnostics.Append(request.State.Set(ctx, &state)...)
 }
 
 func (e *localeResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
@@ -188,8 +192,7 @@ func (e *localeResource) Update(ctx context.Context, request resource.UpdateRequ
 		params,
 		draft,
 	)
-
-	if err != nil {
+	if err := utils.CheckClientResponse(resp, err, 200); err != nil {
 		response.Diagnostics.AddError(
 			"Error updating locale",
 			"Could not update locale: "+err.Error(),
@@ -197,56 +200,33 @@ func (e *localeResource) Update(ctx context.Context, request resource.UpdateRequ
 		return
 	}
 
-	if resp.StatusCode() != 200 {
-		response.Diagnostics.AddError(
-			"Error updating locale",
-			fmt.Sprintf("Received unexpected status code: %d", resp.StatusCode()),
-		)
-		return
-	}
-
-	// Map response to state
-	plan.Import(resp.JSON200)
-
-	// Set state
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	state.Import(resp.JSON200)
+	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 
 func (e *localeResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
-	// Get current state
 	var state Locale
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 
-	// Delete the locale
 	resp, err := e.client.DeleteLocaleWithResponse(
 		ctx,
 		state.SpaceID.ValueString(),
 		state.Environment.ValueString(),
 		state.ID.ValueString(),
 	)
-
-	if err != nil {
+	if err := utils.CheckClientResponse(resp, err, 204); err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting locale",
 			"Could not delete locale: "+err.Error(),
 		)
 		return
 	}
-
-	if resp.StatusCode() != 204 && resp.StatusCode() != 404 {
-		response.Diagnostics.AddError(
-			"Error deleting locale",
-			fmt.Sprintf("Received unexpected status code: %d", resp.StatusCode()),
-		)
-		return
-	}
 }
 
 func (e *localeResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	// Parse the import ID
 	idParts := strings.Split(request.ID, ":")
 	if len(idParts) != 3 || idParts[0] == "" || idParts[1] == "" || idParts[2] == "" {
 		response.Diagnostics.AddError(
@@ -258,57 +238,21 @@ func (e *localeResource) ImportState(ctx context.Context, request resource.Impor
 
 	localeID, environment, spaceID := idParts[0], idParts[1], idParts[2]
 
-	// Set the fields that can be imported
-	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("id"), localeID)...)
-	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("environment"), environment)...)
-	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("space_id"), spaceID)...)
-
-	// Call Read to populate the other fields
-	futureState := &Locale{
-		ID:          types.StringValue(localeID),
-		SpaceID:     types.StringValue(spaceID),
-		Environment: types.StringValue(environment),
-	}
-
-	e.doRead(ctx, futureState, &response.State, &response.Diagnostics)
-}
-
-func (e *localeResource) doRead(ctx context.Context, locale *Locale, state *tfsdk.State, d *diag.Diagnostics) {
 	resp, err := e.client.GetLocaleWithResponse(
 		ctx,
-		locale.SpaceID.ValueString(),
-		locale.Environment.ValueString(),
-		locale.ID.ValueString(),
+		spaceID,
+		environment,
+		localeID,
 	)
-	if err != nil {
-		d.AddError(
-			"Error reading locale",
-			"Could not read locale: "+err.Error(),
+	if err := utils.CheckClientResponse(resp, err, 200); err != nil {
+		response.Diagnostics.AddError(
+			"Error importing locale",
+			"Could not import locale: "+err.Error(),
 		)
 		return
 	}
 
-	// Handle 404 Not Found
-	if resp.StatusCode() == 404 {
-		d.AddWarning(
-			"Locale not found",
-			fmt.Sprintf("Locale %s was not found, removing from state",
-				locale.ID.ValueString()),
-		)
-		return
-	}
-
-	if resp.StatusCode() != 200 {
-		d.AddError(
-			"Error reading locale",
-			fmt.Sprintf("Received unexpected status code: %d", resp.StatusCode()),
-		)
-		return
-	}
-
-	// Map response to state
-	locale.Import(resp.JSON200)
-
-	// Set state
-	d.Append(state.Set(ctx, locale)...)
+	state := &Locale{}
+	state.Import(resp.JSON200)
+	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }

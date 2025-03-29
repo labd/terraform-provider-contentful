@@ -23,10 +23,12 @@ type Locale struct {
 
 // Import populates the Locale struct from an SDK locale object
 func (l *Locale) Import(locale *sdk.Locale) {
-	l.ID = types.StringValue(*locale.Sys.Id)
-	l.Version = types.Int64Value(int64(*locale.Sys.Version))
+	l.ID = types.StringValue(locale.Sys.Id)
+	l.SpaceID = types.StringValue(locale.Sys.Space.Sys.Id)
+	l.Version = types.Int64Value(locale.Sys.Version)
 	l.Name = types.StringValue(locale.Name)
 	l.Code = types.StringValue(locale.Code)
+	l.Environment = types.StringValue(locale.Sys.Environment.Sys.Id)
 
 	// Handle nullable fields
 	if locale.FallbackCode != nil {
