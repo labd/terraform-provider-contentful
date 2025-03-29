@@ -1,4 +1,0 @@
-kind: Fixed
-body: Resolve issues with the contentful_asset resource, merging the detail block
-  as direct attribues (backwards incompatible)
-time: 2025-03-29T09:33:58.084293+01:00
