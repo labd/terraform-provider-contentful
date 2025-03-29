@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 
 	"github.com/deepmap/oapi-codegen/pkg/securityprovider"
 	"github.com/hashicorp/go-retryablehttp"
@@ -55,12 +56,38 @@ func CheckClientResponse(resp Response, err error, statusCode int) error {
 		return fmt.Errorf("Error while interacting with Contentful API: %w", err)
 	}
 
+	if resp.StatusCode() == statusCode {
+		return nil
+	}
+
+	if err := ExtractErrorResponse(resp); err != nil {
+		return err
+	}
+
 	if resp.StatusCode() == http.StatusConflict {
 		return fmt.Errorf("Conflict while interacting with Contentful API: 409 Conflict")
 	}
 
-	if resp.StatusCode() != statusCode {
-		return fmt.Errorf("Unexpected HTTP status code, expected %d, got %d", statusCode, resp.StatusCode())
+	return fmt.Errorf("Unexpected response from Contentful API: %d (expected: %d)", resp.StatusCode(), statusCode)
+}
+
+func ExtractErrorResponse(resp Response) error {
+
+	// Use reflection to check if the response has a JSON422 field
+	respValue := reflect.ValueOf(resp)
+
+	// Handle pointer types by dereferencing
+	if respValue.Kind() == reflect.Ptr {
+		respValue = respValue.Elem()
+	}
+
+	// Extract the body
+	body := respValue.FieldByName("Body")
+	if body.IsValid() && !body.IsZero() {
+		value := body.Interface()
+		if v, ok := value.([]byte); ok {
+			return fmt.Errorf("eesponse from Contentful API:\n\n  %s", string(v))
+		}
 	}
 
 	return nil
