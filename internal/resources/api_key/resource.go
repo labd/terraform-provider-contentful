@@ -3,6 +3,7 @@ package api_key
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -110,27 +111,21 @@ func (e *apiKeyResource) Create(ctx context.Context, request resource.CreateRequ
 	if response.Diagnostics.HasError() {
 		return
 	}
+	state := &ApiKey{}
 
 	draft := plan.Draft()
 
 	resp, err := e.client.CreateApiKeyWithResponse(ctx, plan.SpaceId.ValueString(), *draft)
-	if err != nil {
-		response.Diagnostics.AddError("Error creating api_key", err.Error())
-		return
-	}
-
-	if resp.StatusCode() != 201 {
+	if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
 		response.Diagnostics.AddError(
-			"Error creating api_key",
-			"Could not create api_key, unexpected status code: "+resp.Status(),
+			"Error creating api key",
+			"Could not create api key, unexpected error: "+err.Error(),
 		)
 		return
 	}
+	state.Import(resp.JSON201)
 
-	apiKey := resp.JSON201
-	plan.Import(apiKey)
-
-	previewApiKeyContentful, err := e.getPreviewApiKey(ctx, plan)
+	previewApiKeyContentful, err := e.getPreviewApiKey(ctx, state)
 	if err != nil {
 		response.Diagnostics.AddError(
 			"Error reading preview api key",
@@ -138,11 +133,10 @@ func (e *apiKeyResource) Create(ctx context.Context, request resource.CreateRequ
 		)
 		return
 	}
-
-	plan.PreviewToken = types.StringValue(previewApiKeyContentful.AccessToken)
+	state.PreviewToken = types.StringValue(previewApiKeyContentful.AccessToken)
 
 	// Set state to fully populated data
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
@@ -184,7 +178,7 @@ func (e *apiKeyResource) Update(ctx context.Context, request resource.UpdateRequ
 	}
 
 	resp, err := e.client.UpdateApiKeyWithResponse(ctx, state.SpaceId.ValueString(), state.ID.ValueString(), params, *draft)
-	if err != nil {
+	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 		response.Diagnostics.AddError(
 			"Error updating api key",
 			"Could not update api key, unexpected error: "+err.Error(),
@@ -192,37 +186,25 @@ func (e *apiKeyResource) Update(ctx context.Context, request resource.UpdateRequ
 		return
 	}
 
-	if resp.StatusCode() != 200 {
-		response.Diagnostics.AddError(
-			"Error updating api key",
-			"Could not update api key, unexpected status code: "+resp.Status(),
-		)
-		return
-	}
-
 	apiKey := resp.JSON200
-	plan.Import(apiKey)
+	state.Import(apiKey)
 
 	previewApiKeyContentful, err := e.getPreviewApiKey(ctx, plan)
 	if err != nil {
-		response.Diagnostics.AddError(
-			"Error reading preview api key",
-			"Could not retrieve preview api key, unexpected error: "+err.Error(),
-		)
+		response.Diagnostics.AddError("Error reading preview api key", err.Error())
 		return
 	}
 
-	plan.PreviewToken = types.StringValue(previewApiKeyContentful.AccessToken)
+	state.PreviewToken = types.StringValue(previewApiKeyContentful.AccessToken)
 
 	// Set state to fully populated data
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 }
 
 func (e *apiKeyResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
-	// Get current state
 	var state *ApiKey
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 
@@ -231,18 +213,10 @@ func (e *apiKeyResource) Delete(ctx context.Context, request resource.DeleteRequ
 	}
 
 	resp, err := e.client.DeleteApiKeyWithResponse(ctx, state.SpaceId.ValueString(), state.ID.ValueString(), params)
-	if err != nil {
+	if err := utils.CheckClientResponse(resp, err, http.StatusNoContent); err != nil {
 		response.Diagnostics.AddError(
-			"Error deleting api_key",
-			"Could not delete api_key, unexpected error: "+err.Error(),
-		)
-		return
-	}
-
-	if resp.StatusCode() != 204 {
-		response.Diagnostics.AddError(
-			"Error deleting api_key",
-			"Could not delete api_key, unexpected status code: "+resp.Status(),
+			"Error deleting api key",
+			"Could not delete api key, unexpected error: "+err.Error(),
 		)
 		return
 	}
@@ -271,10 +245,7 @@ func (e *apiKeyResource) doRead(ctx context.Context, apiKey *ApiKey, state *tfsd
 
 	apiKeyContentful, err := e.getApiKey(ctx, apiKey)
 	if err != nil {
-		d.AddError(
-			"Error reading api key",
-			"Could not retrieve api key, unexpected error: "+err.Error(),
-		)
+		d.AddError("Error reading api key", err.Error())
 		return
 	}
 
@@ -282,10 +253,7 @@ func (e *apiKeyResource) doRead(ctx context.Context, apiKey *ApiKey, state *tfsd
 
 	previewApiKeyContentful, err := e.getPreviewApiKey(ctx, apiKey)
 	if err != nil {
-		d.AddError(
-			"Error reading preview api key",
-			"Could not retrieve preview api key, unexpected error: "+err.Error(),
-		)
+		d.AddError("Error reading preview api key", err.Error())
 		return
 	}
 
@@ -300,27 +268,18 @@ func (e *apiKeyResource) doRead(ctx context.Context, apiKey *ApiKey, state *tfsd
 
 func (e *apiKeyResource) getApiKey(ctx context.Context, apiKey *ApiKey) (*sdk.ApiKey, error) {
 	resp, err := e.client.GetApiKeyWithResponse(ctx, apiKey.SpaceId.ValueString(), apiKey.ID.ValueString())
-	if err != nil {
-		return nil, err
+	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		return nil, fmt.Errorf("Could not retrieve api key, unexpected error: %s", err.Error())
 	}
 
-	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("Could not retrieve api key, unexpected status code: %s", resp.Status())
-	}
 	return resp.JSON200, nil
 }
 
 func (e *apiKeyResource) getPreviewApiKey(ctx context.Context, apiKey *ApiKey) (*sdk.PreviewApiKey, error) {
-
 	resp, err := e.client.GetPreviewApiKeyWithResponse(ctx, apiKey.SpaceId.ValueString(), apiKey.PreviewID.ValueString())
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("Could not retrieve preview api key, unexpected status code: %s", resp.Status())
+	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		return nil, fmt.Errorf("Could not retrieve preview api key, unexpected status code: %s", err.Error())
 	}
 
 	return resp.JSON200, nil
-
 }
