@@ -400,9 +400,14 @@ func (f *Field) Import(n sdk.Field) error {
 				return err
 			}
 
+			var linkType = types.StringNull()
+			if linkItem.LinkType != "" {
+				linkType = types.StringValue(string(linkItem.LinkType))
+			}
+
 			f.Items = &Items{
 				Type:        types.StringValue(itemType),
-				LinkType:    types.StringValue(string(linkItem.LinkType)),
+				LinkType:    linkType,
 				Validations: itemValidations,
 			}
 		}
