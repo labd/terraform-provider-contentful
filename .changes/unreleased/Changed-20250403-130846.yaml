@@ -1,4 +1,0 @@
-kind: Changed
-body: Move the contentful_contenttype logic around editor interface to a new resource
-  contentful_editor_interface
-time: 2025-04-03T13:08:46.272612+02:00
