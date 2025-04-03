@@ -535,19 +535,19 @@ type ContentType struct {
 
 // ContentTypeCollection defines model for ContentTypeCollection.
 type ContentTypeCollection struct {
-	Items *[]ContentType `json:"items,omitempty"`
+	Items []ContentType `json:"items"`
 
 	// Limit Maximum number of content types returned
-	Limit *int `json:"limit,omitempty"`
+	Limit int `json:"limit"`
 
 	// Skip Number of content types skipped
-	Skip *int `json:"skip,omitempty"`
-	Sys  *struct {
+	Skip int `json:"skip"`
+	Sys  struct {
 		Type *ContentTypeCollectionSysType `json:"type,omitempty"`
-	} `json:"sys,omitempty"`
+	} `json:"sys"`
 
 	// Total Total number of content types
-	Total *int `json:"total,omitempty"`
+	Total int `json:"total"`
 }
 
 // ContentTypeCollectionSysType defines model for ContentTypeCollection.Sys.Type.
@@ -590,7 +590,7 @@ type EditorInterface struct {
 	// GroupControls To be implemented
 	GroupControls *[]map[string]interface{}     `json:"groupControls,omitempty"`
 	Sidebar       *[]EditorInterfaceSidebarItem `json:"sidebar,omitempty"`
-	Sys           *SystemProperties             `json:"sys,omitempty"`
+	Sys           SystemPropertiesEntry         `json:"sys"`
 }
 
 // EditorInterfaceControl defines model for EditorInterfaceControl.
@@ -657,6 +657,19 @@ type EditorInterfaceSidebarItem struct {
 
 // EditorInterfaceSidebarItemWidgetNamespace Namespace of the widget (optional)
 type EditorInterfaceSidebarItemWidgetNamespace string
+
+// EditorInterfaceUpdate defines model for EditorInterfaceUpdate.
+type EditorInterfaceUpdate struct {
+	// Controls Controls for each field in the content type
+	Controls []EditorInterfaceControl `json:"controls"`
+
+	// EditorLayout To be implemented
+	EditorLayout *[]map[string]interface{} `json:"editorLayout,omitempty"`
+
+	// GroupControls To be implemented
+	GroupControls *[]map[string]interface{}     `json:"groupControls,omitempty"`
+	Sidebar       *[]EditorInterfaceSidebarItem `json:"sidebar,omitempty"`
+}
 
 // Entry defines model for Entry.
 type Entry struct {
@@ -1703,7 +1716,7 @@ type CreateContentTypeJSONRequestBody = ContentTypeCreate
 type UpdateContentTypeJSONRequestBody = ContentTypeUpdate
 
 // UpdateEditorInterfaceJSONRequestBody defines body for UpdateEditorInterface for application/json ContentType.
-type UpdateEditorInterfaceJSONRequestBody = EditorInterface
+type UpdateEditorInterfaceJSONRequestBody = EditorInterfaceUpdate
 
 // CreateEntryJSONRequestBody defines body for CreateEntry for application/json ContentType.
 type CreateEntryJSONRequestBody = EntryDraft

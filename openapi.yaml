@@ -811,7 +811,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EditorInterface"
+              $ref: "#/components/schemas/EditorInterfaceUpdate"
       responses:
         "200":
           description: Success
@@ -1431,6 +1431,12 @@ components:
         total:
           description: Total number of content types
           type: integer
+      required:
+        - items
+        - limit
+        - skip
+        - sys
+        - total
 
     ContentTypeCreate:
       type: object
@@ -2332,7 +2338,35 @@ components:
       type: object
       properties:
         sys:
-          $ref: '#/components/schemas/SystemProperties'
+          $ref: '#/components/schemas/SystemPropertiesEntry'
+        controls:
+          type: array
+          description: Controls for each field in the content type
+          items:
+            $ref: '#/components/schemas/EditorInterfaceControl'
+        sidebar:
+          type: array
+          items:
+            $ref: '#/components/schemas/EditorInterfaceSidebarItem'
+        editorLayout:
+          type: array
+          description: To be implemented
+          items:
+            type: object
+            additionalProperties: true
+        groupControls:
+          type: array
+          description: To be implemented
+          items:
+            type: object
+            additionalProperties: true
+      required:
+       - sys
+       - controls
+
+    EditorInterfaceUpdate:
+      type: object
+      properties:
         controls:
           type: array
           description: Controls for each field in the content type
@@ -2356,7 +2390,6 @@ components:
             additionalProperties: true
       required:
        - controls
-
 
     EditorInterfaceControl:
       type: object

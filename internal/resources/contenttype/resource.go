@@ -4,14 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"reflect"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/elliotchance/pie/v2"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -126,8 +123,6 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 		},
 	}
 
-	widgetIdPath := path.MatchRelative().AtParent().AtParent().AtName("widget_id")
-
 	response.Schema = schema.Schema{
 		Description: "Todo for explaining contenttype",
 		Attributes: map[string]schema.Attribute{
@@ -141,9 +136,6 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 				},
 			},
 			"version": schema.Int64Attribute{
-				Computed: true,
-			},
-			"version_controls": schema.Int64Attribute{
 				Computed: true,
 			},
 			"space_id": schema.StringAttribute{
@@ -167,13 +159,6 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 			},
 			"description": schema.StringAttribute{
 				Optional: true,
-			},
-			"manage_field_controls": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				PlanModifiers: []planmodifier.Bool{
-					custommodifier.BoolDefault(false),
-				},
 			},
 			"fields": schema.ListNestedAttribute{
 				Validators: []validator.List{
@@ -267,109 +252,9 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 								},
 							},
 						},
-						"control": schema.SingleNestedAttribute{
-							Optional: true,
-							PlanModifiers: []planmodifier.Object{
-								objectplanmodifier.UseStateForUnknown(),
-							},
-
-							Attributes: map[string]schema.Attribute{
-								"widget_id": schema.StringAttribute{
-									Required: true,
-								},
-								"widget_namespace": schema.StringAttribute{
-									Required: true,
-									Validators: []validator.String{
-										stringvalidator.OneOf("builtin", "extension", "app"),
-									},
-								},
-								"settings": schema.SingleNestedAttribute{
-									Attributes: map[string]schema.Attribute{
-										"help_text": schema.StringAttribute{
-											Optional: true,
-										},
-										"true_label": schema.StringAttribute{
-											Optional: true,
-											Validators: []validator.String{
-												customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "boolean"),
-											},
-										},
-										"false_label": schema.StringAttribute{
-											Optional: true,
-											Validators: []validator.String{
-												customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "boolean"),
-											},
-										},
-										"stars": schema.Int64Attribute{
-											Optional: true,
-											Validators: []validator.Int64{
-												customvalidator.Int64AllowedWhenSetValidator(widgetIdPath, "rating"),
-											},
-										},
-										"format": schema.StringAttribute{
-											Optional: true,
-											Validators: []validator.String{
-												stringvalidator.OneOf("dateonly", "time", "timeZ"),
-												customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "datepicker"),
-											},
-										},
-										"ampm": schema.StringAttribute{
-											Optional: true,
-											Validators: []validator.String{
-												stringvalidator.OneOf("12", "24"),
-												customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "datepicker"),
-											},
-										},
-										/** (only for References, many) Select whether to enable Bulk Editing mode */
-										"bulk_editing": schema.BoolAttribute{
-											Optional: true,
-										},
-										"tracking_field_id": schema.StringAttribute{
-											Optional: true,
-											Validators: []validator.String{
-												customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "slugEditor"),
-											},
-										},
-									},
-									Optional: true,
-									PlanModifiers: []planmodifier.Object{
-										objectplanmodifier.UseStateForUnknown(),
-									},
-								},
-							},
-						},
 					},
 					PlanModifiers: []planmodifier.Object{
 						custommodifier.FieldTypeChangeProhibited(),
-					},
-				},
-			},
-
-			"sidebar": schema.ListNestedAttribute{
-				Optional: true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"disabled": schema.BoolAttribute{
-							Optional: true,
-							Computed: true,
-							PlanModifiers: []planmodifier.Bool{
-								custommodifier.BoolDefault(false),
-							},
-						},
-						"widget_id": schema.StringAttribute{
-							Required: true,
-						},
-						"widget_namespace": schema.StringAttribute{
-							Required: true,
-						},
-						"settings": schema.StringAttribute{
-							CustomType: jsontypes.NormalizedType{},
-							Optional:   true,
-							Computed:   true,
-							PlanModifiers: []planmodifier.String{
-								custommodifier.StringDefault("{}"),
-							},
-						},
 					},
 				},
 			},
@@ -439,7 +324,6 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 
 	plan.ID = types.StringValue(contentType.Sys.Id)
 	plan.Version = types.Int64Value(contentType.Sys.Version)
-	plan.VersionControls = types.Int64Value(0)
 
 	// Set state to fully populated data
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
@@ -457,7 +341,27 @@ func (e *contentTypeResource) Read(ctx context.Context, request resource.ReadReq
 		return
 	}
 
-	e.doRead(ctx, state, &response.State, &response.Diagnostics)
+	spaceId := state.SpaceId.ValueString()
+	environment := state.Environment.ValueString()
+	id := state.ID.ValueString()
+
+	resp, err := e.client.GetContentTypeWithResponse(ctx, spaceId, environment, id)
+	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		if resp.StatusCode() == http.StatusNotFound {
+			response.State.RemoveResource(ctx)
+			return
+		}
+		response.Diagnostics.AddError(
+			"Error reading contenttype",
+			"Could not retrieve contenttype, unexpected error: "+err.Error(),
+		)
+		return
+	}
+
+	state.Import(resp.JSON200)
+
+	// Set refreshed state
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
 func (e *contentTypeResource) doRead(ctx context.Context, contentType *ContentType, state *tfsdk.State, d *diag.Diagnostics) {
@@ -471,36 +375,7 @@ func (e *contentTypeResource) doRead(ctx context.Context, contentType *ContentTy
 		return
 	}
 
-	var editorInterface *sdk.EditorInterface
-
-	if contentType.ManageFieldControls.ValueBool() {
-		editorInterface, err = e.getEditorInterface(ctx, contentType)
-		if err != nil {
-			d.AddError(
-				"Error reading contenttype",
-				"Could not retrieve contenttype, unexpected error: "+err.Error(),
-			)
-			return
-		}
-
-		if u, ok := ctx.Value(OnlyControlVersion).(bool); ok && u {
-			contentType.VersionControls = types.Int64Value(*editorInterface.Sys.Version)
-
-			ei := &sdk.EditorInterface{}
-			contentType.DraftEditorInterface(ei)
-
-			// remove all controls which are not in the plan for an easier import
-			editorInterface.Controls = pie.Filter(editorInterface.Controls, func(c sdk.EditorInterfaceControl) bool {
-				return pie.Any(ei.Controls, func(value sdk.EditorInterfaceControl) bool {
-					return value.FieldId == c.FieldId && value.WidgetId != nil && reflect.DeepEqual(value.WidgetId, c.WidgetId)
-				})
-			})
-		}
-	}
-
-	err = contentType.Import(contentfulContentType, editorInterface)
-	tflog.Debug(ctx, spew.Sdump(editorInterface))
-
+	err = contentType.Import(contentfulContentType)
 	if err != nil {
 		d.AddError(
 			"Error importing contenttype to state",
@@ -603,95 +478,7 @@ func (e *contentTypeResource) Update(ctx context.Context, request resource.Updat
 		}
 	}
 
-	ctxControls := e.updateEditorInterface(ctx, state, plan, &response.Diagnostics)
-
-	e.doRead(ctxControls, plan, &response.State, &response.Diagnostics)
-}
-
-func (e *contentTypeResource) updateEditorInterface(ctx context.Context, state *ContentType, plan *ContentType, d *diag.Diagnostics) context.Context {
-	if plan.ManageFieldControls.ValueBool() {
-		// first import of editorInterface to the state just get the editorInterface version
-		if state.VersionControls.IsNull() {
-			return context.WithValue(ctx, OnlyControlVersion, true)
-		}
-
-		editorInterface, err := e.getEditorInterface(ctx, plan)
-		if err != nil {
-			d.AddError(
-				"Error reading contenttype",
-				"Could not retrieve contenttype editorInterface, unexpected error: "+err.Error(),
-			)
-			return ctx
-		}
-
-		if !plan.EqualEditorInterface(editorInterface) {
-
-			plan.DraftEditorInterface(editorInterface)
-
-			params := &sdk.UpdateEditorInterfaceParams{
-				XContentfulVersion: *editorInterface.Sys.Version,
-			}
-			resp, err := e.client.UpdateEditorInterfaceWithResponse(
-				ctx, plan.SpaceId.ValueString(), plan.Environment.ValueString(), plan.ID.ValueString(), params, *editorInterface)
-
-			if err != nil {
-				d.AddError(
-					"Error updating contenttype editorInterface",
-					"Could not update contenttype editorInterface, unexpected error: "+err.Error(),
-				)
-
-				return ctx
-			}
-
-			if resp.StatusCode() != 200 {
-				d.AddError(
-					"Error updating contenttype editorInterface",
-					"Could not update contenttype editorInterface, unexpected status code: "+resp.Status(),
-				)
-				return ctx
-			}
-		}
-	}
-
-	return ctx
-}
-
-func (e *contentTypeResource) doUpdate(ctx context.Context, plan *ContentType, draft *sdk.ContentTypeUpdate) (*sdk.ContentType, error) {
-	spaceId := plan.SpaceId.ValueString()
-	environment := plan.Environment.ValueString()
-	id := plan.ID.ValueString()
-
-	params := &sdk.UpdateContentTypeParams{
-		XContentfulVersion: plan.Version.ValueInt64(),
-	}
-
-	resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, id, params, *draft)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("unexpected status code: %s", resp.Status())
-	}
-
-	contentType := resp.JSON200
-
-	return e.activateContentType(ctx, spaceId, environment, id, contentType.Sys.Version)
-}
-
-func (e *contentTypeResource) activateContentType(ctx context.Context, spaceId, environment, id string, version int64) (*sdk.ContentType, error) {
-	params := &sdk.ActivateContentTypeParams{
-		XContentfulVersion: version,
-	}
-	resp, err := e.client.ActivateContentTypeWithResponse(ctx, spaceId, environment, id, params)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("unexpected status code: %s", resp.Status())
-	}
-	return resp.JSON200, nil
+	e.doRead(ctx, plan, &response.State, &response.Diagnostics)
 }
 
 func (e *contentTypeResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
@@ -761,13 +548,58 @@ func (e *contentTypeResource) ImportState(ctx context.Context, request resource.
 		return
 	}
 
-	futureState := &ContentType{
-		ID:          types.StringValue(idParts[0]),
-		SpaceId:     types.StringValue(idParts[2]),
-		Environment: types.StringValue(idParts[1]),
+	id := idParts[0]
+	spaceId := idParts[2]
+	environment := idParts[1]
+
+	resp, err := e.client.GetContentTypeWithResponse(ctx, spaceId, environment, id)
+	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		response.Diagnostics.AddError(
+			"Error reading contenttype",
+			"Could not retrieve contenttype, unexpected error: "+err.Error(),
+		)
+		return
 	}
 
-	e.doRead(ctx, futureState, &response.State, &response.Diagnostics)
+	state := &ContentType{}
+	state.Import(resp.JSON200)
+
+	// Set refreshed state
+	response.Diagnostics.Append(response.State.Set(ctx, state)...)
+}
+
+func (e *contentTypeResource) activateContentType(ctx context.Context, spaceId, environment, id string, version int64) (*sdk.ContentType, error) {
+	params := &sdk.ActivateContentTypeParams{
+		XContentfulVersion: version,
+	}
+	resp, err := e.client.ActivateContentTypeWithResponse(ctx, spaceId, environment, id, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("unexpected status code: %s", resp.Status())
+	}
+	return resp.JSON200, nil
+}
+
+func (e *contentTypeResource) doUpdate(ctx context.Context, plan *ContentType, draft *sdk.ContentTypeUpdate) (*sdk.ContentType, error) {
+	spaceId := plan.SpaceId.ValueString()
+	environment := plan.Environment.ValueString()
+	id := plan.ID.ValueString()
+
+	params := &sdk.UpdateContentTypeParams{
+		XContentfulVersion: plan.Version.ValueInt64(),
+	}
+
+	resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, id, params, *draft)
+	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		return nil, err
+	}
+
+	contentType := resp.JSON200
+
+	return e.activateContentType(ctx, spaceId, environment, id, contentType.Sys.Version)
 }
 
 func (e *contentTypeResource) getContentType(ctx context.Context, editor *ContentType) (*sdk.ContentType, error) {
@@ -777,22 +609,6 @@ func (e *contentTypeResource) getContentType(ctx context.Context, editor *Conten
 
 	tflog.Debug(ctx, fmt.Sprintf("spaceId: %s, environment: %s, id: %s", spaceId, environment, id))
 	resp, err := e.client.GetContentTypeWithResponse(ctx, spaceId, environment, id)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("unexpected status code: %s", resp.Status())
-	}
-
-	return resp.JSON200, nil
-}
-
-func (e *contentTypeResource) getEditorInterface(ctx context.Context, editor *ContentType) (*sdk.EditorInterface, error) {
-	spaceId := editor.SpaceId.ValueString()
-	environment := editor.Environment.ValueString()
-
-	resp, err := e.client.GetEditorInterfaceWithResponse(ctx, spaceId, environment, editor.ID.ValueString())
 	if err != nil {
 		return nil, err
 	}

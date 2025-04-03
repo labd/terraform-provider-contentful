@@ -15,6 +15,7 @@ import (
 	"github.com/labd/terraform-provider-contentful/internal/resources/app_installation"
 	"github.com/labd/terraform-provider-contentful/internal/resources/asset"
 	"github.com/labd/terraform-provider-contentful/internal/resources/contenttype"
+	"github.com/labd/terraform-provider-contentful/internal/resources/editor_interface"
 	"github.com/labd/terraform-provider-contentful/internal/resources/entry"
 	"github.com/labd/terraform-provider-contentful/internal/resources/environment"
 	"github.com/labd/terraform-provider-contentful/internal/resources/locale"
@@ -147,6 +148,7 @@ func (c contentfulProvider) Resources(_ context.Context) []func() resource.Resou
 		app_installation.NewAppInstallationResource,
 		asset.NewAssetResource,
 		contenttype.NewContentTypeResource,
+		editor_interface.NewEditorInterfaceResource,
 		entry.NewEntryResource,
 		environment.NewEnvironmentResource,
 		locale.NewLocaleResource,
