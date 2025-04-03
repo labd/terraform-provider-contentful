@@ -86,7 +86,7 @@ func ExtractErrorResponse(resp Response) error {
 	if body.IsValid() && !body.IsZero() {
 		value := body.Interface()
 		if v, ok := value.([]byte); ok {
-			return fmt.Errorf("eesponse from Contentful API:\n\n  %s", string(v))
+			return fmt.Errorf("response from Contentful API (%d):\n\n  %s", resp.StatusCode(), string(v))
 		}
 	}
 

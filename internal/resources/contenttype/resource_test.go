@@ -38,7 +38,6 @@ func TestContentTypeResource_Create(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
 					resource.TestCheckResourceAttr(resourceName, "id", "tf_test1"),
 					resource.TestCheckResourceAttr(resourceName, "version", "2"),
-					resource.TestCheckResourceAttr(resourceName, "version_controls", "0"),
 					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *sdk.ContentType) {
 						assert.EqualValues(t, "tf_test1", contentType.Name)
 						assert.Equal(t, int64(2), contentType.Sys.Version)
@@ -80,7 +79,6 @@ func TestContentTypeResource_Create(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
 					resource.TestCheckResourceAttr(resourceName, "version", "4"),
-					resource.TestCheckResourceAttr(resourceName, "version_controls", "0"),
 					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *sdk.ContentType) {
 						assert.EqualValues(t, "tf_test1", contentType.Name)
 						assert.Equal(t, int64(4), contentType.Sys.Version)
@@ -118,7 +116,6 @@ func TestContentTypeResource_Create(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
 					resource.TestCheckResourceAttr(resourceName, "version", "6"),
-					resource.TestCheckResourceAttr(resourceName, "version_controls", "4"),
 					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *sdk.ContentType) {
 						assert.EqualValues(t, "tf_test1", contentType.Name)
 						assert.Equal(t, int64(6), contentType.Sys.Version)
@@ -148,21 +145,6 @@ func TestContentTypeResource_Create(t *testing.T) {
 							Omitted:     utils.Pointer(false),
 							Validations: utils.Pointer(make([]sdk.FieldValidation, 0)),
 						}, contentType.Fields[1])
-					}),
-					testAccCheckEditorInterfaceExists(t, "tf_test1", func(t *testing.T, editorInterface *sdk.EditorInterface) {
-						assert.Len(t, editorInterface.Controls, 2)
-						assert.Equal(t, sdk.EditorInterfaceControl{
-							FieldId: "field1",
-						}, editorInterface.Controls[0])
-						assert.Equal(t, sdk.EditorInterfaceControl{
-							FieldId:         "field3",
-							WidgetNamespace: utils.Pointer(sdk.EditorInterfaceControlWidgetNamespaceBuiltin),
-							WidgetId:        utils.Pointer("numberEditor"),
-							Settings: &sdk.EditorInterfaceSettings{
-								BulkEditing: utils.Pointer(true),
-								HelpText:    utils.Pointer("blabla"),
-							},
-						}, editorInterface.Controls[1])
 					}),
 				),
 			},

@@ -14,54 +14,75 @@ Todo for explaining contenttype
 
 ```terraform
 resource "contentful_contenttype" "example_contenttype" {
-  space_id              = "space-id"
-  environment           = "master"
-  id                    = "tf_linked"
-  name                  = "tf_linked"
-  description           = "content type description"
-  display_field         = "asset_field"
-  manage_field_controls = true
-  fields = [{
-    id   = "asset_field"
-    name = "Asset Field"
-    type = "Array"
-    items = {
+  space_id      = "space-id"
+  environment   = "master"
+  id            = "tf_linked"
+  name          = "tf_linked"
+  description   = "content type description"
+  display_field = "asset_field"
+
+  fields = [
+    {
+      id   = "asset_field"
+      name = "Asset Field"
+      type = "Array"
+      items = {
+        type      = "Link"
+        link_type = "Asset"
+      }
+      required = true
+    },
+    {
+      id        = "entry_link_field"
+      name      = "Entry Link Field"
       type      = "Link"
-      link_type = "Asset"
-    }
-    required = true
-    }, {
-    id        = "entry_link_field"
-    name      = "Entry Link Field"
-    type      = "Link"
-    link_type = "Entry"
-    validations = [{
-      link_content_type = [
-        contentful_contenttype.some_other_content_type.id
+      link_type = "Entry"
+      validations = [
+        {
+          link_content_type = [contentful_contenttype.some_other_content_type.id]
+        }
       ]
-      }
-    ]
-    required = false
-    }, {
-    id       = "select",
-    name     = "Select Field",
-    type     = "Symbol",
-    required = true,
-    validations = [
-      {
-        in = [
-          "choice 1",
-          "choice 2",
-          "choice 3",
-          "choice 4"
-        ]
-      }
-    ]
-    control = {
-      widget_id        = "radio"
-      widget_namespace = "builtin"
+      required = false
+    },
+    {
+      id       = "select",
+      name     = "Select Field",
+      type     = "Symbol",
+      required = true,
+      validations = [
+        {
+          in = [
+            "choice 1",
+            "choice 2",
+            "choice 3",
+            "choice 4"
+          ]
+        }
+      ]
     }
-  }]
+  ]
+}
+
+resource "contentful_editor_interface" "example_editor_interface" {
+  space_id     = "space-id"
+  environment  = "master"
+  content_type = contentful_contenttype.example_contenttype.id
+  controls = [
+    {
+      field_id         = "asset_field"
+      widget_id        = "entryLinkEditor"
+      widget_namespace = "builtin"
+    },
+    {
+      field_id         = "entry_link_field"
+      widget_id        = "entryLinkEditor"
+      widget_namespace = "builtin"
+      settings = {
+        show_linked_entries = true
+        show_linked_assets  = false
+      }
+    }
+  ]
 }
 ```
 
@@ -80,13 +101,10 @@ resource "contentful_contenttype" "example_contenttype" {
 
 - `description` (String)
 - `id` (String) content type id
-- `manage_field_controls` (Boolean)
-- `sidebar` (Attributes List) (see [below for nested schema](#nestedatt--sidebar))
 
 ### Read-Only
 
 - `version` (Number)
-- `version_controls` (Number)
 
 <a id="nestedatt--fields"></a>
 ### Nested Schema for `fields`
@@ -99,7 +117,6 @@ Required:
 
 Optional:
 
-- `control` (Attributes) (see [below for nested schema](#nestedatt--fields--control))
 - `default_value` (Attributes) (see [below for nested schema](#nestedatt--fields--default_value))
 - `disabled` (Boolean)
 - `items` (Attributes) (see [below for nested schema](#nestedatt--fields--items))
@@ -108,34 +125,6 @@ Optional:
 - `omitted` (Boolean)
 - `required` (Boolean)
 - `validations` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations))
-
-<a id="nestedatt--fields--control"></a>
-### Nested Schema for `fields.control`
-
-Required:
-
-- `widget_id` (String)
-- `widget_namespace` (String)
-
-Optional:
-
-- `settings` (Attributes) (see [below for nested schema](#nestedatt--fields--control--settings))
-
-<a id="nestedatt--fields--control--settings"></a>
-### Nested Schema for `fields.control.settings`
-
-Optional:
-
-- `ampm` (String)
-- `bulk_editing` (Boolean)
-- `false_label` (String)
-- `format` (String)
-- `help_text` (String)
-- `stars` (Number)
-- `tracking_field_id` (String)
-- `true_label` (String)
-
-
 
 <a id="nestedatt--fields--default_value"></a>
 ### Nested Schema for `fields.default_value`
@@ -262,19 +251,3 @@ Optional:
 
 - `max` (Number)
 - `min` (Number)
-
-
-
-
-<a id="nestedatt--sidebar"></a>
-### Nested Schema for `sidebar`
-
-Required:
-
-- `widget_id` (String)
-- `widget_namespace` (String)
-
-Optional:
-
-- `disabled` (Boolean)
-- `settings` (String)

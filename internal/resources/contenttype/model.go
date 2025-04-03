@@ -1,13 +1,10 @@
 package contenttype
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
-	"strconv"
 
 	"github.com/elliotchance/pie/v2"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -17,24 +14,14 @@ import (
 
 // ContentType is the main resource schema data
 type ContentType struct {
-	ID                  types.String `tfsdk:"id"`
-	SpaceId             types.String `tfsdk:"space_id"`
-	Environment         types.String `tfsdk:"environment"`
-	Name                types.String `tfsdk:"name"`
-	DisplayField        types.String `tfsdk:"display_field"`
-	Description         types.String `tfsdk:"description"`
-	Version             types.Int64  `tfsdk:"version"`
-	VersionControls     types.Int64  `tfsdk:"version_controls"`
-	Fields              []Field      `tfsdk:"fields"`
-	ManageFieldControls types.Bool   `tfsdk:"manage_field_controls"`
-	Sidebar             []Sidebar    `tfsdk:"sidebar"`
-}
-
-type Sidebar struct {
-	WidgetId        types.String         `tfsdk:"widget_id"`
-	WidgetNamespace types.String         `tfsdk:"widget_namespace"`
-	Settings        jsontypes.Normalized `tfsdk:"settings"`
-	Disabled        types.Bool           `tfsdk:"disabled"`
+	ID           types.String `tfsdk:"id"`
+	SpaceId      types.String `tfsdk:"space_id"`
+	Environment  types.String `tfsdk:"environment"`
+	Name         types.String `tfsdk:"name"`
+	DisplayField types.String `tfsdk:"display_field"`
+	Description  types.String `tfsdk:"description"`
+	Version      types.Int64  `tfsdk:"version"`
+	Fields       []Field      `tfsdk:"fields"`
 }
 
 type Field struct {
@@ -48,7 +35,6 @@ type Field struct {
 	Omitted      types.Bool    `tfsdk:"omitted"`
 	Validations  []Validation  `tfsdk:"validations"`
 	Items        *Items        `tfsdk:"items"`
-	Control      *Control      `tfsdk:"control"`
 	DefaultValue *DefaultValue `tfsdk:"default_value"`
 }
 
@@ -79,12 +65,6 @@ func (d *DefaultValue) Draft() *map[string]any {
 	}
 
 	return &defaultValues
-}
-
-type Control struct {
-	WidgetId        types.String `tfsdk:"widget_id"`
-	WidgetNamespace types.String `tfsdk:"widget_namespace"`
-	Settings        *Settings    `tfsdk:"settings"`
 }
 
 type Validation struct {
@@ -327,7 +307,7 @@ func getTypeOfMap(mapValues *map[string]any) (*string, error) {
 	return nil, nil
 }
 
-func (f *Field) Import(n sdk.Field, c []sdk.EditorInterfaceControl) error {
+func (f *Field) Import(n sdk.Field) error {
 	f.Id = types.StringValue(n.Id)
 	f.Name = types.StringValue(n.Name)
 	f.Type = types.StringValue(string(n.Type))
@@ -428,79 +408,7 @@ func (f *Field) Import(n sdk.Field, c []sdk.EditorInterfaceControl) error {
 		}
 	}
 
-	idx := pie.FindFirstUsing(c, func(control sdk.EditorInterfaceControl) bool {
-		return n.Id == control.FieldId
-	})
-
-	if idx != -1 && c[idx].WidgetId != nil {
-
-		var settings *Settings
-
-		if c[idx].Settings != nil {
-			settings = &Settings{}
-
-			settings.Import(c[idx].Settings)
-		}
-
-		var namespace *string = nil
-		if c[idx].WidgetNamespace != nil {
-			namespace = utils.Pointer(string(*c[idx].WidgetNamespace))
-		}
-
-		f.Control = &Control{
-			WidgetId:        types.StringPointerValue(c[idx].WidgetId),
-			WidgetNamespace: types.StringPointerValue(namespace),
-			Settings:        settings,
-		}
-	}
-
 	return nil
-}
-
-type Settings struct {
-	HelpText        types.String `tfsdk:"help_text"`
-	TrueLabel       types.String `tfsdk:"true_label"`
-	FalseLabel      types.String `tfsdk:"false_label"`
-	Stars           types.Int64  `tfsdk:"stars"`
-	Format          types.String `tfsdk:"format"`
-	TimeFormat      types.String `tfsdk:"ampm"`
-	BulkEditing     types.Bool   `tfsdk:"bulk_editing"`
-	TrackingFieldId types.String `tfsdk:"tracking_field_id"`
-}
-
-func (s *Settings) Import(settings *sdk.EditorInterfaceSettings) {
-	if settings.Stars != nil {
-		numStars, err := strconv.ParseInt(*settings.Stars, 10, 64)
-		if err != nil {
-			numStars = 0
-		}
-		s.Stars = types.Int64Value(numStars)
-	}
-
-	s.HelpText = types.StringPointerValue(settings.HelpText)
-	s.TrueLabel = types.StringPointerValue(settings.TrueLabel)
-	s.FalseLabel = types.StringPointerValue(settings.FalseLabel)
-	s.Format = types.StringPointerValue(settings.Format)
-	s.TimeFormat = types.StringPointerValue(settings.Ampm)
-	s.BulkEditing = types.BoolPointerValue(settings.BulkEditing)
-	s.TrackingFieldId = types.StringPointerValue(settings.TrackingFieldId)
-}
-
-func (s *Settings) Draft() *sdk.EditorInterfaceSettings {
-	settings := &sdk.EditorInterfaceSettings{}
-
-	if !s.Stars.IsNull() && !s.Stars.IsUnknown() {
-		settings.Stars = utils.Pointer(strconv.FormatInt(s.Stars.ValueInt64(), 10))
-	}
-
-	settings.HelpText = s.HelpText.ValueStringPointer()
-	settings.TrueLabel = s.TrueLabel.ValueStringPointer()
-	settings.FalseLabel = s.FalseLabel.ValueStringPointer()
-	settings.Format = s.Format.ValueStringPointer()
-	settings.Ampm = s.TimeFormat.ValueStringPointer()
-	settings.BulkEditing = s.BulkEditing.ValueBoolPointer()
-	settings.TrackingFieldId = s.TrackingFieldId.ValueStringPointer()
-	return settings
 }
 
 type Items struct {
@@ -641,7 +549,7 @@ func (c *ContentType) Update() (*sdk.ContentTypeUpdate, error) {
 	return contentfulType, nil
 }
 
-func (c *ContentType) Import(n *sdk.ContentType, e *sdk.EditorInterface) error {
+func (c *ContentType) Import(n *sdk.ContentType) error {
 	c.ID = types.StringValue(n.Sys.Id)
 	c.Version = types.Int64Value(n.Sys.Version)
 
@@ -652,42 +560,14 @@ func (c *ContentType) Import(n *sdk.ContentType, e *sdk.EditorInterface) error {
 
 	var fields []Field
 
-	var controls []sdk.EditorInterfaceControl
-	var sidebar []sdk.EditorInterfaceSidebarItem
-	c.VersionControls = types.Int64Value(0)
-	if e != nil {
-		controls = e.Controls
-
-		if e.Sidebar != nil {
-			sidebar = *e.Sidebar
-		}
-		c.VersionControls = types.Int64Value(int64(*e.Sys.Version))
-	}
-
 	for _, nf := range n.Fields {
 		field := &Field{}
-		err := field.Import(nf, controls)
+		err := field.Import(nf)
 		if err != nil {
 			return fmt.Errorf("field import failed: %w", err)
 		}
 		fields = append(fields, *field)
 	}
-
-	c.Sidebar = pie.Map(sidebar, func(t sdk.EditorInterfaceSidebarItem) Sidebar {
-
-		settings := jsontypes.NewNormalizedValue("{}")
-
-		if t.Settings != nil {
-			data, _ := json.Marshal(t.Settings)
-			settings = jsontypes.NewNormalizedValue(string(data))
-		}
-		return Sidebar{
-			WidgetId:        types.StringValue(*t.WidgetId),
-			WidgetNamespace: types.StringValue(string(*t.WidgetNamespace)),
-			Settings:        settings,
-			Disabled:        types.BoolPointerValue(t.Disabled),
-		}
-	})
 
 	c.Fields = fields
 
@@ -733,161 +613,6 @@ func (c *ContentType) Equal(n *sdk.ContentType) bool {
 	}
 
 	return true
-}
-
-func (c *ContentType) EqualEditorInterface(n *sdk.EditorInterface) bool {
-
-	if len(c.Fields) != len(n.Controls) {
-		return false
-	}
-
-	filteredControls := pie.Filter(n.Controls, func(c sdk.EditorInterfaceControl) bool {
-		return c.WidgetId != nil || c.WidgetNamespace != nil || c.Settings != nil
-	})
-
-	filteredFields := pie.Filter(c.Fields, func(f Field) bool {
-		return f.Control != nil
-	})
-
-	if len(filteredControls) != len(filteredFields) {
-		return false
-	}
-
-	for _, field := range filteredFields {
-		idx := pie.FindFirstUsing(filteredControls, func(t sdk.EditorInterfaceControl) bool {
-			return t.FieldId == field.Id.ValueString()
-		})
-
-		if idx == -1 {
-			return false
-		}
-		control := filteredControls[idx]
-
-		if field.Control.WidgetId.ValueString() != *control.WidgetId {
-			return false
-		}
-
-		var namespace *string = nil
-		if control.WidgetNamespace != nil {
-			namespace = utils.Pointer(string(*control.WidgetNamespace))
-		}
-		if field.Control.WidgetNamespace.ValueStringPointer() != namespace {
-			return false
-		}
-
-		if field.Control.Settings == nil && control.Settings != nil {
-			return false
-		}
-
-		if field.Control.Settings != nil && !reflect.DeepEqual(field.Control.Settings.Draft(), control.Settings) {
-			return false
-		}
-	}
-
-	if n.Sidebar == nil && len(c.Sidebar) > 0 {
-		return false
-	}
-
-	if len(c.Sidebar) != len(*n.Sidebar) {
-		return false
-	}
-
-	sidebar := *n.Sidebar
-
-	for idxOrg, s := range c.Sidebar {
-		idx := pie.FindFirstUsing(sidebar, func(t sdk.EditorInterfaceSidebarItem) bool {
-			return t.WidgetId == s.WidgetId.ValueStringPointer()
-		})
-
-		if idx == -1 {
-			return false
-		}
-
-		// field was moved, it is the same as before but different position
-		if idxOrg != idx {
-			return false
-		}
-
-		sidebar := sidebar[idx]
-
-		if sidebar.Disabled != s.Disabled.ValueBoolPointer() {
-			return false
-		}
-
-		if sidebar.WidgetId != s.WidgetId.ValueStringPointer() {
-			return false
-		}
-
-		var namespace *string = nil
-		if !s.WidgetNamespace.IsNull() {
-			namespace = utils.Pointer(s.WidgetNamespace.ValueString())
-		}
-
-		if namespace != s.WidgetNamespace.ValueStringPointer() {
-			return false
-		}
-
-		a := make(map[string]string)
-
-		s.Settings.Unmarshal(a)
-
-		if !reflect.DeepEqual(sidebar.Settings, a) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func (c *ContentType) DraftEditorInterface(n *sdk.EditorInterface) {
-
-	n.Controls = pie.Map(c.Fields, func(field Field) sdk.EditorInterfaceControl {
-
-		control := sdk.EditorInterfaceControl{
-			FieldId: field.Id.ValueString(),
-		}
-
-		if field.Control != nil {
-			control.WidgetId = field.Control.WidgetId.ValueStringPointer()
-			control.WidgetNamespace = utils.Pointer(sdk.EditorInterfaceControlWidgetNamespace(field.Control.WidgetNamespace.ValueString()))
-
-			if field.Control.Settings != nil {
-				control.Settings = field.Control.Settings.Draft()
-			}
-		}
-
-		return control
-
-	})
-
-	sidebar := pie.Map(c.Sidebar, func(t Sidebar) sdk.EditorInterfaceSidebarItem {
-
-		var namespace sdk.EditorInterfaceSidebarItemWidgetNamespace
-		if !t.WidgetNamespace.IsNull() {
-			namespace = sdk.EditorInterfaceSidebarItemWidgetNamespace(t.WidgetNamespace.ValueString())
-		}
-
-		sidebar := sdk.EditorInterfaceSidebarItem{
-			WidgetNamespace: &namespace,
-			WidgetId:        t.WidgetId.ValueStringPointer(),
-			Disabled:        t.Disabled.ValueBoolPointer(),
-		}
-
-		if !*sidebar.Disabled {
-			settings := sdk.EditorInterfaceSettings{}
-
-			t.Settings.Unmarshal(settings)
-			sidebar.Settings = &settings
-		}
-
-		return sidebar
-	})
-
-	if len(sidebar) > 0 {
-		n.Sidebar = &sidebar
-	} else {
-		n.Sidebar = nil
-	}
 }
 
 func getValidations(contentfulValidations *[]sdk.FieldValidation) ([]Validation, error) {
