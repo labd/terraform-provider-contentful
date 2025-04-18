@@ -563,6 +563,8 @@ func (e *contentTypeResource) ImportState(ctx context.Context, request resource.
 
 	state := &ContentType{}
 	state.Import(resp.JSON200)
+	state.SpaceId = types.StringValue(spaceId)
+	state.Environment = types.StringValue(environment)
 
 	// Set refreshed state
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
