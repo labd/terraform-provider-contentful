@@ -953,6 +953,86 @@ paths:
               schema:
                 $ref: "#/components/schemas/AppInstallationCollection"
 
+  /spaces/{spaceId}/roles:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+    get:
+      summary: Get all roles
+      description: Retrieves all roles in a space
+      operationId: getAllRoles
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleCollection"
+    post:
+      summary: Create a role
+      description: Creates a new role in a space
+      operationId: createRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+
+  /spaces/{spaceId}/roles/{roleId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/roleId"
+    get:
+      summary: Get a role
+      description: Retrieves a specific role by ID
+      operationId: getRole
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+    put:
+      summary: Update a role
+      description: Updates a role in a space
+      operationId: updateRole
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleUpdate"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+    delete:
+      summary: Delete a role
+      description: Deletes a role in a space
+      operationId: deleteRole
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
+
   /spaces/{spaceId}/environments/{environmentId}/app_installations/{resourceId}:
     parameters:
       - $ref: "#/components/parameters/spaceId"
@@ -1209,6 +1289,13 @@ components:
       schema:
         type: string
       description: ID of the locale
+    roleId: 
+      name: roleId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID of the role
     webhookId:
       name: webhookId
       in: path
@@ -1956,6 +2043,145 @@ components:
       required:
         - name
         - code
+
+    Role:
+      type: object
+      properties:
+        sys:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The unique identifier for the role.
+            type:
+              type: string
+              description: The type of the resource (e.g., "Role").
+            version:
+              type: integer
+              description: The current version of the role.
+        name:
+          type: string
+          description: The name of the role.
+        description:
+          type: string
+          description: A short description of the role.
+        permissions: 
+          $ref: "#/components/schemas/RolePermissions"
+        policies:
+          $ref: "#/components/schemas/RolePolicies"
+      required:
+        - name
+        - description
+
+    RoleCollection:
+      type: object
+      properties:
+        sys:
+          type: object
+          properties:
+            type:
+              type: string
+              description: The type of the resource (e.g., "Array").
+            total:
+              type: integer
+              description: The total number of roles.
+            skip:
+              type: integer
+              description: The number of skipped items.
+            limit:
+              type: integer
+              description: The maximum number of items returned.
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+          description: The list of roles.
+
+
+    RolePolicies:
+      type: array
+      items:
+        type: object
+        properties:
+          effect:
+            type: string
+            description: The effect of the policy (e.g., "allow" or "deny").
+            example: "allow"
+          actions:
+            type: array
+            items:
+              type: string
+            description: A list of actions the policy applies to.
+            example:
+              - "read"
+              - "edit"
+          constraint:
+            type: object
+            description: Constraints applied to the policy.
+            example:
+              and:
+                - equals:
+                    field: "sys.type"
+                    value: "Entry"
+
+      
+
+    RolePermissions:
+      type: object
+      additionalProperties:
+        oneOf:
+          - type: string
+            description: A string representing access level (e.g., "all").
+          - type: array
+            items:
+              type: string
+              description: Specific permissions (e.g., "read", "create", "publish", "delete").
+            description: A list of specific permissions.
+
+    RoleCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the role.
+          example: "Editor"
+        description:
+          type: string
+          description: A short description of the role.
+          example: "Can edit content but not publish."
+        permissions:
+          $ref: "#/components/schemas/RolePermissions"
+          description: "A map of permissions associated with the role."
+        policies:
+          $ref: "#/components/schemas/RolePolicies"
+          description: "A map of policies associated with the role."
+      required:
+        - name 
+        - description
+        - policies
+
+    RoleUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the role.
+          example: "Updated Editor"
+        description:
+          type: string
+          description: A short description of the role.
+          example: "Updated description for the role."
+        policies:
+          $ref: "#/components/schemas/RolePolicies"
+          description: "A map of policies associated with the role."
+        permissions:
+          $ref: "#/components/schemas/RolePermissions"
+          description: "A map of permissions associated with the role."
+      required:
+        - name
+        - description
+        - permissions
+        - policies
 
     Space:
       type: object
