@@ -13,16 +13,12 @@ import (
 
 // Role is the main resource schema data
 type Role struct {
-	ID types.String `tfsdk:"id"`
-	// RoleID  types.String `tfsdk:"role_id"`
-	Version types.Int64 `tfsdk:"version"`
+	ID      types.String `tfsdk:"id"`
+	Version types.Int64  `tfsdk:"version"`
 
 	Name        types.String          `tfsdk:"name"`
 	Description types.String          `tfsdk:"description"`
 	Permissions map[string]Permission `tfsdk:"permission"`
-
-	// Published types.Bool `tfsdk:"published"`
-	// Archived  types.Bool `tfsdk:"archived"`
 }
 
 type Permission struct {
@@ -30,7 +26,6 @@ type Permission struct {
 	Actions types.List   `tfsdk:"actions"`
 }
 
-// Field represents a content field in an Entry
 type Policy struct {
 	Effect     types.String `tfsdk:"effect:"`
 	Actions    types.List   `tfsdk:"actions"`
@@ -44,7 +39,6 @@ type Constraint struct {
 // Import populates the Role struct from an sdk.Role object
 func (r *Role) Import(role *sdk.Role) {
 	r.ID = types.StringValue(*role.Sys.Id)
-	// r.RoleID = types.StringValue(role.Sys.Id)
 	r.Version = types.Int64Value(int64(*role.Sys.Version))
 	r.Name = types.StringValue(role.Name)
 	r.Description = types.StringValue(role.Description)
