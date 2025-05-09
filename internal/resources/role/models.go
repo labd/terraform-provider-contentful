@@ -2,13 +2,12 @@ package role
 
 import (
 	"encoding/json"
-	"fmt"
+	// "fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	// "github.com/iancoleman/orderedmap"
 
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
-	"github.com/labd/terraform-provider-contentful/internal/utils"
+	// "github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
 // Role is the main resource schema data
@@ -18,7 +17,8 @@ type Role struct {
 
 	Name        types.String          `tfsdk:"name"`
 	Description types.String          `tfsdk:"description"`
-	Permissions map[string]Permission `tfsdk:"permission"`
+	Permissions map[string]Permission `tfsdk:"permissions"`
+	Policies    []Policy              `tfsdk:"policies"`
 }
 
 type Permission struct {
@@ -42,15 +42,13 @@ func (r *Role) Import(role *sdk.Role) {
 	r.Version = types.Int64Value(int64(*role.Sys.Version))
 	r.Name = types.StringValue(role.Name)
 	r.Description = types.StringValue(role.Description)
-
-	r.BuildFieldsFromAPIResponse(role)
 }
 
 func (r *Role) DraftForCreate() sdk.RoleCreate {
 	return sdk.RoleCreate{
 		Name:        r.Name.ValueString(),
 		Description: r.Description.ValueString(),
-		Permissions: r.Permissions,
+		Permissions: convertPermissions(r.Permissions),
 	}
 }
 
@@ -58,82 +56,56 @@ func (r *Role) DraftForUpdate() sdk.RoleUpdate {
 	return sdk.RoleUpdate{
 		Name:        r.Name.ValueString(),
 		Description: r.Description.ValueString(),
-		Permissions: r.Permissions,
+		Permissions: convertPermissions(r.Permissions),
 	}
 }
 
-// func (r *Role) DraftForCreate() sdk.RoleCreate {
-// 	fieldProperties := orderedmap.New()
-//
-// 	// for _, field := range r.Field {
-// 	// 	fieldID := field.ID.ValueString()
-// 	// 	locale := field.Locale.ValueString()
-// 	// 	content := ParseContentValue(field.Content.ValueString())
-// 	//
-// 	// 	prop, ok := fieldProperties.Get(fieldID)
-// 	// 	if !ok {
-// 	// 		prop = map[string]any{}
-// 	// 		fieldProperties.Set(fieldID, prop)
-// 	// 	}
-// 	//
-// 	// 	prop.(map[string]any)[locale] = content
-// 	// }
-//
-// 	return sdk.RoleCreate{
-// 		Fields: fieldProperties,
-// 	}
-// }
+// NOTE: Validate this function
+func convertPermissions(input map[string]Permission) sdk.RolePermissions {
+	rawMap := make(map[string]json.RawMessage)
 
-// parseContentValue tries to parse a string as JSON, otherwise returns the original value
-func ParseContentValue(value string) interface{} {
-	var content any
-	err := json.Unmarshal([]byte(value), &content)
-	if err != nil {
-		content = value
-	}
+	for key, val := range input {
+		// Handle the "all" shortcut
+		if !val.All.IsNull() && val.All.ValueString() != "" {
+			b, err := json.Marshal(val.All.ValueString())
+			if err != nil {
+				continue // or log
+			}
+			rawMap[key] = b
+			continue
+		}
 
-	return utils.SortOrderedMapRecursively(content)
-}
-
-// BuildFieldsFromAPIResponse builds the Field array from API response
-func (r *Role) BuildFieldsFromAPIResponse(role *sdk.Role) {
-	r.Field = []Field{}
-
-	// If no fields are present in the response, return early
-	if len(entry.Fields.Keys()) == 0 {
-		return
-	}
-
-	// Convert fields from the API response to the Field structure
-	fields := entry.Fields
-	for _, fieldID := range fields.Keys() {
-		fieldValue, _ := fields.Get(fieldID)
-
-		subFields := fieldValue.(orderedmap.OrderedMap)
-
-		for _, locale := range subFields.Keys() {
-			content, _ := subFields.Get(locale)
-
-			// Convert the content back to string representation for storage
-			contentStr := ""
-			switch v := content.(type) {
-			case string:
-				contentStr = v
-			default:
-				v = utils.SortOrderedMapRecursively(v)
-				// Try to marshal complex types back to JSON string
-				if jsonBytes, err := json.Marshal(v); err == nil {
-					contentStr = string(jsonBytes)
-				} else {
-					contentStr = fmt.Sprintf("%v", v)
+		// Handle the explicit actions list
+		if !val.Actions.IsNull() && val.Actions.Elements() != nil {
+			var actions []string
+			for _, elem := range val.Actions.Elements() {
+				strVal, ok := elem.(types.String)
+				if !ok || strVal.IsNull() {
+					continue
 				}
+				actions = append(actions, strVal.ValueString())
 			}
 
-			e.Field = append(e.Field, Field{
-				ID:      types.StringValue(fieldID),
-				Locale:  types.StringValue(locale),
-				Content: types.StringValue(contentStr),
-			})
+			if len(actions) > 0 {
+				b, err := json.Marshal(actions)
+				if err != nil {
+					continue // or log
+				}
+				rawMap[key] = b
+			}
 		}
 	}
+
+	// Marshal and unmarshal into the SDK's RolePermissions type
+	b, err := json.Marshal(rawMap)
+	if err != nil {
+		return nil
+	}
+
+	var perms sdk.RolePermissions
+	if err := json.Unmarshal(b, &perms); err != nil {
+		return nil
+	}
+
+	return perms
 }
