@@ -13,6 +13,28 @@ type Space struct {
 	Version       types.Int64  `tfsdk:"version"`
 	Name          types.String `tfsdk:"name"`
 	DefaultLocale types.String `tfsdk:"default_locale"`
+	AllowDeletion types.Bool   `tfsdk:"deletion_protection"`
+}
+
+// Space is the main datasource schema data
+type SpaceData struct {
+	ID            types.String `tfsdk:"id"`
+	Version       types.Int64  `tfsdk:"version"`
+	Name          types.String `tfsdk:"name"`
+	DefaultLocale types.String `tfsdk:"default_locale"`
+}
+
+// Import populates the Space struct from an SDK space object
+func (s *SpaceData) Import(space *sdk.Space) {
+	s.ID = types.StringValue(space.Sys.Id)
+	s.Version = types.Int64Value(int64(space.Sys.Version))
+	s.Name = types.StringValue(space.Name)
+
+	// Default locale is not directly exposed in the Space response
+	// It needs to be fetched separately or passed separately
+	if s.DefaultLocale.IsNull() || s.DefaultLocale.IsUnknown() {
+		s.DefaultLocale = types.StringValue("en") // Default value
+	}
 }
 
 // Import populates the Space struct from an SDK space object

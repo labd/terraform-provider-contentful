@@ -64,7 +64,7 @@ func (e *spaceDataSource) Configure(_ context.Context, request datasource.Config
 }
 
 func (e *spaceDataSource) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
-	data := &Space{}
+	data := &SpaceData{}
 
 	// Read Terraform configuration data into the model
 	response.Diagnostics.Append(request.Config.Get(ctx, &data)...)
