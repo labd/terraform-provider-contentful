@@ -5,7 +5,11 @@ resource "contentful_role" "example_role" {
   description = "Custom Role Description"
 
   permissions = {
-    ContentModel    = ["read", "delete", "publish"]
+    ContentModel = [
+      "read",
+      "delete",
+      "publish"
+    ]
     ContentDelivery = "all"
     Environments    = "all"
   }
@@ -37,4 +41,3 @@ resource "contentful_role" "example_role" {
     }
   ]
 }
-

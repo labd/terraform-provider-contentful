@@ -2332,8 +2332,6 @@ components:
                     field: "sys.type"
                     value: "Entry"
 
-      
-
     RolePermissions:
       type: object
       additionalProperties:
@@ -2367,6 +2365,7 @@ components:
         - name 
         - description
         - policies
+        - permissions
 
     RoleUpdate:
       type: object

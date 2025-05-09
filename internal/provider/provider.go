@@ -19,6 +19,7 @@ import (
 	"github.com/labd/terraform-provider-contentful/internal/resources/entry"
 	"github.com/labd/terraform-provider-contentful/internal/resources/environment"
 	"github.com/labd/terraform-provider-contentful/internal/resources/locale"
+	"github.com/labd/terraform-provider-contentful/internal/resources/role"
 	"github.com/labd/terraform-provider-contentful/internal/resources/preview_environment"
 	"github.com/labd/terraform-provider-contentful/internal/resources/space"
 	"github.com/labd/terraform-provider-contentful/internal/resources/webhook"
@@ -155,6 +156,7 @@ func (c contentfulProvider) Resources(_ context.Context) []func() resource.Resou
 		entry.NewEntryResource,
 		environment.NewEnvironmentResource,
 		locale.NewLocaleResource,
+		role.NewRoleResource,
 		preview_environment.NewPreviewEnvironmentResource,
 		space.NewSpaceResource,
 		webhook.NewWebhookResource,
