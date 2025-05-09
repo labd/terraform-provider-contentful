@@ -1081,9 +1081,9 @@ type RoleCreate struct {
 	Description string `json:"description"`
 
 	// Name The name of the role.
-	Name        string           `json:"name"`
-	Permissions *RolePermissions `json:"permissions,omitempty"`
-	Policies    RolePolicies     `json:"policies"`
+	Name        string          `json:"name"`
+	Permissions RolePermissions `json:"permissions"`
+	Policies    RolePolicies    `json:"policies"`
 }
 
 // RolePermissions defines model for RolePermissions.
