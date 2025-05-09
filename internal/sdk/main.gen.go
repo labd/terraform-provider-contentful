@@ -193,22 +193,10 @@ const (
 	Link SystemPropertiesContentTypeSysType = "Link"
 )
 
-// Defines values for SystemPropertiesPreviewEnvironmentType.
-const (
-	SystemPropertiesPreviewEnvironmentTypePreviewEnvironment SystemPropertiesPreviewEnvironmentType = "PreviewEnvironment"
-)
-
 // Defines values for WebhookCollectionSysType.
 const (
 	WebhookCollectionSysTypeArray WebhookCollectionSysType = "Array"
 )
-
-// AllowedResource defines model for AllowedResource.
-type AllowedResource struct {
-	ContentTypes *[]string `json:"contentTypes,omitempty"`
-	Source       *string   `json:"source,omitempty"`
-	Type         *string   `json:"type,omitempty"`
-}
 
 // ApiKey defines model for ApiKey.
 type ApiKey struct {
@@ -531,12 +519,6 @@ type AssetFile struct {
 	Upload string `json:"upload"`
 }
 
-// AssetHyperlinkValidation defines model for AssetHyperlinkValidation.
-type AssetHyperlinkValidation struct {
-	Message *string      `json:"message,omitempty"`
-	Size    *RangeMinMax `json:"size,omitempty"`
-}
-
 // ContentType defines model for ContentType.
 type ContentType struct {
 	// Description Description of the content type
@@ -689,44 +671,6 @@ type EditorInterfaceUpdate struct {
 	Sidebar       *[]EditorInterfaceSidebarItem `json:"sidebar,omitempty"`
 }
 
-// EmbeddedAssetBlockValidation defines model for EmbeddedAssetBlockValidation.
-type EmbeddedAssetBlockValidation struct {
-	Message *string      `json:"message,omitempty"`
-	Size    *RangeMinMax `json:"size,omitempty"`
-}
-
-// EmbeddedEntryBlockValidation defines model for EmbeddedEntryBlockValidation.
-type EmbeddedEntryBlockValidation struct {
-	LinkContentType *[]string    `json:"linkContentType,omitempty"`
-	Message         *string      `json:"message,omitempty"`
-	Size            *RangeMinMax `json:"size,omitempty"`
-}
-
-// EmbeddedEntryInlineValidation defines model for EmbeddedEntryInlineValidation.
-type EmbeddedEntryInlineValidation struct {
-	LinkContentType *[]string    `json:"linkContentType,omitempty"`
-	Message         *string      `json:"message,omitempty"`
-	Size            *RangeMinMax `json:"size,omitempty"`
-}
-
-// EmbeddedResourceBlockValidation defines model for EmbeddedResourceBlockValidation.
-type EmbeddedResourceBlockValidation struct {
-	AllowedResources *[]AllowedResource    `json:"allowedResources,omitempty"`
-	Validations      *[]EmbeddedValidation `json:"validations,omitempty"`
-}
-
-// EmbeddedResourceInlineValidation defines model for EmbeddedResourceInlineValidation.
-type EmbeddedResourceInlineValidation struct {
-	AllowedResources *[]AllowedResource    `json:"allowedResources,omitempty"`
-	Validations      *[]EmbeddedValidation `json:"validations,omitempty"`
-}
-
-// EmbeddedValidation defines model for EmbeddedValidation.
-type EmbeddedValidation struct {
-	Message *string      `json:"message,omitempty"`
-	Size    *RangeMinMax `json:"size,omitempty"`
-}
-
 // Entry defines model for Entry.
 type Entry struct {
 	// Fields Content fields with values by locale
@@ -758,13 +702,6 @@ type EntryCollectionSysType string
 type EntryDraft struct {
 	// Fields Content fields with values by locale
 	Fields *orderedmap.OrderedMap `json:"fields,omitempty"`
-}
-
-// EntryHyperlinkValidation defines model for EntryHyperlinkValidation.
-type EntryHyperlinkValidation struct {
-	LinkContentType *[]string    `json:"linkContentType,omitempty"`
-	Message         *string      `json:"message,omitempty"`
-	Size            *RangeMinMax `json:"size,omitempty"`
 }
 
 // Environment defines model for Environment.
@@ -823,19 +760,6 @@ type EnvironmentSystemPropertiesSysType string
 type EnvironmentUpdate struct {
 	// Name Updated name for the environment
 	Name string `json:"name"`
-}
-
-// Error defines model for Error.
-type Error struct {
-	// Details Additional error details
-	Details *map[string]interface{} `json:"details,omitempty"`
-
-	// Message Error message
-	Message *string `json:"message,omitempty"`
-
-	// RequestId Unique identifier for the request
-	RequestId string               `json:"requestId"`
-	Sys       SystemPropertiesBase `json:"sys"`
 }
 
 // Field defines model for Field.
@@ -935,7 +859,6 @@ type FieldValidation struct {
 
 	// Message Custom error message
 	Message *string               `json:"message,omitempty"`
-	Nodes   *NodesValidation      `json:"nodes,omitempty"`
 	Range   *RangeMinMax          `json:"range,omitempty"`
 	Regexp  *RegexValidationValue `json:"regexp,omitempty"`
 	Size    *RangeMinMax          `json:"size,omitempty"`
@@ -1034,18 +957,6 @@ type LocaleUpdate struct {
 	Optional *bool `json:"optional,omitempty"`
 }
 
-// NodesValidation defines model for NodesValidation.
-type NodesValidation struct {
-	AssetHyperlink         *[]AssetHyperlinkValidation       `json:"asset-hyperlink,omitempty"`
-	EmbeddedAssetBlock     *[]EmbeddedAssetBlockValidation   `json:"embedded-asset-block,omitempty"`
-	EmbeddedEntryBlock     *[]EmbeddedEntryBlockValidation   `json:"embedded-entry-block,omitempty"`
-	EmbeddedEntryInline    *[]EmbeddedEntryInlineValidation  `json:"embedded-entry-inline,omitempty"`
-	EmbeddedResourceBlock  *EmbeddedResourceBlockValidation  `json:"embedded-resource-block,omitempty"`
-	EmbeddedResourceInline *EmbeddedResourceInlineValidation `json:"embedded-resource-inline,omitempty"`
-	EntryHyperlink         *[]EntryHyperlinkValidation       `json:"entry-hyperlink,omitempty"`
-	ResourceHyperlink      *ResourceHyperlinkValidation      `json:"resource-hyperlink,omitempty"`
-}
-
 // PreviewApiKey defines model for PreviewApiKey.
 type PreviewApiKey struct {
 	// AccessToken The Preview API access token
@@ -1081,44 +992,6 @@ type PreviewApiKeyCollection struct {
 
 // PreviewApiKeyCollectionSysType defines model for PreviewApiKeyCollection.Sys.Type.
 type PreviewApiKeyCollectionSysType string
-
-// PreviewConfiguration defines model for PreviewConfiguration.
-type PreviewConfiguration struct {
-	// ContentType Content type ID
-	ContentType string `json:"contentType"`
-
-	// Enabled Whether the content type is enabled
-	Enabled bool  `json:"enabled"`
-	Example *bool `json:"example,omitempty"`
-
-	// Url URL for the preview env of the content type
-	Url string `json:"url"`
-}
-
-// PreviewEnvironment defines model for PreviewEnvironment.
-type PreviewEnvironment struct {
-	// Configurations Configuration for the preview environment
-	Configurations []PreviewConfiguration `json:"configurations"`
-
-	// Description Description of the preview environment
-	Description string `json:"description"`
-
-	// Name Name of the preview environment
-	Name string                             `json:"name"`
-	Sys  SystemPropertiesPreviewEnvironment `json:"sys"`
-}
-
-// PreviewEnvironmentInput defines model for PreviewEnvironmentInput.
-type PreviewEnvironmentInput struct {
-	// Configurations Configuration for the preview environment
-	Configurations []PreviewConfiguration `json:"configurations"`
-
-	// Description Description of the preview environment
-	Description string `json:"description"`
-
-	// Name Name of the preview environment
-	Name string `json:"name"`
-}
 
 // RangeDate defines model for RangeDate.
 type RangeDate struct {
@@ -1162,10 +1035,92 @@ type RegexValidationValue struct {
 	Pattern string `json:"pattern"`
 }
 
-// ResourceHyperlinkValidation defines model for ResourceHyperlinkValidation.
-type ResourceHyperlinkValidation struct {
-	AllowedResources *[]AllowedResource    `json:"allowedResources,omitempty"`
-	Validations      *[]EmbeddedValidation `json:"validations,omitempty"`
+// Role defines model for Role.
+type Role struct {
+	// Description A short description of the role.
+	Description string `json:"description"`
+
+	// Name The name of the role.
+	Name        string           `json:"name"`
+	Permissions *RolePermissions `json:"permissions,omitempty"`
+	Policies    *RolePolicies    `json:"policies,omitempty"`
+	Sys         *struct {
+		// Id The unique identifier for the role.
+		Id *string `json:"id,omitempty"`
+
+		// Type The type of the resource (e.g., "Role").
+		Type *string `json:"type,omitempty"`
+
+		// Version The current version of the role.
+		Version *int `json:"version,omitempty"`
+	} `json:"sys,omitempty"`
+}
+
+// RoleCollection defines model for RoleCollection.
+type RoleCollection struct {
+	// Items The list of roles.
+	Items *[]Role `json:"items,omitempty"`
+	Sys   *struct {
+		// Limit The maximum number of items returned.
+		Limit *int `json:"limit,omitempty"`
+
+		// Skip The number of skipped items.
+		Skip *int `json:"skip,omitempty"`
+
+		// Total The total number of roles.
+		Total *int `json:"total,omitempty"`
+
+		// Type The type of the resource (e.g., "Array").
+		Type *string `json:"type,omitempty"`
+	} `json:"sys,omitempty"`
+}
+
+// RoleCreate defines model for RoleCreate.
+type RoleCreate struct {
+	// Description A short description of the role.
+	Description string `json:"description"`
+
+	// Name The name of the role.
+	Name        string           `json:"name"`
+	Permissions *RolePermissions `json:"permissions,omitempty"`
+	Policies    RolePolicies     `json:"policies"`
+}
+
+// RolePermissions defines model for RolePermissions.
+type RolePermissions map[string]RolePermissions_AdditionalProperties
+
+// RolePermissions0 A string representing access level (e.g., "all").
+type RolePermissions0 = string
+
+// RolePermissions1 A list of specific permissions.
+type RolePermissions1 = []string
+
+// RolePermissions_AdditionalProperties defines model for RolePermissions.AdditionalProperties.
+type RolePermissions_AdditionalProperties struct {
+	union json.RawMessage
+}
+
+// RolePolicies defines model for RolePolicies.
+type RolePolicies = []struct {
+	// Actions A list of actions the policy applies to.
+	Actions *[]string `json:"actions,omitempty"`
+
+	// Constraint Constraints applied to the policy.
+	Constraint *map[string]interface{} `json:"constraint,omitempty"`
+
+	// Effect The effect of the policy (e.g., "allow" or "deny").
+	Effect *string `json:"effect,omitempty"`
+}
+
+// RoleUpdate defines model for RoleUpdate.
+type RoleUpdate struct {
+	// Description A short description of the role.
+	Description string `json:"description"`
+
+	// Name The name of the role.
+	Name        string          `json:"name"`
+	Permissions RolePermissions `json:"permissions"`
+	Policies    RolePolicies    `json:"policies"`
 }
 
 // Space defines model for Space.
@@ -1341,26 +1296,6 @@ type SystemPropertiesLink struct {
 	Type string `json:"type"`
 }
 
-// SystemPropertiesPreviewEnvironment defines model for SystemPropertiesPreviewEnvironment.
-type SystemPropertiesPreviewEnvironment struct {
-	// CreatedAt Creation timestamp
-	CreatedAt *time.Time `json:"createdAt,omitempty"`
-
-	// Id Resource ID
-	Id    string                                 `json:"id"`
-	Space *SystemPropertiesReference             `json:"space,omitempty"`
-	Type  SystemPropertiesPreviewEnvironmentType `json:"type"`
-
-	// UpdatedAt Last update timestamp
-	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
-
-	// Version Resource version
-	Version *int64 `json:"version,omitempty"`
-}
-
-// SystemPropertiesPreviewEnvironmentType defines model for SystemPropertiesPreviewEnvironment.Type.
-type SystemPropertiesPreviewEnvironmentType string
-
 // SystemPropertiesReference defines model for SystemPropertiesReference.
 type SystemPropertiesReference struct {
 	Sys SystemPropertiesLink `json:"sys"`
@@ -1400,12 +1335,6 @@ type SystemPropertiesSpace struct {
 
 // Webhook defines model for Webhook.
 type Webhook struct {
-	// Active Whether the webhook is active
-	Active *bool `json:"active,omitempty"`
-
-	// Filters Filters to apply to the webhook
-	Filters *[]map[string]interface{} `json:"filters,omitempty"`
-
 	// Headers HTTP headers to send with the webhook request
 	Headers []WebhookHeader `json:"headers"`
 
@@ -1448,12 +1377,6 @@ type WebhookCollectionSysType string
 
 // WebhookCreate defines model for WebhookCreate.
 type WebhookCreate struct {
-	// Active Whether the webhook is active
-	Active *bool `json:"active,omitempty"`
-
-	// Filters Filters to apply to the webhook
-	Filters *[]map[string]interface{} `json:"filters,omitempty"`
-
 	// Headers HTTP headers to send with the webhook request
 	Headers *[]WebhookHeader `json:"headers,omitempty"`
 
@@ -1481,12 +1404,6 @@ type WebhookHeader struct {
 
 // WebhookUpdate defines model for WebhookUpdate.
 type WebhookUpdate struct {
-	// Active Whether the webhook is active
-	Active *bool `json:"active,omitempty"`
-
-	// Filters Filters to apply to the webhook
-	Filters *[]map[string]interface{} `json:"filters,omitempty"`
-
 	// Headers HTTP headers to send with the webhook request
 	Headers *[]WebhookHeader `json:"headers,omitempty"`
 
@@ -1538,6 +1455,9 @@ type ResourceId = string
 
 // ResourceVersion defines model for resourceVersion.
 type ResourceVersion = int64
+
+// RoleId defines model for roleId.
+type RoleId = string
 
 // Skip defines model for skip.
 type Skip = int
@@ -1823,14 +1743,23 @@ type GetAllPreviewApiKeysParams struct {
 	Skip *Skip `form:"skip,omitempty" json:"skip,omitempty"`
 }
 
-// DeletePreviewEnvironmentParams defines parameters for DeletePreviewEnvironment.
-type DeletePreviewEnvironmentParams struct {
+// GetAllRolesParams defines parameters for GetAllRoles.
+type GetAllRolesParams struct {
+	// Limit Maximum number of items to return
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Skip Number of items to skip
+	Skip *Skip `form:"skip,omitempty" json:"skip,omitempty"`
+}
+
+// DeleteRoleParams defines parameters for DeleteRole.
+type DeleteRoleParams struct {
 	// XContentfulVersion The version of the locale to update.
 	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
 }
 
-// UpdatePreviewEnvironmentParams defines parameters for UpdatePreviewEnvironment.
-type UpdatePreviewEnvironmentParams struct {
+// UpdateRoleParams defines parameters for UpdateRole.
+type UpdateRoleParams struct {
 	// XContentfulVersion The version of the locale to update.
 	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
 }
@@ -1913,11 +1842,11 @@ type CreateLocaleJSONRequestBody = LocaleCreate
 // UpdateLocaleJSONRequestBody defines body for UpdateLocale for application/json ContentType.
 type UpdateLocaleJSONRequestBody = LocaleUpdate
 
-// CreatePreviewEnvironmentJSONRequestBody defines body for CreatePreviewEnvironment for application/json ContentType.
-type CreatePreviewEnvironmentJSONRequestBody = PreviewEnvironmentInput
+// CreateRoleJSONRequestBody defines body for CreateRole for application/json ContentType.
+type CreateRoleJSONRequestBody = RoleCreate
 
-// UpdatePreviewEnvironmentJSONRequestBody defines body for UpdatePreviewEnvironment for application/json ContentType.
-type UpdatePreviewEnvironmentJSONRequestBody = PreviewEnvironmentInput
+// UpdateRoleJSONRequestBody defines body for UpdateRole for application/json ContentType.
+type UpdateRoleJSONRequestBody = RoleUpdate
 
 // CreateWebhookJSONRequestBody defines body for CreateWebhook for application/json ContentType.
 type CreateWebhookJSONRequestBody = WebhookCreate
@@ -2183,6 +2112,68 @@ func (t FieldItem) MarshalJSON() ([]byte, error) {
 }
 
 func (t *FieldItem) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsRolePermissions0 returns the union data inside the RolePermissions_AdditionalProperties as a RolePermissions0
+func (t RolePermissions_AdditionalProperties) AsRolePermissions0() (RolePermissions0, error) {
+	var body RolePermissions0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromRolePermissions0 overwrites any union data inside the RolePermissions_AdditionalProperties as the provided RolePermissions0
+func (t *RolePermissions_AdditionalProperties) FromRolePermissions0(v RolePermissions0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeRolePermissions0 performs a merge with any union data inside the RolePermissions_AdditionalProperties, using the provided RolePermissions0
+func (t *RolePermissions_AdditionalProperties) MergeRolePermissions0(v RolePermissions0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsRolePermissions1 returns the union data inside the RolePermissions_AdditionalProperties as a RolePermissions1
+func (t RolePermissions_AdditionalProperties) AsRolePermissions1() (RolePermissions1, error) {
+	var body RolePermissions1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromRolePermissions1 overwrites any union data inside the RolePermissions_AdditionalProperties as the provided RolePermissions1
+func (t *RolePermissions_AdditionalProperties) FromRolePermissions1(v RolePermissions1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeRolePermissions1 performs a merge with any union data inside the RolePermissions_AdditionalProperties, using the provided RolePermissions1
+func (t *RolePermissions_AdditionalProperties) MergeRolePermissions1(v RolePermissions1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t RolePermissions_AdditionalProperties) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *RolePermissions_AdditionalProperties) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -2481,21 +2472,24 @@ type ClientInterface interface {
 	// GetPreviewApiKey request
 	GetPreviewApiKey(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CreatePreviewEnvironmentWithBody request with any body
-	CreatePreviewEnvironmentWithBody(ctx context.Context, spaceId SpaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetAllRoles request
+	GetAllRoles(ctx context.Context, spaceId SpaceId, params *GetAllRolesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreatePreviewEnvironment(ctx context.Context, spaceId SpaceId, body CreatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// CreateRoleWithBody request with any body
+	CreateRoleWithBody(ctx context.Context, spaceId SpaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// DeletePreviewEnvironment request
-	DeletePreviewEnvironment(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *DeletePreviewEnvironmentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateRole(ctx context.Context, spaceId SpaceId, body CreateRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetPreviewEnvironment request
-	GetPreviewEnvironment(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// DeleteRole request
+	DeleteRole(ctx context.Context, spaceId SpaceId, roleId RoleId, params *DeleteRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// UpdatePreviewEnvironmentWithBody request with any body
-	UpdatePreviewEnvironmentWithBody(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetRole request
+	GetRole(ctx context.Context, spaceId SpaceId, roleId RoleId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdatePreviewEnvironment(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, body UpdatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// UpdateRoleWithBody request with any body
+	UpdateRoleWithBody(ctx context.Context, spaceId SpaceId, roleId RoleId, params *UpdateRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateRole(ctx context.Context, spaceId SpaceId, roleId RoleId, params *UpdateRoleParams, body UpdateRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAllWebhooks request
 	GetAllWebhooks(ctx context.Context, spaceId SpaceId, params *GetAllWebhooksParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3477,8 +3471,8 @@ func (c *Client) GetPreviewApiKey(ctx context.Context, spaceId SpaceId, resource
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreatePreviewEnvironmentWithBody(ctx context.Context, spaceId SpaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreatePreviewEnvironmentRequestWithBody(c.Server, spaceId, contentType, body)
+func (c *Client) GetAllRoles(ctx context.Context, spaceId SpaceId, params *GetAllRolesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAllRolesRequest(c.Server, spaceId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3489,8 +3483,8 @@ func (c *Client) CreatePreviewEnvironmentWithBody(ctx context.Context, spaceId S
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreatePreviewEnvironment(ctx context.Context, spaceId SpaceId, body CreatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreatePreviewEnvironmentRequest(c.Server, spaceId, body)
+func (c *Client) CreateRoleWithBody(ctx context.Context, spaceId SpaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRoleRequestWithBody(c.Server, spaceId, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3501,8 +3495,8 @@ func (c *Client) CreatePreviewEnvironment(ctx context.Context, spaceId SpaceId, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeletePreviewEnvironment(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *DeletePreviewEnvironmentParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeletePreviewEnvironmentRequest(c.Server, spaceId, resourceId, params)
+func (c *Client) CreateRole(ctx context.Context, spaceId SpaceId, body CreateRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRoleRequest(c.Server, spaceId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3513,8 +3507,8 @@ func (c *Client) DeletePreviewEnvironment(ctx context.Context, spaceId SpaceId, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetPreviewEnvironment(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetPreviewEnvironmentRequest(c.Server, spaceId, resourceId)
+func (c *Client) DeleteRole(ctx context.Context, spaceId SpaceId, roleId RoleId, params *DeleteRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRoleRequest(c.Server, spaceId, roleId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3525,8 +3519,8 @@ func (c *Client) GetPreviewEnvironment(ctx context.Context, spaceId SpaceId, res
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdatePreviewEnvironmentWithBody(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdatePreviewEnvironmentRequestWithBody(c.Server, spaceId, resourceId, params, contentType, body)
+func (c *Client) GetRole(ctx context.Context, spaceId SpaceId, roleId RoleId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRoleRequest(c.Server, spaceId, roleId)
 	if err != nil {
 		return nil, err
 	}
@@ -3537,8 +3531,20 @@ func (c *Client) UpdatePreviewEnvironmentWithBody(ctx context.Context, spaceId S
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdatePreviewEnvironment(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, body UpdatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdatePreviewEnvironmentRequest(c.Server, spaceId, resourceId, params, body)
+func (c *Client) UpdateRoleWithBody(ctx context.Context, spaceId SpaceId, roleId RoleId, params *UpdateRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRoleRequestWithBody(c.Server, spaceId, roleId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRole(ctx context.Context, spaceId SpaceId, roleId RoleId, params *UpdateRoleParams, body UpdateRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRoleRequest(c.Server, spaceId, roleId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -7278,19 +7284,8 @@ func NewGetPreviewApiKeyRequest(server string, spaceId SpaceId, resourceId Resou
 	return req, nil
 }
 
-// NewCreatePreviewEnvironmentRequest calls the generic CreatePreviewEnvironment builder with application/json body
-func NewCreatePreviewEnvironmentRequest(server string, spaceId SpaceId, body CreatePreviewEnvironmentJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewCreatePreviewEnvironmentRequestWithBody(server, spaceId, "application/json", bodyReader)
-}
-
-// NewCreatePreviewEnvironmentRequestWithBody generates requests for CreatePreviewEnvironment with any type of body
-func NewCreatePreviewEnvironmentRequestWithBody(server string, spaceId SpaceId, contentType string, body io.Reader) (*http.Request, error) {
+// NewGetAllRolesRequest generates requests for GetAllRoles
+func NewGetAllRolesRequest(server string, spaceId SpaceId, params *GetAllRolesParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7305,7 +7300,90 @@ func NewCreatePreviewEnvironmentRequestWithBody(server string, spaceId SpaceId, 
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/spaces/%s/preview_environments", pathParam0)
+	operationPath := fmt.Sprintf("/spaces/%s/roles", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Skip != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "skip", runtime.ParamLocationQuery, *params.Skip); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateRoleRequest calls the generic CreateRole builder with application/json body
+func NewCreateRoleRequest(server string, spaceId SpaceId, body CreateRoleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateRoleRequestWithBody(server, spaceId, "application/json", bodyReader)
+}
+
+// NewCreateRoleRequestWithBody generates requests for CreateRole with any type of body
+func NewCreateRoleRequestWithBody(server string, spaceId SpaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/roles", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -7325,8 +7403,8 @@ func NewCreatePreviewEnvironmentRequestWithBody(server string, spaceId SpaceId, 
 	return req, nil
 }
 
-// NewDeletePreviewEnvironmentRequest generates requests for DeletePreviewEnvironment
-func NewDeletePreviewEnvironmentRequest(server string, spaceId SpaceId, resourceId ResourceId, params *DeletePreviewEnvironmentParams) (*http.Request, error) {
+// NewDeleteRoleRequest generates requests for DeleteRole
+func NewDeleteRoleRequest(server string, spaceId SpaceId, roleId RoleId, params *DeleteRoleParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7338,7 +7416,7 @@ func NewDeletePreviewEnvironmentRequest(server string, spaceId SpaceId, resource
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "resourceId", runtime.ParamLocationPath, resourceId)
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "roleId", runtime.ParamLocationPath, roleId)
 	if err != nil {
 		return nil, err
 	}
@@ -7348,7 +7426,7 @@ func NewDeletePreviewEnvironmentRequest(server string, spaceId SpaceId, resource
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/spaces/%s/preview_environments/%s", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/spaces/%s/roles/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -7379,8 +7457,8 @@ func NewDeletePreviewEnvironmentRequest(server string, spaceId SpaceId, resource
 	return req, nil
 }
 
-// NewGetPreviewEnvironmentRequest generates requests for GetPreviewEnvironment
-func NewGetPreviewEnvironmentRequest(server string, spaceId SpaceId, resourceId ResourceId) (*http.Request, error) {
+// NewGetRoleRequest generates requests for GetRole
+func NewGetRoleRequest(server string, spaceId SpaceId, roleId RoleId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7392,7 +7470,7 @@ func NewGetPreviewEnvironmentRequest(server string, spaceId SpaceId, resourceId 
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "resourceId", runtime.ParamLocationPath, resourceId)
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "roleId", runtime.ParamLocationPath, roleId)
 	if err != nil {
 		return nil, err
 	}
@@ -7402,7 +7480,7 @@ func NewGetPreviewEnvironmentRequest(server string, spaceId SpaceId, resourceId 
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/spaces/%s/preview_environments/%s", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/spaces/%s/roles/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -7420,19 +7498,19 @@ func NewGetPreviewEnvironmentRequest(server string, spaceId SpaceId, resourceId 
 	return req, nil
 }
 
-// NewUpdatePreviewEnvironmentRequest calls the generic UpdatePreviewEnvironment builder with application/json body
-func NewUpdatePreviewEnvironmentRequest(server string, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, body UpdatePreviewEnvironmentJSONRequestBody) (*http.Request, error) {
+// NewUpdateRoleRequest calls the generic UpdateRole builder with application/json body
+func NewUpdateRoleRequest(server string, spaceId SpaceId, roleId RoleId, params *UpdateRoleParams, body UpdateRoleJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdatePreviewEnvironmentRequestWithBody(server, spaceId, resourceId, params, "application/json", bodyReader)
+	return NewUpdateRoleRequestWithBody(server, spaceId, roleId, params, "application/json", bodyReader)
 }
 
-// NewUpdatePreviewEnvironmentRequestWithBody generates requests for UpdatePreviewEnvironment with any type of body
-func NewUpdatePreviewEnvironmentRequestWithBody(server string, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, contentType string, body io.Reader) (*http.Request, error) {
+// NewUpdateRoleRequestWithBody generates requests for UpdateRole with any type of body
+func NewUpdateRoleRequestWithBody(server string, spaceId SpaceId, roleId RoleId, params *UpdateRoleParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7444,7 +7522,7 @@ func NewUpdatePreviewEnvironmentRequestWithBody(server string, spaceId SpaceId, 
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "resourceId", runtime.ParamLocationPath, resourceId)
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "roleId", runtime.ParamLocationPath, roleId)
 	if err != nil {
 		return nil, err
 	}
@@ -7454,7 +7532,7 @@ func NewUpdatePreviewEnvironmentRequestWithBody(server string, spaceId SpaceId, 
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/spaces/%s/preview_environments/%s", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/spaces/%s/roles/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -8032,21 +8110,24 @@ type ClientWithResponsesInterface interface {
 	// GetPreviewApiKeyWithResponse request
 	GetPreviewApiKeyWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetPreviewApiKeyResponse, error)
 
-	// CreatePreviewEnvironmentWithBodyWithResponse request with any body
-	CreatePreviewEnvironmentWithBodyWithResponse(ctx context.Context, spaceId SpaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePreviewEnvironmentResponse, error)
+	// GetAllRolesWithResponse request
+	GetAllRolesWithResponse(ctx context.Context, spaceId SpaceId, params *GetAllRolesParams, reqEditors ...RequestEditorFn) (*GetAllRolesResponse, error)
 
-	CreatePreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, body CreatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePreviewEnvironmentResponse, error)
+	// CreateRoleWithBodyWithResponse request with any body
+	CreateRoleWithBodyWithResponse(ctx context.Context, spaceId SpaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRoleResponse, error)
 
-	// DeletePreviewEnvironmentWithResponse request
-	DeletePreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *DeletePreviewEnvironmentParams, reqEditors ...RequestEditorFn) (*DeletePreviewEnvironmentResponse, error)
+	CreateRoleWithResponse(ctx context.Context, spaceId SpaceId, body CreateRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRoleResponse, error)
 
-	// GetPreviewEnvironmentWithResponse request
-	GetPreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetPreviewEnvironmentResponse, error)
+	// DeleteRoleWithResponse request
+	DeleteRoleWithResponse(ctx context.Context, spaceId SpaceId, roleId RoleId, params *DeleteRoleParams, reqEditors ...RequestEditorFn) (*DeleteRoleResponse, error)
 
-	// UpdatePreviewEnvironmentWithBodyWithResponse request with any body
-	UpdatePreviewEnvironmentWithBodyWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePreviewEnvironmentResponse, error)
+	// GetRoleWithResponse request
+	GetRoleWithResponse(ctx context.Context, spaceId SpaceId, roleId RoleId, reqEditors ...RequestEditorFn) (*GetRoleResponse, error)
 
-	UpdatePreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, body UpdatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePreviewEnvironmentResponse, error)
+	// UpdateRoleWithBodyWithResponse request with any body
+	UpdateRoleWithBodyWithResponse(ctx context.Context, spaceId SpaceId, roleId RoleId, params *UpdateRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRoleResponse, error)
+
+	UpdateRoleWithResponse(ctx context.Context, spaceId SpaceId, roleId RoleId, params *UpdateRoleParams, body UpdateRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRoleResponse, error)
 
 	// GetAllWebhooksWithResponse request
 	GetAllWebhooksWithResponse(ctx context.Context, spaceId SpaceId, params *GetAllWebhooksParams, reqEditors ...RequestEditorFn) (*GetAllWebhooksResponse, error)
@@ -9408,14 +9489,14 @@ func (r GetPreviewApiKeyResponse) StatusCode() int {
 	return 0
 }
 
-type CreatePreviewEnvironmentResponse struct {
+type GetAllRolesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *PreviewEnvironment
+	JSON200      *RoleCollection
 }
 
 // Status returns HTTPResponse.Status
-func (r CreatePreviewEnvironmentResponse) Status() string {
+func (r GetAllRolesResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -9423,20 +9504,21 @@ func (r CreatePreviewEnvironmentResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r CreatePreviewEnvironmentResponse) StatusCode() int {
+func (r GetAllRolesResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type DeletePreviewEnvironmentResponse struct {
+type CreateRoleResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON201      *Role
 }
 
 // Status returns HTTPResponse.Status
-func (r DeletePreviewEnvironmentResponse) Status() string {
+func (r CreateRoleResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -9444,21 +9526,20 @@ func (r DeletePreviewEnvironmentResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r DeletePreviewEnvironmentResponse) StatusCode() int {
+func (r CreateRoleResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetPreviewEnvironmentResponse struct {
+type DeleteRoleResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PreviewEnvironment
 }
 
 // Status returns HTTPResponse.Status
-func (r GetPreviewEnvironmentResponse) Status() string {
+func (r DeleteRoleResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -9466,21 +9547,21 @@ func (r GetPreviewEnvironmentResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetPreviewEnvironmentResponse) StatusCode() int {
+func (r DeleteRoleResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type UpdatePreviewEnvironmentResponse struct {
+type GetRoleResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PreviewEnvironment
+	JSON200      *Role
 }
 
 // Status returns HTTPResponse.Status
-func (r UpdatePreviewEnvironmentResponse) Status() string {
+func (r GetRoleResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -9488,7 +9569,29 @@ func (r UpdatePreviewEnvironmentResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r UpdatePreviewEnvironmentResponse) StatusCode() int {
+func (r GetRoleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateRoleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Role
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateRoleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateRoleResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -10305,56 +10408,65 @@ func (c *ClientWithResponses) GetPreviewApiKeyWithResponse(ctx context.Context, 
 	return ParseGetPreviewApiKeyResponse(rsp)
 }
 
-// CreatePreviewEnvironmentWithBodyWithResponse request with arbitrary body returning *CreatePreviewEnvironmentResponse
-func (c *ClientWithResponses) CreatePreviewEnvironmentWithBodyWithResponse(ctx context.Context, spaceId SpaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePreviewEnvironmentResponse, error) {
-	rsp, err := c.CreatePreviewEnvironmentWithBody(ctx, spaceId, contentType, body, reqEditors...)
+// GetAllRolesWithResponse request returning *GetAllRolesResponse
+func (c *ClientWithResponses) GetAllRolesWithResponse(ctx context.Context, spaceId SpaceId, params *GetAllRolesParams, reqEditors ...RequestEditorFn) (*GetAllRolesResponse, error) {
+	rsp, err := c.GetAllRoles(ctx, spaceId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseCreatePreviewEnvironmentResponse(rsp)
+	return ParseGetAllRolesResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreatePreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, body CreatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePreviewEnvironmentResponse, error) {
-	rsp, err := c.CreatePreviewEnvironment(ctx, spaceId, body, reqEditors...)
+// CreateRoleWithBodyWithResponse request with arbitrary body returning *CreateRoleResponse
+func (c *ClientWithResponses) CreateRoleWithBodyWithResponse(ctx context.Context, spaceId SpaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRoleResponse, error) {
+	rsp, err := c.CreateRoleWithBody(ctx, spaceId, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseCreatePreviewEnvironmentResponse(rsp)
+	return ParseCreateRoleResponse(rsp)
 }
 
-// DeletePreviewEnvironmentWithResponse request returning *DeletePreviewEnvironmentResponse
-func (c *ClientWithResponses) DeletePreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *DeletePreviewEnvironmentParams, reqEditors ...RequestEditorFn) (*DeletePreviewEnvironmentResponse, error) {
-	rsp, err := c.DeletePreviewEnvironment(ctx, spaceId, resourceId, params, reqEditors...)
+func (c *ClientWithResponses) CreateRoleWithResponse(ctx context.Context, spaceId SpaceId, body CreateRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRoleResponse, error) {
+	rsp, err := c.CreateRole(ctx, spaceId, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseDeletePreviewEnvironmentResponse(rsp)
+	return ParseCreateRoleResponse(rsp)
 }
 
-// GetPreviewEnvironmentWithResponse request returning *GetPreviewEnvironmentResponse
-func (c *ClientWithResponses) GetPreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetPreviewEnvironmentResponse, error) {
-	rsp, err := c.GetPreviewEnvironment(ctx, spaceId, resourceId, reqEditors...)
+// DeleteRoleWithResponse request returning *DeleteRoleResponse
+func (c *ClientWithResponses) DeleteRoleWithResponse(ctx context.Context, spaceId SpaceId, roleId RoleId, params *DeleteRoleParams, reqEditors ...RequestEditorFn) (*DeleteRoleResponse, error) {
+	rsp, err := c.DeleteRole(ctx, spaceId, roleId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetPreviewEnvironmentResponse(rsp)
+	return ParseDeleteRoleResponse(rsp)
 }
 
-// UpdatePreviewEnvironmentWithBodyWithResponse request with arbitrary body returning *UpdatePreviewEnvironmentResponse
-func (c *ClientWithResponses) UpdatePreviewEnvironmentWithBodyWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePreviewEnvironmentResponse, error) {
-	rsp, err := c.UpdatePreviewEnvironmentWithBody(ctx, spaceId, resourceId, params, contentType, body, reqEditors...)
+// GetRoleWithResponse request returning *GetRoleResponse
+func (c *ClientWithResponses) GetRoleWithResponse(ctx context.Context, spaceId SpaceId, roleId RoleId, reqEditors ...RequestEditorFn) (*GetRoleResponse, error) {
+	rsp, err := c.GetRole(ctx, spaceId, roleId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseUpdatePreviewEnvironmentResponse(rsp)
+	return ParseGetRoleResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdatePreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, body UpdatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePreviewEnvironmentResponse, error) {
-	rsp, err := c.UpdatePreviewEnvironment(ctx, spaceId, resourceId, params, body, reqEditors...)
+// UpdateRoleWithBodyWithResponse request with arbitrary body returning *UpdateRoleResponse
+func (c *ClientWithResponses) UpdateRoleWithBodyWithResponse(ctx context.Context, spaceId SpaceId, roleId RoleId, params *UpdateRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRoleResponse, error) {
+	rsp, err := c.UpdateRoleWithBody(ctx, spaceId, roleId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseUpdatePreviewEnvironmentResponse(rsp)
+	return ParseUpdateRoleResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateRoleWithResponse(ctx context.Context, spaceId SpaceId, roleId RoleId, params *UpdateRoleParams, body UpdateRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRoleResponse, error) {
+	rsp, err := c.UpdateRole(ctx, spaceId, roleId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRoleResponse(rsp)
 }
 
 // GetAllWebhooksWithResponse request returning *GetAllWebhooksResponse
@@ -11936,64 +12048,22 @@ func ParseGetPreviewApiKeyResponse(rsp *http.Response) (*GetPreviewApiKeyRespons
 	return response, nil
 }
 
-// ParseCreatePreviewEnvironmentResponse parses an HTTP response from a CreatePreviewEnvironmentWithResponse call
-func ParseCreatePreviewEnvironmentResponse(rsp *http.Response) (*CreatePreviewEnvironmentResponse, error) {
+// ParseGetAllRolesResponse parses an HTTP response from a GetAllRolesWithResponse call
+func ParseGetAllRolesResponse(rsp *http.Response) (*GetAllRolesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &CreatePreviewEnvironmentResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest PreviewEnvironment
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON201 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDeletePreviewEnvironmentResponse parses an HTTP response from a DeletePreviewEnvironmentWithResponse call
-func ParseDeletePreviewEnvironmentResponse(rsp *http.Response) (*DeletePreviewEnvironmentResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DeletePreviewEnvironmentResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetPreviewEnvironmentResponse parses an HTTP response from a GetPreviewEnvironmentWithResponse call
-func ParseGetPreviewEnvironmentResponse(rsp *http.Response) (*GetPreviewEnvironmentResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetPreviewEnvironmentResponse{
+	response := &GetAllRolesResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PreviewEnvironment
+		var dest RoleCollection
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -12004,22 +12074,90 @@ func ParseGetPreviewEnvironmentResponse(rsp *http.Response) (*GetPreviewEnvironm
 	return response, nil
 }
 
-// ParseUpdatePreviewEnvironmentResponse parses an HTTP response from a UpdatePreviewEnvironmentWithResponse call
-func ParseUpdatePreviewEnvironmentResponse(rsp *http.Response) (*UpdatePreviewEnvironmentResponse, error) {
+// ParseCreateRoleResponse parses an HTTP response from a CreateRoleWithResponse call
+func ParseCreateRoleResponse(rsp *http.Response) (*CreateRoleResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &UpdatePreviewEnvironmentResponse{
+	response := &CreateRoleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Role
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteRoleResponse parses an HTTP response from a DeleteRoleWithResponse call
+func ParseDeleteRoleResponse(rsp *http.Response) (*DeleteRoleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteRoleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetRoleResponse parses an HTTP response from a GetRoleWithResponse call
+func ParseGetRoleResponse(rsp *http.Response) (*GetRoleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetRoleResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PreviewEnvironment
+		var dest Role
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateRoleResponse parses an HTTP response from a UpdateRoleWithResponse call
+func ParseUpdateRoleResponse(rsp *http.Response) (*UpdateRoleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateRoleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Role
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
