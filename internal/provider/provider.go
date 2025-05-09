@@ -138,7 +138,9 @@ func (c contentfulProvider) Configure(ctx context.Context, request provider.Conf
 }
 
 func (c contentfulProvider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		space.NewSpaceDataSource,
+	}
 }
 
 func (c contentfulProvider) Resources(_ context.Context) []func() resource.Resource {
