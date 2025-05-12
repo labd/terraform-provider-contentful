@@ -159,7 +159,7 @@ func (e *localeResource) Read(ctx context.Context, request resource.ReadRequest,
 	}
 
 	state.Import(resp.JSON200)
-	response.Diagnostics.Append(request.State.Set(ctx, &state)...)
+	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 
 func (e *localeResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
