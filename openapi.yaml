@@ -174,6 +174,74 @@ paths:
         "204":
           description: No Content
 
+  /spaces/{spaceId}/preview_environments:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+
+    post:
+      summary: Create a preview environment
+      description: Creates a new preview environment
+      operationId: createPreviewEnvironment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewEnvironmentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviewEnvironment"
+
+
+  /spaces/{spaceId}/preview_environments/{resourceId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/resourceId"
+
+    get:
+      summary: Get a preview environment
+      description: Retrieves a specific preview environment by ID
+      operationId: getPreviewEnvironment
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviewEnvironment"
+    put:
+      summary: Create a preview environment
+      description: Creates a new preview environment
+      operationId: updatePreviewEnvironment
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewEnvironmentInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviewEnvironment"
+    delete:
+      summary: Delete a preview environment
+      description: Deletes a preview environment
+      operationId: deletePreviewEnvironment
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
   /spaces/{spaceId}/environments/{environmentId}/content_types:
     parameters:
       - $ref: "#/components/parameters/spaceId"
@@ -2128,6 +2196,32 @@ components:
           required:
             - contentType
 
+    SystemPropertiesPreviewEnvironment:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/SystemPropertiesBase'
+        - properties:
+            type:
+              type: string
+              enum:
+                - PreviewEnvironment
+            space:
+              $ref: '#/components/schemas/SystemPropertiesReference'
+            version:
+              description: Resource version
+              type: integer
+              format: int64
+            createdAt:
+              description: Creation timestamp
+              format: date-time
+              type: string
+            updatedAt:
+              description: Last update timestamp
+              format: date-time
+              type: string
+
+
+
     # TODO: Sync with https://www.contentful.com/developers/docs/references/content-management-api/#/introduction/common-resource-attributes
     SystemProperties:
       type: object
@@ -2864,3 +2958,66 @@ components:
       required:
         - comment
         - upload
+
+    PreviewConfiguration:
+      type: object
+      properties:
+        contentType:
+          type: string
+          description: Content type ID
+        enabled:
+          type: boolean
+          description: Whether the content type is enabled
+        example:
+          type: boolean
+        url:
+          type: string
+          description: URL for the preview env of the content type
+      required:
+        - contentType
+        - enabled
+        - url
+
+    PreviewEnvironment:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the preview environment
+        sys:
+          $ref: '#/components/schemas/SystemPropertiesPreviewEnvironment'
+        description:
+          type: string
+          description: Description of the preview environment
+        configurations:
+          type: array
+          description: Configuration for the preview environment
+          items:
+            $ref: '#/components/schemas/PreviewConfiguration'
+
+      required:
+        - name
+        - sys
+        - description
+        - configurations
+
+
+    PreviewEnvironmentInput:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the preview environment
+        description:
+          type: string
+          description: Description of the preview environment
+        configurations:
+          type: array
+          description: Configuration for the preview environment
+          items:
+            $ref: '#/components/schemas/PreviewConfiguration'
+
+      required:
+        - name
+        - description
+        - configurations

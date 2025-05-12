@@ -193,6 +193,11 @@ const (
 	Link SystemPropertiesContentTypeSysType = "Link"
 )
 
+// Defines values for SystemPropertiesPreviewEnvironmentType.
+const (
+	SystemPropertiesPreviewEnvironmentTypePreviewEnvironment SystemPropertiesPreviewEnvironmentType = "PreviewEnvironment"
+)
+
 // Defines values for WebhookCollectionSysType.
 const (
 	WebhookCollectionSysTypeArray WebhookCollectionSysType = "Array"
@@ -993,6 +998,44 @@ type PreviewApiKeyCollection struct {
 // PreviewApiKeyCollectionSysType defines model for PreviewApiKeyCollection.Sys.Type.
 type PreviewApiKeyCollectionSysType string
 
+// PreviewConfiguration defines model for PreviewConfiguration.
+type PreviewConfiguration struct {
+	// ContentType Content type ID
+	ContentType string `json:"contentType"`
+
+	// Enabled Whether the content type is enabled
+	Enabled bool  `json:"enabled"`
+	Example *bool `json:"example,omitempty"`
+
+	// Url URL for the preview env of the content type
+	Url string `json:"url"`
+}
+
+// PreviewEnvironment defines model for PreviewEnvironment.
+type PreviewEnvironment struct {
+	// Configurations Configuration for the preview environment
+	Configurations []PreviewConfiguration `json:"configurations"`
+
+	// Description Description of the preview environment
+	Description string `json:"description"`
+
+	// Name Name of the preview environment
+	Name string                             `json:"name"`
+	Sys  SystemPropertiesPreviewEnvironment `json:"sys"`
+}
+
+// PreviewEnvironmentInput defines model for PreviewEnvironmentInput.
+type PreviewEnvironmentInput struct {
+	// Configurations Configuration for the preview environment
+	Configurations []PreviewConfiguration `json:"configurations"`
+
+	// Description Description of the preview environment
+	Description string `json:"description"`
+
+	// Name Name of the preview environment
+	Name string `json:"name"`
+}
+
 // RangeDate defines model for RangeDate.
 type RangeDate struct {
 	// Max Maximum date
@@ -1207,6 +1250,26 @@ type SystemPropertiesLink struct {
 	// Type Resource type
 	Type string `json:"type"`
 }
+
+// SystemPropertiesPreviewEnvironment defines model for SystemPropertiesPreviewEnvironment.
+type SystemPropertiesPreviewEnvironment struct {
+	// CreatedAt Creation timestamp
+	CreatedAt *time.Time `json:"createdAt,omitempty"`
+
+	// Id Resource ID
+	Id    string                                 `json:"id"`
+	Space *SystemPropertiesReference             `json:"space,omitempty"`
+	Type  SystemPropertiesPreviewEnvironmentType `json:"type"`
+
+	// UpdatedAt Last update timestamp
+	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
+
+	// Version Resource version
+	Version *int64 `json:"version,omitempty"`
+}
+
+// SystemPropertiesPreviewEnvironmentType defines model for SystemPropertiesPreviewEnvironment.Type.
+type SystemPropertiesPreviewEnvironmentType string
 
 // SystemPropertiesReference defines model for SystemPropertiesReference.
 type SystemPropertiesReference struct {
@@ -1652,6 +1715,18 @@ type GetAllPreviewApiKeysParams struct {
 	Skip *Skip `form:"skip,omitempty" json:"skip,omitempty"`
 }
 
+// DeletePreviewEnvironmentParams defines parameters for DeletePreviewEnvironment.
+type DeletePreviewEnvironmentParams struct {
+	// XContentfulVersion The version of the locale to update.
+	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
+}
+
+// UpdatePreviewEnvironmentParams defines parameters for UpdatePreviewEnvironment.
+type UpdatePreviewEnvironmentParams struct {
+	// XContentfulVersion The version of the locale to update.
+	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
+}
+
 // GetAllWebhooksParams defines parameters for GetAllWebhooks.
 type GetAllWebhooksParams struct {
 	// Limit Maximum number of items to return
@@ -1729,6 +1804,12 @@ type CreateLocaleJSONRequestBody = LocaleCreate
 
 // UpdateLocaleJSONRequestBody defines body for UpdateLocale for application/json ContentType.
 type UpdateLocaleJSONRequestBody = LocaleUpdate
+
+// CreatePreviewEnvironmentJSONRequestBody defines body for CreatePreviewEnvironment for application/json ContentType.
+type CreatePreviewEnvironmentJSONRequestBody = PreviewEnvironmentInput
+
+// UpdatePreviewEnvironmentJSONRequestBody defines body for UpdatePreviewEnvironment for application/json ContentType.
+type UpdatePreviewEnvironmentJSONRequestBody = PreviewEnvironmentInput
 
 // CreateWebhookJSONRequestBody defines body for CreateWebhook for application/json ContentType.
 type CreateWebhookJSONRequestBody = WebhookCreate
@@ -2291,6 +2372,22 @@ type ClientInterface interface {
 
 	// GetPreviewApiKey request
 	GetPreviewApiKey(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreatePreviewEnvironmentWithBody request with any body
+	CreatePreviewEnvironmentWithBody(ctx context.Context, spaceId SpaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreatePreviewEnvironment(ctx context.Context, spaceId SpaceId, body CreatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeletePreviewEnvironment request
+	DeletePreviewEnvironment(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *DeletePreviewEnvironmentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPreviewEnvironment request
+	GetPreviewEnvironment(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdatePreviewEnvironmentWithBody request with any body
+	UpdatePreviewEnvironmentWithBody(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdatePreviewEnvironment(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, body UpdatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAllWebhooks request
 	GetAllWebhooks(ctx context.Context, spaceId SpaceId, params *GetAllWebhooksParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3262,6 +3359,78 @@ func (c *Client) GetAllPreviewApiKeys(ctx context.Context, spaceId SpaceId, para
 
 func (c *Client) GetPreviewApiKey(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetPreviewApiKeyRequest(c.Server, spaceId, resourceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreatePreviewEnvironmentWithBody(ctx context.Context, spaceId SpaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePreviewEnvironmentRequestWithBody(c.Server, spaceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreatePreviewEnvironment(ctx context.Context, spaceId SpaceId, body CreatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePreviewEnvironmentRequest(c.Server, spaceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePreviewEnvironment(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *DeletePreviewEnvironmentParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePreviewEnvironmentRequest(c.Server, spaceId, resourceId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPreviewEnvironment(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPreviewEnvironmentRequest(c.Server, spaceId, resourceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePreviewEnvironmentWithBody(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePreviewEnvironmentRequestWithBody(c.Server, spaceId, resourceId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePreviewEnvironment(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, body UpdatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePreviewEnvironmentRequest(c.Server, spaceId, resourceId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -7001,6 +7170,215 @@ func NewGetPreviewApiKeyRequest(server string, spaceId SpaceId, resourceId Resou
 	return req, nil
 }
 
+// NewCreatePreviewEnvironmentRequest calls the generic CreatePreviewEnvironment builder with application/json body
+func NewCreatePreviewEnvironmentRequest(server string, spaceId SpaceId, body CreatePreviewEnvironmentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreatePreviewEnvironmentRequestWithBody(server, spaceId, "application/json", bodyReader)
+}
+
+// NewCreatePreviewEnvironmentRequestWithBody generates requests for CreatePreviewEnvironment with any type of body
+func NewCreatePreviewEnvironmentRequestWithBody(server string, spaceId SpaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/preview_environments", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeletePreviewEnvironmentRequest generates requests for DeletePreviewEnvironment
+func NewDeletePreviewEnvironmentRequest(server string, spaceId SpaceId, resourceId ResourceId, params *DeletePreviewEnvironmentParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "resourceId", runtime.ParamLocationPath, resourceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/preview_environments/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Contentful-Version", runtime.ParamLocationHeader, params.XContentfulVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Contentful-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetPreviewEnvironmentRequest generates requests for GetPreviewEnvironment
+func NewGetPreviewEnvironmentRequest(server string, spaceId SpaceId, resourceId ResourceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "resourceId", runtime.ParamLocationPath, resourceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/preview_environments/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdatePreviewEnvironmentRequest calls the generic UpdatePreviewEnvironment builder with application/json body
+func NewUpdatePreviewEnvironmentRequest(server string, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, body UpdatePreviewEnvironmentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdatePreviewEnvironmentRequestWithBody(server, spaceId, resourceId, params, "application/json", bodyReader)
+}
+
+// NewUpdatePreviewEnvironmentRequestWithBody generates requests for UpdatePreviewEnvironment with any type of body
+func NewUpdatePreviewEnvironmentRequestWithBody(server string, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "resourceId", runtime.ParamLocationPath, resourceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/preview_environments/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Contentful-Version", runtime.ParamLocationHeader, params.XContentfulVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Contentful-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
 // NewGetAllWebhooksRequest generates requests for GetAllWebhooks
 func NewGetAllWebhooksRequest(server string, spaceId SpaceId, params *GetAllWebhooksParams) (*http.Request, error) {
 	var err error
@@ -7545,6 +7923,22 @@ type ClientWithResponsesInterface interface {
 
 	// GetPreviewApiKeyWithResponse request
 	GetPreviewApiKeyWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetPreviewApiKeyResponse, error)
+
+	// CreatePreviewEnvironmentWithBodyWithResponse request with any body
+	CreatePreviewEnvironmentWithBodyWithResponse(ctx context.Context, spaceId SpaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePreviewEnvironmentResponse, error)
+
+	CreatePreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, body CreatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePreviewEnvironmentResponse, error)
+
+	// DeletePreviewEnvironmentWithResponse request
+	DeletePreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *DeletePreviewEnvironmentParams, reqEditors ...RequestEditorFn) (*DeletePreviewEnvironmentResponse, error)
+
+	// GetPreviewEnvironmentWithResponse request
+	GetPreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetPreviewEnvironmentResponse, error)
+
+	// UpdatePreviewEnvironmentWithBodyWithResponse request with any body
+	UpdatePreviewEnvironmentWithBodyWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePreviewEnvironmentResponse, error)
+
+	UpdatePreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, body UpdatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePreviewEnvironmentResponse, error)
 
 	// GetAllWebhooksWithResponse request
 	GetAllWebhooksWithResponse(ctx context.Context, spaceId SpaceId, params *GetAllWebhooksParams, reqEditors ...RequestEditorFn) (*GetAllWebhooksResponse, error)
@@ -8906,6 +9300,93 @@ func (r GetPreviewApiKeyResponse) StatusCode() int {
 	return 0
 }
 
+type CreatePreviewEnvironmentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *PreviewEnvironment
+}
+
+// Status returns HTTPResponse.Status
+func (r CreatePreviewEnvironmentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreatePreviewEnvironmentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeletePreviewEnvironmentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePreviewEnvironmentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePreviewEnvironmentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPreviewEnvironmentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PreviewEnvironment
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPreviewEnvironmentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPreviewEnvironmentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdatePreviewEnvironmentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PreviewEnvironment
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdatePreviewEnvironmentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdatePreviewEnvironmentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetAllWebhooksResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -9714,6 +10195,58 @@ func (c *ClientWithResponses) GetPreviewApiKeyWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseGetPreviewApiKeyResponse(rsp)
+}
+
+// CreatePreviewEnvironmentWithBodyWithResponse request with arbitrary body returning *CreatePreviewEnvironmentResponse
+func (c *ClientWithResponses) CreatePreviewEnvironmentWithBodyWithResponse(ctx context.Context, spaceId SpaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePreviewEnvironmentResponse, error) {
+	rsp, err := c.CreatePreviewEnvironmentWithBody(ctx, spaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreatePreviewEnvironmentResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreatePreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, body CreatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePreviewEnvironmentResponse, error) {
+	rsp, err := c.CreatePreviewEnvironment(ctx, spaceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreatePreviewEnvironmentResponse(rsp)
+}
+
+// DeletePreviewEnvironmentWithResponse request returning *DeletePreviewEnvironmentResponse
+func (c *ClientWithResponses) DeletePreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *DeletePreviewEnvironmentParams, reqEditors ...RequestEditorFn) (*DeletePreviewEnvironmentResponse, error) {
+	rsp, err := c.DeletePreviewEnvironment(ctx, spaceId, resourceId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePreviewEnvironmentResponse(rsp)
+}
+
+// GetPreviewEnvironmentWithResponse request returning *GetPreviewEnvironmentResponse
+func (c *ClientWithResponses) GetPreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetPreviewEnvironmentResponse, error) {
+	rsp, err := c.GetPreviewEnvironment(ctx, spaceId, resourceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPreviewEnvironmentResponse(rsp)
+}
+
+// UpdatePreviewEnvironmentWithBodyWithResponse request with arbitrary body returning *UpdatePreviewEnvironmentResponse
+func (c *ClientWithResponses) UpdatePreviewEnvironmentWithBodyWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePreviewEnvironmentResponse, error) {
+	rsp, err := c.UpdatePreviewEnvironmentWithBody(ctx, spaceId, resourceId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePreviewEnvironmentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdatePreviewEnvironmentWithResponse(ctx context.Context, spaceId SpaceId, resourceId ResourceId, params *UpdatePreviewEnvironmentParams, body UpdatePreviewEnvironmentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePreviewEnvironmentResponse, error) {
+	rsp, err := c.UpdatePreviewEnvironment(ctx, spaceId, resourceId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePreviewEnvironmentResponse(rsp)
 }
 
 // GetAllWebhooksWithResponse request returning *GetAllWebhooksResponse
@@ -11285,6 +11818,100 @@ func ParseGetPreviewApiKeyResponse(rsp *http.Response) (*GetPreviewApiKeyRespons
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest PreviewApiKey
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreatePreviewEnvironmentResponse parses an HTTP response from a CreatePreviewEnvironmentWithResponse call
+func ParseCreatePreviewEnvironmentResponse(rsp *http.Response) (*CreatePreviewEnvironmentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreatePreviewEnvironmentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest PreviewEnvironment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeletePreviewEnvironmentResponse parses an HTTP response from a DeletePreviewEnvironmentWithResponse call
+func ParseDeletePreviewEnvironmentResponse(rsp *http.Response) (*DeletePreviewEnvironmentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeletePreviewEnvironmentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetPreviewEnvironmentResponse parses an HTTP response from a GetPreviewEnvironmentWithResponse call
+func ParseGetPreviewEnvironmentResponse(rsp *http.Response) (*GetPreviewEnvironmentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPreviewEnvironmentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PreviewEnvironment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdatePreviewEnvironmentResponse parses an HTTP response from a UpdatePreviewEnvironmentWithResponse call
+func ParseUpdatePreviewEnvironmentResponse(rsp *http.Response) (*UpdatePreviewEnvironmentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdatePreviewEnvironmentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PreviewEnvironment
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

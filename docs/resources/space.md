@@ -28,6 +28,7 @@ resource "contentful_space" "example_space" {
 ### Optional
 
 - `default_locale` (String) Default locale for the space
+- `deletion_protection` (Boolean) Allow deletion of the space
 
 ### Read-Only
 
