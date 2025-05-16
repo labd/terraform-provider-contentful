@@ -4,40 +4,56 @@ resource "contentful_role" "example_role" {
   name        = "custom-role-name"
   description = "Custom Role Description"
 
-  permissions = {
-    ContentModel = [
-      "read",
-      "delete",
-      "publish"
-    ]
-    ContentDelivery = "all"
-    Environments    = "all"
+  permission {
+    id     = "ContentModel"
+    values = ["read", "delete", "publish"]
   }
 
-  policies = [
-    {
-      effect = "allow"
-      actions = [
-        "read",
-        "create",
-        "update",
-        "delete",
-        "publish",
-        "unpublish",
-        "archive",
-        "unarchive",
-      ]
-      constraint = {
-        and = [
-          [
-            "equals",
-            {
-              doc = "sys.type"
-            },
+  permission {
+    id    = "ContentDelivery"
+    value = "all"
+  }
+
+  permission {
+    id    = "Environments"
+    value = "all"
+  }
+
+  policy {
+    effect = "allow"
+    action {
+      value = "all"
+    }
+
+    constraint = jsonencode({
+      and = [
+        {
+          equals = [
+            { doc = "sys.type" },
             "Entry"
           ]
-        ]
-      }
+        }
+      ]
+    })
+  }
+
+  policy {
+    effect = "allow"
+
+    action {
+      values = ["create"]
     }
-  ]
+
+    constraint = jsonencode({
+      and = [
+        {
+          equals = [
+            { doc = "sys.type" },
+            "Entry"
+          ]
+        }
+      ]
+    })
+  }
 }
+
