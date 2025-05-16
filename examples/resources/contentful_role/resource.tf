@@ -21,7 +21,7 @@ resource "contentful_role" "example_role" {
 
   policy {
     effect = "allow"
-    action {
+    actions = {
       value = "all"
     }
 
@@ -40,7 +40,7 @@ resource "contentful_role" "example_role" {
   policy {
     effect = "allow"
 
-    action {
+    actions = {
       values = ["create"]
     }
 

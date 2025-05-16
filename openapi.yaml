@@ -2100,41 +2100,16 @@ components:
 
     RolePolicies:
       type: array
-      items:
-        type: object
-        properties:
-          effect:
-            type: string
-            description: The effect of the policy (e.g., "allow" or "deny").
-            example: "allow"
-          actions:
-            type: array
-            items:
-              type: string
-            description: A list of actions the policy applies to.
-            example:
-              - "read"
-              - "edit"
-          constraint:
-            type: object
-            description: Constraints applied to the policy.
-            example:
-              and:
-                - equals:
-                    field: "sys.type"
-                    value: "Entry"
+      additionalProperties: true
+      description: "A map of permissions associated with the role."
 
     RolePermissions:
       type: object
-      additionalProperties:
-        oneOf:
-          - type: string
-            description: A string representing access level (e.g., "all").
-          - type: array
-            items:
-              type: string
-              description: Specific permissions (e.g., "read", "create", "publish", "delete").
-            description: A list of specific permissions.
+      additionalProperties: true
+      description: "A map of permissions associated with the role."
+      x-go-type: orderedmap.OrderedMap
+      x-go-type-import:
+        path:  "github.com/iancoleman/orderedmap"
 
     RoleCreate:
       type: object
@@ -2156,8 +2131,6 @@ components:
       required:
         - name 
         - description
-        - policies
-        - permissions
 
     RoleUpdate:
       type: object
@@ -2170,17 +2143,15 @@ components:
           type: string
           description: A short description of the role.
           example: "Updated description for the role."
-        policies:
-          $ref: "#/components/schemas/RolePolicies"
-          description: "A map of policies associated with the role."
         permissions:
           $ref: "#/components/schemas/RolePermissions"
           description: "A map of permissions associated with the role."
+        policies:
+          $ref: "#/components/schemas/RolePolicies"
+          description: "A map of policies associated with the role."
       required:
         - name
         - description
-        - permissions
-        - policies
 
     Space:
       type: object

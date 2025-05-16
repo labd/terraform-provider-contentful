@@ -1,4 +1,4 @@
-package role
+package role_test
 
 import (
 	"context"
@@ -14,25 +14,12 @@ import (
 
 	"github.com/labd/terraform-provider-contentful/internal/acctest"
 	"github.com/labd/terraform-provider-contentful/internal/provider"
-	"github.com/labd/terraform-provider-contentful/internal/resources/entry"
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
 )
 
-func TestParseContentValue_String(t *testing.T) {
-	value := `"hello"`
-	parsed := entry.ParseContentValue(value)
-	assert.Equal(t, "hello", parsed)
-}
-
-func TestParseContentValue_Json(t *testing.T) {
-	value := `{"foo": "bar", "baz": [1, 2, 3]}`
-	parsed := entry.ParseContentValue(value)
-	assert.Equal(t, map[string]interface{}{"foo": "bar", "baz": []interface{}{float64(1), float64(2), float64(3)}}, parsed)
-}
-
-func TestEntryResource_Basic(t *testing.T) {
+func TestRoleResource_Basic(t *testing.T) {
 	spaceID := os.Getenv("CONTENTFUL_SPACE_ID")
-	resourceName := "contentful_entry.myentry"
+	resourceName := "contentful_role.example_role"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { acctest.TestAccPreCheck(t) },
@@ -44,25 +31,21 @@ func TestEntryResource_Basic(t *testing.T) {
 			{
 				Config: testEntryConfig(spaceID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckContentfulEntryExists(t, resourceName, func(t *testing.T, entry *sdk.Entry) {
-						assert.Equal(t, "mytestentry", entry.Sys.Id)
-						assert.Equal(t, "tf_test_1", entry.Sys.ContentType.Sys.Id)
-						assert.Equal(t, spaceID, entry.Sys.Space.Sys.Id)
-						assert.NotNil(t, entry.Sys.PublishedAt)
+					testAccCheckContentfulRoleExists(t, resourceName, func(t *testing.T, role *sdk.Role) {
+						assert.Equal(t, "custom-role-name", role.Name)
+						// assert.Equal(t, spaceID, entry.Sys.Space.Sys.Id)
 					}),
 				),
 			},
-			{
-				Config: testEntryUpdateConfig(spaceID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckContentfulEntryExists(t, resourceName, func(t *testing.T, entry *sdk.Entry) {
-						assert.Equal(t, "mytestentry", entry.Sys.Id)
-						assert.Equal(t, "tf_test_1", entry.Sys.ContentType.Sys.Id)
-						assert.Equal(t, spaceID, entry.Sys.Space.Sys.Id)
-						assert.Nil(t, entry.Sys.PublishedAt)
-					}),
-				),
-			},
+			// {
+			// 	Config: testEntryUpdateConfig(spaceID),
+			// 	Check: resource.ComposeTestCheckFunc(
+			// 		testAccCheckContentfulRoleExists(t, resourceName, func(t *testing.T, role *sdk.Role) {
+			// 			assert.Equal(t, "my-custom-role", role.Sys.Id)
+			// 			// assert.Equal(t, spaceID, entry.Sys.Space.Sys.Id)
+			// 		}),
+			// 	),
+			// },
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
@@ -72,31 +55,31 @@ func TestEntryResource_Basic(t *testing.T) {
 					if !ok {
 						return "", fmt.Errorf("not found: %s", resourceName)
 					}
-					return fmt.Sprintf("%s:%s:%s",
+					return fmt.Sprintf("%s:%s",
 						rs.Primary.ID,
 						rs.Primary.Attributes["space_id"],
-						rs.Primary.Attributes["environment"]), nil
+					), nil
 				},
 			},
 		},
 	})
 }
 
-type assertFunc func(*testing.T, *sdk.Entry)
+type assertFunc func(*testing.T, *sdk.Role)
 
-func testAccCheckContentfulEntryExists(t *testing.T, resourceName string, assertFunc assertFunc) resource.TestCheckFunc {
+func testAccCheckContentfulRoleExists(t *testing.T, resourceName string, assertFunc assertFunc) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		entry, err := getEntryFromState(s, resourceName)
+		role, err := getRoleFromState(s, resourceName)
 		if err != nil {
 			return err
 		}
 
-		assertFunc(t, entry)
+		assertFunc(t, role)
 		return nil
 	}
 }
 
-func getEntryFromState(s *terraform.State, resourceName string) (*sdk.Entry, error) {
+func getRoleFromState(s *terraform.State, resourceName string) (*sdk.Role, error) {
 	rs, ok := s.RootModule().Resources[resourceName]
 	if !ok {
 		return nil, fmt.Errorf("entry not found in state: %s", resourceName)
@@ -111,13 +94,8 @@ func getEntryFromState(s *terraform.State, resourceName string) (*sdk.Entry, err
 		return nil, fmt.Errorf("no space_id is set")
 	}
 
-	environment := rs.Primary.Attributes["environment"]
-	if environment == "" {
-		return nil, fmt.Errorf("no environment is set")
-	}
-
 	client := acctest.GetClient()
-	resp, err := client.GetEntryWithResponse(context.Background(), spaceID, environment, rs.Primary.ID)
+	resp, err := client.GetRoleWithResponse(context.Background(), spaceID, rs.Primary.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +110,7 @@ func getEntryFromState(s *terraform.State, resourceName string) (*sdk.Entry, err
 func testAccCheckContentfulEntryDestroy(s *terraform.State) error {
 	client := acctest.GetClient()
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "contentful_entry" {
+		if rs.Type != "contentful_role" {
 			continue
 		}
 
@@ -146,7 +124,7 @@ func testAccCheckContentfulEntryDestroy(s *terraform.State) error {
 			return fmt.Errorf("no environment is set")
 		}
 
-		resp, err := client.GetEntryWithResponse(context.Background(), spaceID, environment, rs.Primary.ID)
+		resp, err := client.GetRoleWithResponse(context.Background(), spaceID, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -163,161 +141,127 @@ func testAccCheckContentfulEntryDestroy(s *terraform.State) error {
 
 func testEntryConfig(spaceID string) string {
 	return fmt.Sprintf(`
-resource "contentful_contenttype" "mycontenttype" {
+resource "contentful_role" "example_role" {
   space_id = "%s"
-  name = "tf_test_1"
-  environment = "master"
-  description = "Terraform Acc Test Content Type"
-  display_field = "field1"
 
-  fields = [
-		{
-			disabled  = false
-			id        = "field1"
-			localized = false
-			name      = "Field 1"
-			omitted   = false
-			required  = true
-			type      = "Text"
-		},
-		{
-			disabled  = false
-			id        = "field2"
-			localized = false
-			name      = "Field 2"
-			omitted   = false
-			required  = true
-			type      = "Text"
-		},
-		{
-			id       = "field3"
-			name     = "Field 3"
-			type     = "RichText"
-		}
-	]
-}
+  name        = "custom-role-name"
+  description = "Custom Role Description"
 
-resource "contentful_entry" "myentry" {
-  entry_id = "mytestentry"
-  space_id = "%s"
-  environment = "master"
-  contenttype_id = "tf_test_1"
-  field {
-    id = "field1"
-    content = "Hello, World!"
-    locale = "en-US"
-  }
-  field {
-    id = "field2"
-    content = "Bacon is healthy!"
-    locale = "en-US"
+  permission {
+    id     = "ContentModel"
+    values = ["read", "delete", "publish"]
   }
 
-  field {
-    id = "field3"
-    locale = "en-US"
-    content = jsonencode({
-      data= {},
-      content= [
+  permission {
+    id    = "ContentDelivery"
+    value = "all"
+  }
+
+  permission {
+    id    = "Environments"
+    value = "all"
+  }
+
+  policy {
+    effect = "allow"
+    actions = {
+      value = "all"
+    }
+
+    constraint = jsonencode({
+      and = [
         {
-          nodeType= "paragraph",
-          content= [
-            {
-              nodeType= "text",
-              marks= [],
-              value= "This is another paragraph.",
-              data= {},
-            },
-          ],
-          data= {},
+          equals = [
+            { doc = "sys.type" },
+            "Entry"
+          ]
         }
-      ],
-      nodeType= "document"
+      ]
     })
   }
-  published = true
-  archived  = false
-  depends_on = [contentful_contenttype.mycontenttype]
+
+  policy {
+    effect = "allow"
+
+    actions = {
+      values = ["create"]
+    }
+
+    constraint = jsonencode({
+      and = [
+        {
+          equals = [
+            { doc = "sys.type" },
+            "Entry"
+          ]
+        }
+      ]
+    })
+  }
 }
-`, spaceID, spaceID)
+`, spaceID)
 }
 
 func testEntryUpdateConfig(spaceID string) string {
 	return fmt.Sprintf(`
-resource "contentful_contenttype" "mycontenttype" {
+resource "contentful_role" "example_role" {
+  id = "%s"
   space_id = "%s"
-  environment = "master"
-  name = "tf_test_1"
-  description = "Terraform Acc Test Content Type"
-  display_field = "field1"
 
-	fields = [
-		{
-			disabled  = false
-			id        = "field1"
-			localized = false
-			name      = "Field 1"
-			omitted   = false
-			required  = true
-			type      = "Text"
-		},
-		{
-			disabled  = false
-			id        = "field2"
-			localized = false
-			name      = "Field 2"
-			omitted   = false
-			required  = true
-			type      = "Text"
-		},
-		{
-			id       = "field3"
-			name     = "Field 3"
-			type     = "RichText"
-		}
-	]
-}
+  name        = "custom-role-name"
+  description = "Custom Role Description"
 
-resource "contentful_entry" "myentry" {
-  entry_id = "mytestentry"
-  space_id = "%s"
-  environment = "master"
-  contenttype_id = "tf_test_1"
-  field {
-    id = "field1"
-    content = "Hello, World!"
-    locale = "en-US"
+  permission {
+    id     = "ContentModel"
+    values = ["read", "delete", "publish"]
   }
-  field {
-    id = "field2"
-    content = "Bacon is healthy!"
-    locale = "en-US"
+
+  permission {
+    id    = "ContentDelivery"
+    value = "all"
   }
-  field {
-    id = "field3"
-    locale = "en-US"
-    content = jsonencode({
-      data= {},
-      content= [
+
+  permission {
+    id    = "Environments"
+    value = "all"
+  }
+
+  policy {
+    effect = "allow"
+    actions = {
+      value = "all"
+    }
+
+    constraint = jsonencode({
+      and = [
         {
-          nodeType= "paragraph",
-          content= [
-            {
-              nodeType= "text",
-              marks= [],
-              value= "This is another paragraph.",
-              data= {},
-            },
-          ],
-          data= {},
+          equals = [
+            { doc = "sys.type" },
+            "Entry"
+          ]
         }
-      ],
-      nodeType= "document"
+      ]
     })
   }
-  published = false
-  archived  = false
-  depends_on = [contentful_contenttype.mycontenttype]
+
+  policy {
+    effect = "allow"
+
+    actions = {
+      values = ["create"]
+    }
+
+    constraint = jsonencode({
+      and = [
+        {
+          equals = [
+            { doc = "sys.type" },
+            "Entry"
+          ]
+        }
+      ]
+    })
+  }
 }
 `, spaceID, spaceID)
 }

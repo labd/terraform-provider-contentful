@@ -61,55 +61,62 @@ func (e *roleResource) Schema(_ context.Context, _ resource.SchemaRequest, respo
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
+			"name": schema.StringAttribute{
+				Required:    true,
+				Description: "The name of the role",
+			},
 			"description": schema.StringAttribute{
-				Optional: true,
+				Description: "The description of the role",
+				Optional:    true,
 			},
-			"published": schema.BoolAttribute{
-				Required:    true,
-				Description: "Whether the role is published",
-			},
-			"archived": schema.BoolAttribute{
-				Required:    true,
-				Description: "Whether the role is archived",
-			},
-			"permissions": schema.MapNestedAttribute{
-				Required:    true,
+		},
+		Blocks: map[string]schema.Block{
+			"permission": schema.ListNestedBlock{
 				Description: "The list of permissions defined",
-				NestedObject: schema.NestedAttributeObject{
+				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
-						"all": schema.StringAttribute{
-							Optional: true, // For "all"
+						"id": schema.StringAttribute{
+							Required:    true,
+							Description: "Permission ID",
 						},
-						"actions": schema.ListAttribute{
-							ElementType: types.StringType, // For list of actions
+						"value": schema.StringAttribute{
 							Optional:    true,
+							Description: "If all are allowed this should be `all`.",
+						},
+						"values": schema.ListAttribute{
+							ElementType: types.StringType,
+							Optional:    true,
+							Description: "List of permission values, e.g. [\"create\", \"read\"].",
 						},
 					},
 				},
 			},
-			"policies": schema.ListNestedAttribute{
-				Required: true,
-				NestedObject: schema.NestedAttributeObject{
+			"policy": schema.ListNestedBlock{
+				Description: "The list of policies defined.",
+				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"effect": schema.StringAttribute{
-							Required: true,
-						},
-						"actions": schema.ListAttribute{
-							ElementType: types.StringType,
 							Required:    true,
+							Description: "The effect of the policy (e.g., allow or deny).",
 						},
-						"constraint": schema.MapNestedAttribute{
-							Optional: true,
-							NestedObject: schema.NestedAttributeObject{
-								Attributes: map[string]schema.Attribute{
-									"and": schema.ListAttribute{
-										ElementType: types.ListType{
-											ElemType: types.StringType,
-										},
-										Optional: true,
-									},
+						"actions": schema.SingleNestedAttribute{
+							Required:    true,
+							Description: "Policy action. Use `value` for a single action, or `values` for multiple actions.",
+							Attributes: map[string]schema.Attribute{
+								"value": schema.StringAttribute{
+									Optional:    true,
+									Description: "Single action value (e.g., 'all').",
+								},
+								"values": schema.ListAttribute{
+									ElementType: types.StringType,
+									Optional:    true,
+									Description: "List of action values (e.g., ['read', 'write']).",
 								},
 							},
+						},
+						"constraint": schema.StringAttribute{
+							Optional:    true,
+							Description: "JSON-encoded constraint for the policy.",
 						},
 					},
 				},
@@ -135,52 +142,21 @@ func (e *roleResource) Create(ctx context.Context, request resource.CreateReques
 		return
 	}
 
-	// Create the role
-	draft := plan.Draft()
+	// Create the webhook
+	draft := plan.DraftForCreate()
 
-	var role *sdk.Role
-	if plan.RoleID.IsUnknown() || plan.RoleID.IsNull() {
-		params := &sdk.CreateRoleParams{
-			XContentfulContentType: plan.ContentTypeID.ValueString(),
-		}
-		resp, err := e.client.CreateRoleWithResponse(ctx, plan.SpaceID.ValueString(), plan.Environment.ValueString(), params, draft)
-		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
-			response.Diagnostics.AddError(
-				"Error creating role",
-				"Could not create role: "+err.Error(),
-			)
-			return
-		}
-
-		role = resp.JSON201
-	} else {
-		params := &sdk.UpdateRoleParams{
-			XContentfulContentType: plan.ContentTypeID.ValueString(),
-		}
-		resp, err := e.client.UpdateRoleWithResponse(ctx, plan.SpaceID.ValueString(), plan.Environment.ValueString(), plan.RoleID.ValueString(), params, draft)
-		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
-			response.Diagnostics.AddError(
-				"Error creating role",
-				"Could not create role: "+err.Error(),
-			)
-			return
-		}
-
-		role = resp.JSON201
-	}
-
-	// Map response to state
-	state := Role{}
-	state.Import(role)
-
-	// Set role state (published/archived)
-	if err := e.setRoleState(ctx, &state, &plan); err != nil {
+	resp, err := e.client.CreateRoleWithResponse(ctx, plan.SpaceID.ValueString(), draft)
+	if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
 		response.Diagnostics.AddError(
-			"Error setting role state",
-			err.Error(),
+			"Error creating role",
+			"Could not create role: "+err.Error(),
 		)
 		return
 	}
+
+	// Map response to state
+	state := &Role{}
+	state.Import(resp.JSON201)
 
 	// Set state
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
@@ -195,7 +171,18 @@ func (e *roleResource) Read(ctx context.Context, request resource.ReadRequest, r
 		return
 	}
 
-	e.doRead(ctx, &state, &response.State, &response.Diagnostics)
+	resp, err := e.client.GetRoleWithResponse(ctx, state.SpaceID.ValueString(), state.ID.ValueString())
+	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		if resp.StatusCode() == 404 {
+			response.State.RemoveResource(ctx)
+			return
+		}
+		response.Diagnostics.AddError("Error reading role", err.Error())
+	}
+
+	state.Import(resp.JSON200)
+
+	response.Diagnostics.Append(request.State.Set(ctx, &state)...)
 }
 
 func (e *roleResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
@@ -219,11 +206,10 @@ func (e *roleResource) Update(ctx context.Context, request resource.UpdateReques
 	}
 
 	// Update the role
-	draft := plan.Draft()
+	draft := plan.DraftForUpdate()
 	resp, err := e.client.UpdateRoleWithResponse(
 		ctx,
 		plan.SpaceID.ValueString(),
-		plan.Environment.ValueString(),
 		plan.ID.ValueString(),
 		params,
 		draft,
@@ -238,15 +224,6 @@ func (e *roleResource) Update(ctx context.Context, request resource.UpdateReques
 	}
 
 	state.Import(resp.JSON200)
-
-	// Set role state (published/archived)
-	if err := e.setRoleState(ctx, &state, &plan); err != nil {
-		response.Diagnostics.AddError(
-			"Error setting role state",
-			err.Error(),
-		)
-		return
-	}
 
 	// Set state
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
@@ -264,7 +241,6 @@ func (e *roleResource) Delete(ctx context.Context, request resource.DeleteReques
 	resp, err := e.client.GetRoleWithResponse(
 		ctx,
 		state.SpaceID.ValueString(),
-		state.Environment.ValueString(),
 		state.ID.ValueString(),
 	)
 	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
@@ -282,26 +258,6 @@ func (e *roleResource) Delete(ctx context.Context, request resource.DeleteReques
 
 	state.Import(resp.JSON200)
 
-	if state.Published.ValueBool() {
-		resp, err := e.client.UnpublishRoleWithResponse(
-			ctx,
-			state.SpaceID.ValueString(),
-			state.Environment.ValueString(),
-			state.ID.ValueString(),
-			&sdk.UnpublishRoleParams{
-				XContentfulVersion: state.Version.ValueInt64(),
-			},
-		)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-			response.Diagnostics.AddError(
-				"Error deleting role",
-				"Could not unpublish role before deletion: "+err.Error(),
-			)
-			return
-		}
-		state.Import(resp.JSON200)
-	}
-
 	// Create delete parameters with latest version
 	params := &sdk.DeleteRoleParams{
 		XContentfulVersion: int64(state.Version.ValueInt64()),
@@ -311,7 +267,6 @@ func (e *roleResource) Delete(ctx context.Context, request resource.DeleteReques
 	deleteResp, err := e.client.DeleteRoleWithResponse(
 		ctx,
 		state.SpaceID.ValueString(),
-		state.Environment.ValueString(),
 		state.ID.ValueString(),
 		params,
 	)
@@ -334,31 +289,28 @@ func (e *roleResource) Delete(ctx context.Context, request resource.DeleteReques
 }
 
 func (e *roleResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	// Extract the role ID, space ID, and environment ID from the import ID
+	// Extract the role ID and space ID from the import ID
 	idParts := strings.Split(request.ID, ":")
-	if len(idParts) != 3 || idParts[0] == "" || idParts[1] == "" || idParts[2] == "" {
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		response.Diagnostics.AddError(
 			"Error importing role",
-			fmt.Sprintf("Expected import format: role_id:space_id:environment, got: %s", request.ID),
+			fmt.Sprintf("Expected import format: role_id:space_id, got: %s", request.ID),
 		)
 		return
 	}
 
 	roleID := idParts[0]
 	spaceID := idParts[1]
-	environment := idParts[2]
 
 	role := Role{
-		ID:          types.StringValue(roleID),
-		RoleID:      types.StringValue(roleID),
-		SpaceID:     types.StringValue(spaceID),
-		Environment: types.StringValue(environment),
+		ID: types.StringValue(roleID),
+		// RoleID:  types.StringValue(roleID), <-- TODO: Validate if this is needed.
+		SpaceID: types.StringValue(spaceID),
 	}
 
 	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("id"), roleID)...)
 	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("role_id"), roleID)...)
 	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("space_id"), spaceID)...)
-	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("environment"), environment)...)
 
 	e.doRead(ctx, &role, &response.State, &response.Diagnostics)
 }
@@ -367,7 +319,6 @@ func (e *roleResource) doRead(ctx context.Context, role *Role, state *tfsdk.Stat
 	resp, err := e.client.GetRoleWithResponse(
 		ctx,
 		role.SpaceID.ValueString(),
-		role.Environment.ValueString(),
 		role.ID.ValueString(),
 	)
 

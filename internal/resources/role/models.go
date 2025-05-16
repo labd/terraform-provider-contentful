@@ -1,39 +1,42 @@
 package role
 
 import (
-	"encoding/json"
+	// "encoding/json"
+
 	// "fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
-
+	"github.com/iancoleman/orderedmap"
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
-	// "github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
 // Role is the main resource schema data
 type Role struct {
 	ID      types.String `tfsdk:"id"`
 	Version types.Int64  `tfsdk:"version"`
+	SpaceID types.String `tfsdk:"space_id"`
 
-	Name        types.String          `tfsdk:"name"`
-	Description types.String          `tfsdk:"description"`
-	Permissions map[string]Permission `tfsdk:"permissions"`
-	Policies    []Policy              `tfsdk:"policies"`
+	Name        types.String `tfsdk:"name"`
+	Description types.String `tfsdk:"description"`
+	Permission  []Permission `tfsdk:"permission"`
+	Policy      []Policy     `tfsdk:"policy"`
 }
 
 type Permission struct {
-	All     types.String `tfsdk:"all"`
-	Actions types.List   `tfsdk:"actions"`
+	ID     types.String   `tfsdk:"id"`
+	Value  types.String   `tfsdk:"value"`
+	Values []types.String `tfsdk:"values"`
 }
 
 type Policy struct {
-	Effect     types.String `tfsdk:"effect:"`
-	Actions    types.List   `tfsdk:"actions"`
-	Constraint Constraint   `tfsdk:"constraint"`
+	Effect     types.String `tfsdk:"effect"`
+	Actions    Action       `tfsdk:"actions"`
+	Constraint types.String `tfsdk:"constraint"`
 }
 
-type Constraint struct {
-	And []types.List `tfsdk:"and"`
+type Action struct {
+	Value  types.String   `tfsdk:"value"`
+	Values []types.String `tfsdk:"values"`
 }
 
 // Import populates the Role struct from an sdk.Role object
@@ -48,7 +51,8 @@ func (r *Role) DraftForCreate() sdk.RoleCreate {
 	return sdk.RoleCreate{
 		Name:        r.Name.ValueString(),
 		Description: r.Description.ValueString(),
-		Permissions: convertPermissions(r.Permissions),
+		Permissions: convertPermissions(r.Permission),
+		Policies:    convertPolicies(r.Policy),
 	}
 }
 
@@ -56,56 +60,53 @@ func (r *Role) DraftForUpdate() sdk.RoleUpdate {
 	return sdk.RoleUpdate{
 		Name:        r.Name.ValueString(),
 		Description: r.Description.ValueString(),
-		Permissions: convertPermissions(r.Permissions),
+		Permissions: convertPermissions(r.Permission),
+		Policies:    convertPolicies(r.Policy),
 	}
 }
 
-// NOTE: Validate this function
-func convertPermissions(input map[string]Permission) sdk.RolePermissions {
-	rawMap := make(map[string]json.RawMessage)
+func convertPermissions(p []Permission) *orderedmap.OrderedMap {
+	permissions := orderedmap.New()
 
-	for key, val := range input {
-		// Handle the "all" shortcut
-		if !val.All.IsNull() && val.All.ValueString() != "" {
-			b, err := json.Marshal(val.All.ValueString())
-			if err != nil {
-				continue // or log
+	for _, permission := range p {
+		id := permission.ID.ValueString()
+		if v := permission.Value.ValueString(); v != "" {
+			permissions.Set(id, permission.Value.String())
+		} else if len(permission.Values) > 0 {
+			strVals := make([]string, len(permission.Values))
+			for i, val := range permission.Values {
+				strVals[i] = val.ValueString() // extract the raw string
 			}
-			rawMap[key] = b
-			continue
-		}
-
-		// Handle the explicit actions list
-		if !val.Actions.IsNull() && val.Actions.Elements() != nil {
-			var actions []string
-			for _, elem := range val.Actions.Elements() {
-				strVal, ok := elem.(types.String)
-				if !ok || strVal.IsNull() {
-					continue
-				}
-				actions = append(actions, strVal.ValueString())
-			}
-
-			if len(actions) > 0 {
-				b, err := json.Marshal(actions)
-				if err != nil {
-					continue // or log
-				}
-				rawMap[key] = b
-			}
+			permissions.Set(id, strVals)
 		}
 	}
 
-	// Marshal and unmarshal into the SDK's RolePermissions type
-	b, err := json.Marshal(rawMap)
-	if err != nil {
-		return nil
-	}
+	return permissions
+}
 
-	var perms sdk.RolePermissions
-	if err := json.Unmarshal(b, &perms); err != nil {
-		return nil
-	}
+func convertPolicies(policies []Policy) *[]any {
+	var out []any
+	for _, policy := range policies {
+		policyMap := map[string]interface{}{
+			"effect": policy.Effect.ValueString(),
+		}
 
-	return perms
+		// Handle action as a nested map
+		if v := policy.Actions.Value.ValueString(); v != "" {
+			policyMap["actions"] = v
+		}
+		if len(policy.Actions.Values) > 0 {
+			strVals := make([]string, len(policy.Actions.Values))
+			for i, val := range policy.Actions.Values {
+				strVals[i] = val.ValueString()
+			}
+			policyMap["actions"] = strVals
+		}
+
+		if c := policy.Constraint.ValueString(); c != "" {
+			policyMap["constraint"] = c
+		}
+		out = append(out, policyMap)
+	}
+	return &out
 }
