@@ -20,6 +20,7 @@ Create, update and delete Contentful resources such as:
 - [x] Environments
 - [x] Entries
 - [x] Assets
+- [x] Roles
 
 # Getting started
 

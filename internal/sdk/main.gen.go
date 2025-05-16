@@ -1041,10 +1041,14 @@ type Role struct {
 	Description string `json:"description"`
 
 	// Name The name of the role.
-	Name        string           `json:"name"`
+	Name string `json:"name"`
+
+	// Permissions A map of permissions associated with the role.
 	Permissions *RolePermissions `json:"permissions,omitempty"`
-	Policies    *RolePolicies    `json:"policies,omitempty"`
-	Sys         *struct {
+
+	// Policies A map of permissions associated with the role.
+	Policies *RolePolicies `json:"policies,omitempty"`
+	Sys      *struct {
 		// Id The unique identifier for the role.
 		Id *string `json:"id,omitempty"`
 
@@ -1081,36 +1085,20 @@ type RoleCreate struct {
 	Description string `json:"description"`
 
 	// Name The name of the role.
-	Name        string          `json:"name"`
-	Permissions RolePermissions `json:"permissions"`
-	Policies    RolePolicies    `json:"policies"`
+	Name string `json:"name"`
+
+	// Permissions A map of permissions associated with the role.
+	Permissions *RolePermissions `json:"permissions,omitempty"`
+
+	// Policies A map of permissions associated with the role.
+	Policies *RolePolicies `json:"policies,omitempty"`
 }
 
-// RolePermissions defines model for RolePermissions.
-type RolePermissions map[string]RolePermissions_AdditionalProperties
+// RolePermissions A map of permissions associated with the role.
+type RolePermissions = orderedmap.OrderedMap
 
-// RolePermissions0 A string representing access level (e.g., "all").
-type RolePermissions0 = string
-
-// RolePermissions1 A list of specific permissions.
-type RolePermissions1 = []string
-
-// RolePermissions_AdditionalProperties defines model for RolePermissions.AdditionalProperties.
-type RolePermissions_AdditionalProperties struct {
-	union json.RawMessage
-}
-
-// RolePolicies defines model for RolePolicies.
-type RolePolicies = []struct {
-	// Actions A list of actions the policy applies to.
-	Actions *[]string `json:"actions,omitempty"`
-
-	// Constraint Constraints applied to the policy.
-	Constraint *map[string]interface{} `json:"constraint,omitempty"`
-
-	// Effect The effect of the policy (e.g., "allow" or "deny").
-	Effect *string `json:"effect,omitempty"`
-}
+// RolePolicies A map of permissions associated with the role.
+type RolePolicies = []interface{}
 
 // RoleUpdate defines model for RoleUpdate.
 type RoleUpdate struct {
@@ -1118,9 +1106,13 @@ type RoleUpdate struct {
 	Description string `json:"description"`
 
 	// Name The name of the role.
-	Name        string          `json:"name"`
-	Permissions RolePermissions `json:"permissions"`
-	Policies    RolePolicies    `json:"policies"`
+	Name string `json:"name"`
+
+	// Permissions A map of permissions associated with the role.
+	Permissions *RolePermissions `json:"permissions,omitempty"`
+
+	// Policies A map of permissions associated with the role.
+	Policies *RolePolicies `json:"policies,omitempty"`
 }
 
 // Space defines model for Space.
@@ -2112,68 +2104,6 @@ func (t FieldItem) MarshalJSON() ([]byte, error) {
 }
 
 func (t *FieldItem) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsRolePermissions0 returns the union data inside the RolePermissions_AdditionalProperties as a RolePermissions0
-func (t RolePermissions_AdditionalProperties) AsRolePermissions0() (RolePermissions0, error) {
-	var body RolePermissions0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromRolePermissions0 overwrites any union data inside the RolePermissions_AdditionalProperties as the provided RolePermissions0
-func (t *RolePermissions_AdditionalProperties) FromRolePermissions0(v RolePermissions0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeRolePermissions0 performs a merge with any union data inside the RolePermissions_AdditionalProperties, using the provided RolePermissions0
-func (t *RolePermissions_AdditionalProperties) MergeRolePermissions0(v RolePermissions0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsRolePermissions1 returns the union data inside the RolePermissions_AdditionalProperties as a RolePermissions1
-func (t RolePermissions_AdditionalProperties) AsRolePermissions1() (RolePermissions1, error) {
-	var body RolePermissions1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromRolePermissions1 overwrites any union data inside the RolePermissions_AdditionalProperties as the provided RolePermissions1
-func (t *RolePermissions_AdditionalProperties) FromRolePermissions1(v RolePermissions1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeRolePermissions1 performs a merge with any union data inside the RolePermissions_AdditionalProperties, using the provided RolePermissions1
-func (t *RolePermissions_AdditionalProperties) MergeRolePermissions1(v RolePermissions1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t RolePermissions_AdditionalProperties) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *RolePermissions_AdditionalProperties) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
