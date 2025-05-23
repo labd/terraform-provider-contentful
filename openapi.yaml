@@ -2305,7 +2305,6 @@ components:
           description: HTTP headers to send with the webhook request
           items:
             $ref: '#/components/schemas/WebhookHeader'
-            type: object
           type: array
         httpBasicPassword:
           description: Password for HTTP basic authentication
@@ -2326,6 +2325,15 @@ components:
         url:
           description: URL to call when the webhook is triggered
           type: string
+        active:
+          description: Whether the webhook is active
+          type: boolean
+        filters:
+          description: Filters to apply to the webhook
+          type: array
+          items:
+            type: object
+            additionalProperties: true
       required:
         - name
         - url
@@ -2362,7 +2370,6 @@ components:
           description: HTTP headers to send with the webhook request
           items:
             $ref: '#/components/schemas/WebhookHeader'
-            type: object
           type: array
         httpBasicPassword:
           description: Password for HTTP basic authentication
@@ -2381,6 +2388,15 @@ components:
         url:
           description: URL to call when the webhook is triggered
           type: string
+        active:
+          description: Whether the webhook is active
+          type: boolean
+        filters:
+          description: Filters to apply to the webhook
+          type: array
+          items:
+              type: object
+              additionalProperties: true
       required:
         - name
         - url
@@ -2423,6 +2439,15 @@ components:
         url:
           description: URL to call when the webhook is triggered
           type: string
+        active:
+          description: Whether the webhook is active
+          type: boolean
+        filters:
+          description: Filters to apply to the webhook
+          type: array
+          items:
+            type: object
+            additionalProperties: true
       required:
         - name
         - url
