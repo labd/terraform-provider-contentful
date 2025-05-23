@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-	hashicor_acctest "github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	hashicoracctest "github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/assert"
@@ -20,8 +20,8 @@ import (
 
 type assertFunc func(*testing.T, *sdk.Webhook)
 
-func TestWebhookResource_Create(t *testing.T) {
-	name := fmt.Sprintf("webhook-name-%s", hashicor_acctest.RandString(3))
+func TestWebhookResource_Basic(t *testing.T) {
+	name := fmt.Sprintf("webhook-name-%s", hashicoracctest.RandString(3))
 	url := "https://www.example.com/test"
 	resourceName := "contentful_webhook.mywebhook"
 
@@ -49,6 +49,8 @@ func TestWebhookResource_Create(t *testing.T) {
 						assert.Contains(t, webhook.Topics, "ContentType.create")
 						assert.Len(t, webhook.Headers, 2)
 					}),
+					resource.TestCheckResourceAttr(resourceName, "active", "true"),
+					resource.TestCheckResourceAttr(resourceName, "filters", "[]"),
 				),
 			},
 			{
@@ -69,6 +71,8 @@ func TestWebhookResource_Create(t *testing.T) {
 						assert.Contains(t, webhook.Topics, "Asset.*")
 						assert.Len(t, webhook.Headers, 2)
 					}),
+					resource.TestCheckResourceAttr(resourceName, "active", "false"),
+					resource.TestCheckResourceAttr(resourceName, "filters", "[{\"in\":[{\"doc\":\"sys.environment.sys.id\"},[\"testing\",\"staging\"]]},{\"not\":{\"equals\":[{\"doc\":\"sys.environment.sys.id\"},\"master\"]}}]"),
 				),
 			},
 			{
@@ -186,6 +190,7 @@ func testWebhookUpdate(spaceId string, name string, url string) string {
 	return fmt.Sprintf(`
 resource "contentful_webhook" "mywebhook" {
   space_id = "%s"
+  active = false	
   name = "%s-updated"
   url = "%s-updated"
   topics = [
@@ -199,6 +204,10 @@ resource "contentful_webhook" "mywebhook" {
   }
   http_basic_auth_username = "username-updated"
   http_basic_auth_password = "password-updated"
+  filters = jsonencode([
+    {in: [{ "doc" : "sys.environment.sys.id" }, ["testing", "staging" ]]},
+    { not : {equals: [{ "doc" : "sys.environment.sys.id" }, "master"]} },
+  ])	
 }
 `, spaceId, name, url)
 }

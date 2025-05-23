@@ -1310,6 +1310,12 @@ type SystemPropertiesSpace struct {
 
 // Webhook defines model for Webhook.
 type Webhook struct {
+	// Active Whether the webhook is active
+	Active *bool `json:"active,omitempty"`
+
+	// Filters Filters to apply to the webhook
+	Filters *[]map[string]interface{} `json:"filters,omitempty"`
+
 	// Headers HTTP headers to send with the webhook request
 	Headers []WebhookHeader `json:"headers"`
 
@@ -1352,6 +1358,12 @@ type WebhookCollectionSysType string
 
 // WebhookCreate defines model for WebhookCreate.
 type WebhookCreate struct {
+	// Active Whether the webhook is active
+	Active *bool `json:"active,omitempty"`
+
+	// Filters Filters to apply to the webhook
+	Filters *[]map[string]interface{} `json:"filters,omitempty"`
+
 	// Headers HTTP headers to send with the webhook request
 	Headers *[]WebhookHeader `json:"headers,omitempty"`
 
@@ -1379,6 +1391,12 @@ type WebhookHeader struct {
 
 // WebhookUpdate defines model for WebhookUpdate.
 type WebhookUpdate struct {
+	// Active Whether the webhook is active
+	Active *bool `json:"active,omitempty"`
+
+	// Filters Filters to apply to the webhook
+	Filters *[]map[string]interface{} `json:"filters,omitempty"`
+
 	// Headers HTTP headers to send with the webhook request
 	Headers *[]WebhookHeader `json:"headers,omitempty"`
 
