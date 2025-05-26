@@ -1,3 +1,0 @@
-kind: Fixed
-body: Resolve nil error on widget namespace in `resource_editor_interface`
-time: 2025-05-26T13:36:17.346134+02:00
