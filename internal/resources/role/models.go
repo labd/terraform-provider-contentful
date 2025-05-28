@@ -5,9 +5,12 @@ import (
 
 	// "fmt"
 
+	"encoding/json"
+
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/iancoleman/orderedmap"
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
+	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
 // Role is the main resource schema data
@@ -104,9 +107,20 @@ func convertPolicies(policies []Policy) *[]any {
 		}
 
 		if c := policy.Constraint.ValueString(); c != "" {
-			policyMap["constraint"] = c
+			policyMap["constraint"] = ParseContentValue(c)
 		}
 		out = append(out, policyMap)
 	}
 	return &out
+}
+
+// parseContentValue tries to parse a string as JSON, otherwise returns the original value
+func ParseContentValue(value string) interface{} {
+	var content any
+	err := json.Unmarshal([]byte(value), &content)
+	if err != nil {
+		return value
+	}
+
+	return utils.SortOrderedMapRecursively(content)
 }
