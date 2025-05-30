@@ -2048,17 +2048,7 @@ components:
       type: object
       properties:
         sys:
-          type: object
-          properties:
-            id:
-              type: string
-              description: The unique identifier for the role.
-            type:
-              type: string
-              description: The type of the resource (e.g., "Role").
-            version:
-              type: integer
-              description: The current version of the role.
+          $ref: '#/components/schemas/SystemPropertiesContent'
         name:
           type: string
           description: The name of the role.
@@ -2072,6 +2062,7 @@ components:
       required:
         - name
         - description
+        - sys
 
     RoleCollection:
       type: object

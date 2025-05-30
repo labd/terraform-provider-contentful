@@ -1047,17 +1047,8 @@ type Role struct {
 	Permissions *RolePermissions `json:"permissions,omitempty"`
 
 	// Policies A map of permissions associated with the role.
-	Policies *RolePolicies `json:"policies,omitempty"`
-	Sys      *struct {
-		// Id The unique identifier for the role.
-		Id *string `json:"id,omitempty"`
-
-		// Type The type of the resource (e.g., "Role").
-		Type *string `json:"type,omitempty"`
-
-		// Version The current version of the role.
-		Version *int `json:"version,omitempty"`
-	} `json:"sys,omitempty"`
+	Policies *RolePolicies           `json:"policies,omitempty"`
+	Sys      SystemPropertiesContent `json:"sys"`
 }
 
 // RoleCollection defines model for RoleCollection.
