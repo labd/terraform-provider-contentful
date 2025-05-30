@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -46,6 +45,13 @@ func (e *roleResource) Schema(_ context.Context, _ resource.SchemaRequest, respo
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "Role ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"role_id": schema.StringAttribute{
+				Required:    true,
+				Description: "Role Identifier",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -171,7 +177,7 @@ func (e *roleResource) Read(ctx context.Context, request resource.ReadRequest, r
 		return
 	}
 
-	resp, err := e.client.GetRoleWithResponse(ctx, state.SpaceID.ValueString(), state.ID.ValueString())
+	resp, err := e.client.GetRoleWithResponse(ctx, state.SpaceID.ValueString(), state.RoleID.ValueString())
 	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 		if resp.StatusCode() == 404 {
 			response.State.RemoveResource(ctx)
@@ -210,7 +216,7 @@ func (e *roleResource) Update(ctx context.Context, request resource.UpdateReques
 	resp, err := e.client.UpdateRoleWithResponse(
 		ctx,
 		plan.SpaceID.ValueString(),
-		plan.ID.ValueString(),
+		plan.RoleID.ValueString(),
 		params,
 		draft,
 	)
@@ -302,17 +308,20 @@ func (e *roleResource) ImportState(ctx context.Context, request resource.ImportS
 	roleID := idParts[0]
 	spaceID := idParts[1]
 
-	role := Role{
-		ID: types.StringValue(roleID),
-		// RoleID:  types.StringValue(roleID), <-- TODO: Validate if this is needed.
-		SpaceID: types.StringValue(spaceID),
+	resp, err := e.client.GetRoleWithResponse(ctx, spaceID, roleID)
+
+	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		response.Diagnostics.AddError(
+			"Error importing asset",
+			fmt.Sprintf("Could not import role with ID %s: %s", roleID, err.Error()),
+		)
+		return
 	}
 
-	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("id"), roleID)...)
-	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("role_id"), roleID)...)
-	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("space_id"), spaceID)...)
+	role := Role{}
+	role.Import(resp.JSON200)
 
-	e.doRead(ctx, &role, &response.State, &response.Diagnostics)
+	response.Diagnostics.Append(response.State.Set(ctx, role)...)
 }
 
 func (e *roleResource) doRead(ctx context.Context, role *Role, state *tfsdk.State, d *diag.Diagnostics) {

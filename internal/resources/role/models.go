@@ -16,6 +16,7 @@ import (
 // Role is the main resource schema data
 type Role struct {
 	ID      types.String `tfsdk:"id"`
+	RoleID  types.String `tfsdk:"role_id"`
 	Version types.Int64  `tfsdk:"version"`
 	SpaceID types.String `tfsdk:"space_id"`
 
@@ -44,8 +45,10 @@ type Action struct {
 
 // Import populates the Role struct from an sdk.Role object
 func (r *Role) Import(role *sdk.Role) {
-	r.ID = types.StringValue(*role.Sys.Id)
-	r.Version = types.Int64Value(int64(*role.Sys.Version))
+	r.ID = types.StringValue(role.Sys.Id)
+	r.RoleID = types.StringValue(role.Sys.Id)
+	r.SpaceID = types.StringValue(role.Sys.Space.Sys.Id)
+	r.Version = types.Int64Value(int64(role.Sys.Version))
 	r.Name = types.StringValue(role.Name)
 	r.Description = types.StringValue(role.Description)
 }
