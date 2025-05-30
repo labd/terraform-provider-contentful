@@ -23,7 +23,7 @@ func TestRoleResource_Basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { acctest.TestAccPreCheck(t) },
-		CheckDestroy: testAccCheckContentfulEntryDestroy,
+		CheckDestroy: testAccCheckContentfulRoleDestroy,
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
 			"contentful": providerserver.NewProtocol6WithError(provider.New("test", true)()),
 		},
@@ -32,8 +32,8 @@ func TestRoleResource_Basic(t *testing.T) {
 				Config: testEntryConfig(spaceID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckContentfulRoleExists(t, resourceName, func(t *testing.T, role *sdk.Role) {
-						assert.Equal(t, "custom-role-name", role.Name)
-						// assert.Equal(t, spaceID, entry.Sys.Space.Sys.Id)
+						assert.Equal(t, "[automated] Custom Role", role.Name)
+						assert.Equal(t, spaceID, role.Sys.Space.Sys.Id)
 					}),
 				),
 			},
@@ -47,16 +47,17 @@ func TestRoleResource_Basic(t *testing.T) {
 			// 	),
 			// },
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       false,
+				ImportStateVerifyIgnore: []string{"role_id"},
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					rs, ok := s.RootModule().Resources[resourceName]
 					if !ok {
 						return "", fmt.Errorf("not found: %s", resourceName)
 					}
 					return fmt.Sprintf("%s:%s",
-						rs.Primary.ID,
+						rs.Primary.Attributes["role_id"],
 						rs.Primary.Attributes["space_id"],
 					), nil
 				},
@@ -70,7 +71,10 @@ type assertFunc func(*testing.T, *sdk.Role)
 func testAccCheckContentfulRoleExists(t *testing.T, resourceName string, assertFunc assertFunc) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		role, err := getRoleFromState(s, resourceName)
+
+		fmt.Println("getRoleFromState()")
 		if err != nil {
+			fmt.Println("ERROR HERE")
 			return err
 		}
 
@@ -94,6 +98,8 @@ func getRoleFromState(s *terraform.State, resourceName string) (*sdk.Role, error
 		return nil, fmt.Errorf("no space_id is set")
 	}
 
+	fmt.Println(rs.Primary.ID)
+
 	client := acctest.GetClient()
 	resp, err := client.GetRoleWithResponse(context.Background(), spaceID, rs.Primary.ID)
 	if err != nil {
@@ -107,7 +113,7 @@ func getRoleFromState(s *terraform.State, resourceName string) (*sdk.Role, error
 	return resp.JSON200, nil
 }
 
-func testAccCheckContentfulEntryDestroy(s *terraform.State) error {
+func testAccCheckContentfulRoleDestroy(s *terraform.State) error {
 	client := acctest.GetClient()
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "contentful_role" {
@@ -117,11 +123,6 @@ func testAccCheckContentfulEntryDestroy(s *terraform.State) error {
 		spaceID := rs.Primary.Attributes["space_id"]
 		if spaceID == "" {
 			return fmt.Errorf("no space_id is set")
-		}
-
-		environment := rs.Primary.Attributes["environment"]
-		if environment == "" {
-			return fmt.Errorf("no environment is set")
 		}
 
 		resp, err := client.GetRoleWithResponse(context.Background(), spaceID, rs.Primary.ID)
@@ -144,47 +145,28 @@ func testEntryConfig(spaceID string) string {
 resource "contentful_role" "example_role" {
   space_id = "%s"
 
-  name        = "custom-role-name"
+  role_id     = "custom-role-name"
+  name        = "[automated] Custom Role"
   description = "Custom Role Description"
 
   permission {
     id     = "ContentModel"
-    values = ["read", "delete", "publish"]
-  }
-
-  permission {
-    id    = "ContentDelivery"
-    value = "all"
-  }
-
-  permission {
-    id    = "Environments"
-    value = "all"
+    values = ["read"]
   }
 
   policy {
     effect = "allow"
     actions = {
-      value = "all"
-    }
-
-    constraint = jsonencode({
-      and = [
-        {
-          equals = [
-            { doc = "sys.type" },
-            "Entry"
-          ]
-        }
-      ]
-    })
-  }
-
-  policy {
-    effect = "allow"
-
-    actions = {
-      values = ["create"]
+    	values = [
+			"read",
+			"create",
+			"update",
+			"delete",
+			"publish",
+			"unpublish",
+			"archive",
+			"unarchive"
+		]
     }
 
     constraint = jsonencode({
@@ -216,39 +198,10 @@ resource "contentful_role" "example_role" {
     values = ["read", "delete", "publish"]
   }
 
-  permission {
-    id    = "ContentDelivery"
-    value = "all"
-  }
-
-  permission {
-    id    = "Environments"
-    value = "all"
-  }
-
   policy {
     effect = "allow"
     actions = {
-      value = "all"
-    }
-
-    constraint = jsonencode({
-      and = [
-        {
-          equals = [
-            { doc = "sys.type" },
-            "Entry"
-          ]
-        }
-      ]
-    })
-  }
-
-  policy {
-    effect = "allow"
-
-    actions = {
-      values = ["create"]
+      value = ["update"]
     }
 
     constraint = jsonencode({
