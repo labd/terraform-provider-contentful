@@ -1,10 +1,6 @@
 package role
 
 import (
-	// "encoding/json"
-
-	// "fmt"
-
 	"encoding/json"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -51,6 +47,9 @@ func (r *Role) Import(role *sdk.Role) {
 	r.Version = types.Int64Value(int64(role.Sys.Version))
 	r.Name = types.StringValue(role.Name)
 	r.Description = types.StringValue(role.Description)
+
+	r.BuildPermissionsFromAPIResponse(role)
+	r.BuildPoliciesFromAPIResponse(role)
 }
 
 func (r *Role) DraftForCreate() sdk.RoleCreate {
@@ -115,6 +114,104 @@ func convertPolicies(policies []Policy) *[]any {
 		out = append(out, policyMap)
 	}
 	return &out
+}
+
+func (r *Role) BuildPermissionsFromAPIResponse(role *sdk.Role) {
+	var permissions []Permission
+
+	// If no fields are present in the response, return early
+	if len(role.Permissions.Keys()) == 0 {
+		return
+	}
+
+	for _, key := range role.Permissions.Keys() {
+		rawActions, _ := role.Permissions.Get(key)
+		permission := Permission{}
+
+		var actions []string
+
+		switch val := rawActions.(type) {
+		case []string:
+			actions = val
+		case []interface{}:
+			for _, item := range val {
+				if str, ok := item.(string); ok {
+					actions = append(actions, str)
+				}
+			}
+		default:
+			continue
+		}
+
+		permission.ID = types.StringValue(key)
+		// If the permission is ["all"], set Value, not Values
+		if len(actions) == 1 && actions[0] == "all" {
+			permission.Value = types.StringValue("all")
+		} else {
+			var values []types.String
+			if len(actions) == 0 {
+				continue
+			}
+
+			for _, action := range actions {
+				values = append(values, types.StringValue(action))
+			}
+			permission.Values = values
+		}
+
+		permissions = append(permissions, permission)
+	}
+
+	r.Permission = permissions
+}
+
+func (r *Role) BuildPoliciesFromAPIResponse(role *sdk.Role) {
+	var policies []Policy
+
+	if role.Policies == nil || len(*role.Policies) == 0 {
+		return
+	}
+
+	for _, raw := range *role.Policies {
+		policyMap, ok := raw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		policy := Policy{}
+
+		// Handle "effect"
+		if effect, ok := policyMap["effect"].(string); ok {
+			policy.Effect = types.StringValue(effect)
+		}
+
+		// Handle "actions" as string or []interface{}
+		if rawActions, ok := policyMap["actions"]; ok {
+			switch actions := rawActions.(type) {
+			case string:
+				policy.Actions.Value = types.StringValue(actions)
+			case []interface{}:
+				var actionValues []types.String
+				for _, item := range actions {
+					if str, ok := item.(string); ok {
+						actionValues = append(actionValues, types.StringValue(str))
+					}
+				}
+				policy.Actions.Values = actionValues
+			}
+		}
+
+		// Handle "constraint" as optional JSON string
+		if constraintRaw, ok := policyMap["constraint"]; ok {
+			if marshaled, err := json.Marshal(constraintRaw); err == nil {
+				policy.Constraint = types.StringValue(string(marshaled))
+			}
+		}
+
+		policies = append(policies, policy)
+	}
+
+	r.Policy = policies
 }
 
 // parseContentValue tries to parse a string as JSON, otherwise returns the original value
