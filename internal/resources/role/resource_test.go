@@ -19,6 +19,7 @@ import (
 
 func TestRoleResource_Basic(t *testing.T) {
 	spaceID := os.Getenv("CONTENTFUL_SPACE_ID")
+	// roleID := "example_role"
 	resourceName := "contentful_role.example_role"
 
 	resource.Test(t, resource.TestCase{
@@ -71,10 +72,7 @@ type assertFunc func(*testing.T, *sdk.Role)
 func testAccCheckContentfulRoleExists(t *testing.T, resourceName string, assertFunc assertFunc) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		role, err := getRoleFromState(s, resourceName)
-
-		fmt.Println("getRoleFromState()")
 		if err != nil {
-			fmt.Println("ERROR HERE")
 			return err
 		}
 
@@ -90,7 +88,7 @@ func getRoleFromState(s *terraform.State, resourceName string) (*sdk.Role, error
 	}
 
 	if rs.Primary.ID == "" {
-		return nil, fmt.Errorf("no entry ID found")
+		return nil, fmt.Errorf("no role ID found")
 	}
 
 	spaceID := rs.Primary.Attributes["space_id"]
@@ -145,7 +143,6 @@ func testEntryConfig(spaceID string) string {
 resource "contentful_role" "example_role" {
   space_id = "%s"
 
-  role_id     = "custom-role-name"
   name        = "[automated] Custom Role"
   description = "Custom Role Description"
 
@@ -184,12 +181,14 @@ resource "contentful_role" "example_role" {
 `, spaceID)
 }
 
-func testEntryUpdateConfig(spaceID string) string {
+func testEntryUpdateConfig(spaceID, roleID string) string {
 	return fmt.Sprintf(`
 resource "contentful_role" "example_role" {
   id = "%s"
   space_id = "%s"
 
+
+  role_id     = "%s"
   name        = "custom-role-name"
   description = "Custom Role Description"
 
@@ -216,5 +215,5 @@ resource "contentful_role" "example_role" {
     })
   }
 }
-`, spaceID, spaceID)
+`, spaceID, spaceID, roleID)
 }

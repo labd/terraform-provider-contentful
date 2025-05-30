@@ -50,7 +50,8 @@ func (e *roleResource) Schema(_ context.Context, _ resource.SchemaRequest, respo
 				},
 			},
 			"role_id": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
+				Optional:    true,
 				Description: "Role Identifier",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
