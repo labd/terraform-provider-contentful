@@ -724,6 +724,16 @@ func getValidation(cfVal sdk.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
+	if cfVal.Size != nil {
+		return &Validation{
+			Size: &Size{
+				Max: types.Float64PointerValue(cfVal.Size.Max),
+				Min: types.Float64PointerValue(cfVal.Size.Min),
+			},
+			Message: types.StringPointerValue(cfVal.Message),
+		}, nil
+	}
+
 	return nil, fmt.Errorf("unsupported validation used, %s. Please implement", reflect.TypeOf(cfVal).String())
 }
 
