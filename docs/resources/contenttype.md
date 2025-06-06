@@ -13,6 +13,22 @@ Todo for explaining contenttype
 ## Example Usage
 
 ```terraform
+resource "contentful_contenttype" "some_other_content_type" {
+  space_id      = "space-id"
+  environment   = "provider-test"
+  id            = "some_other_content_type"
+  name          = "some_other_content_type"
+  description   = "some other content type description"
+  display_field = "content"
+
+  fields = [{
+    id       = "content"
+    name     = "Content"
+    type     = "RichText"
+    required = true
+  }]
+}
+
 resource "contentful_contenttype" "example_contenttype" {
   space_id      = "space-id"
   environment   = "master"
@@ -59,6 +75,33 @@ resource "contentful_contenttype" "example_contenttype" {
           ]
         }
       ]
+    },
+    {
+      id   = "content"
+      name = "Content"
+      type = "RichText"
+      validations = [
+        {
+          nodes = {
+            entry_hyperlink = [
+              {
+                size = {
+                  min = 1
+                  max = 1
+                },
+                message = "test",
+              },
+              {
+                link_content_type = [
+                  contentful_contenttype.some_other_content_type.id
+                ],
+                message = "test"
+              },
+            ]
+          }
+        }
+      ]
+      required = false
     }
   ]
 }
@@ -159,6 +202,7 @@ Optional:
 - `link_content_type` (List of String)
 - `link_mimetype_group` (List of String)
 - `message` (String)
+- `nodes` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--nodes))
 - `range` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--range))
 - `regexp` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--regexp))
 - `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--size))
@@ -171,6 +215,111 @@ Optional:
 
 - `max` (Number)
 - `min` (Number)
+
+
+<a id="nestedatt--fields--items--validations--nodes"></a>
+### Nested Schema for `fields.items.validations.nodes`
+
+Optional:
+
+- `asset_hyperlink` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--asset_hyperlink))
+- `embedded_asset_block` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_asset_block))
+- `embedded_entry_block` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_entry_block))
+- `embedded_entry_inline` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_entry_inline))
+- `entry_hyperlink` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--entry_hyperlink))
+
+<a id="nestedatt--fields--items--validations--unique--asset_hyperlink"></a>
+### Nested Schema for `fields.items.validations.unique.asset_hyperlink`
+
+Optional:
+
+- `message` (String)
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--asset_hyperlink--size))
+
+<a id="nestedatt--fields--items--validations--unique--asset_hyperlink--size"></a>
+### Nested Schema for `fields.items.validations.unique.asset_hyperlink.size`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+
+<a id="nestedatt--fields--items--validations--unique--embedded_asset_block"></a>
+### Nested Schema for `fields.items.validations.unique.embedded_asset_block`
+
+Optional:
+
+- `message` (String)
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_asset_block--size))
+
+<a id="nestedatt--fields--items--validations--unique--embedded_asset_block--size"></a>
+### Nested Schema for `fields.items.validations.unique.embedded_asset_block.size`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+
+<a id="nestedatt--fields--items--validations--unique--embedded_entry_block"></a>
+### Nested Schema for `fields.items.validations.unique.embedded_entry_block`
+
+Optional:
+
+- `link_content_type` (List of String)
+- `message` (String)
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_entry_block--size))
+
+<a id="nestedatt--fields--items--validations--unique--embedded_entry_block--size"></a>
+### Nested Schema for `fields.items.validations.unique.embedded_entry_block.size`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+
+<a id="nestedatt--fields--items--validations--unique--embedded_entry_inline"></a>
+### Nested Schema for `fields.items.validations.unique.embedded_entry_inline`
+
+Optional:
+
+- `link_content_type` (List of String)
+- `message` (String)
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_entry_inline--size))
+
+<a id="nestedatt--fields--items--validations--unique--embedded_entry_inline--size"></a>
+### Nested Schema for `fields.items.validations.unique.embedded_entry_inline.size`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+
+<a id="nestedatt--fields--items--validations--unique--entry_hyperlink"></a>
+### Nested Schema for `fields.items.validations.unique.entry_hyperlink`
+
+Optional:
+
+- `link_content_type` (List of String)
+- `message` (String)
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--entry_hyperlink--size))
+
+<a id="nestedatt--fields--items--validations--unique--entry_hyperlink--size"></a>
+### Nested Schema for `fields.items.validations.unique.entry_hyperlink.size`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
 
 
 <a id="nestedatt--fields--items--validations--range"></a>
@@ -213,6 +362,7 @@ Optional:
 - `link_content_type` (List of String)
 - `link_mimetype_group` (List of String)
 - `message` (String)
+- `nodes` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes))
 - `range` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--range))
 - `regexp` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--regexp))
 - `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--size))
@@ -225,6 +375,111 @@ Optional:
 
 - `max` (Number)
 - `min` (Number)
+
+
+<a id="nestedatt--fields--validations--nodes"></a>
+### Nested Schema for `fields.validations.nodes`
+
+Optional:
+
+- `asset_hyperlink` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--asset_hyperlink))
+- `embedded_asset_block` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--embedded_asset_block))
+- `embedded_entry_block` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--embedded_entry_block))
+- `embedded_entry_inline` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--embedded_entry_inline))
+- `entry_hyperlink` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--entry_hyperlink))
+
+<a id="nestedatt--fields--validations--nodes--asset_hyperlink"></a>
+### Nested Schema for `fields.validations.nodes.asset_hyperlink`
+
+Optional:
+
+- `message` (String)
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--entry_hyperlink--size))
+
+<a id="nestedatt--fields--validations--nodes--entry_hyperlink--size"></a>
+### Nested Schema for `fields.validations.nodes.entry_hyperlink.size`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+
+<a id="nestedatt--fields--validations--nodes--embedded_asset_block"></a>
+### Nested Schema for `fields.validations.nodes.embedded_asset_block`
+
+Optional:
+
+- `message` (String)
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--entry_hyperlink--size))
+
+<a id="nestedatt--fields--validations--nodes--entry_hyperlink--size"></a>
+### Nested Schema for `fields.validations.nodes.entry_hyperlink.size`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+
+<a id="nestedatt--fields--validations--nodes--embedded_entry_block"></a>
+### Nested Schema for `fields.validations.nodes.embedded_entry_block`
+
+Optional:
+
+- `link_content_type` (List of String)
+- `message` (String)
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--entry_hyperlink--size))
+
+<a id="nestedatt--fields--validations--nodes--entry_hyperlink--size"></a>
+### Nested Schema for `fields.validations.nodes.entry_hyperlink.size`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+
+<a id="nestedatt--fields--validations--nodes--embedded_entry_inline"></a>
+### Nested Schema for `fields.validations.nodes.embedded_entry_inline`
+
+Optional:
+
+- `link_content_type` (List of String)
+- `message` (String)
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--entry_hyperlink--size))
+
+<a id="nestedatt--fields--validations--nodes--entry_hyperlink--size"></a>
+### Nested Schema for `fields.validations.nodes.entry_hyperlink.size`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
+
+<a id="nestedatt--fields--validations--nodes--entry_hyperlink"></a>
+### Nested Schema for `fields.validations.nodes.entry_hyperlink`
+
+Optional:
+
+- `link_content_type` (List of String)
+- `message` (String)
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--entry_hyperlink--size))
+
+<a id="nestedatt--fields--validations--nodes--entry_hyperlink--size"></a>
+### Nested Schema for `fields.validations.nodes.entry_hyperlink.size`
+
+Optional:
+
+- `max` (Number)
+- `min` (Number)
+
+
 
 
 <a id="nestedatt--fields--validations--range"></a>

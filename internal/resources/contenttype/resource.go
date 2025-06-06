@@ -23,7 +23,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
 	"github.com/labd/terraform-provider-contentful/internal/custommodifier"
 	"github.com/labd/terraform-provider-contentful/internal/customvalidator"
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
@@ -62,7 +61,6 @@ var arrayItemTypes = []string{"Symbol", "Link", "ResourceLink"}
 //https://www.contentful.com/developers/docs/extensibility/app-framework/editor-interfaces/
 
 func (e *contentTypeResource) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
-
 	sizeSchema := schema.SingleNestedAttribute{
 		Optional: true,
 		Attributes: map[string]schema.Attribute{
@@ -73,6 +71,15 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 				Optional: true,
 			},
 		},
+	}
+
+	linkContentTypeSchema := schema.ListAttribute{
+		Optional:    true,
+		ElementType: types.StringType,
+	}
+
+	messageSchema := schema.StringAttribute{
+		Optional: true,
 	}
 
 	validationsSchema := schema.ListNestedAttribute{
@@ -97,10 +104,7 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 					Optional:    true,
 					ElementType: types.StringType,
 				},
-				"link_content_type": schema.ListAttribute{
-					Optional:    true,
-					ElementType: types.StringType,
-				},
+				"link_content_type": linkContentTypeSchema,
 				"in": schema.ListAttribute{
 					Optional:    true,
 					ElementType: types.StringType,
@@ -113,8 +117,59 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 					Optional:    true,
 					ElementType: types.StringType,
 				},
-				"message": schema.StringAttribute{
+				"message": messageSchema,
+				"nodes": schema.SingleNestedAttribute{
 					Optional: true,
+					Attributes: map[string]schema.Attribute{
+						"asset_hyperlink": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":    sizeSchema,
+									"message": messageSchema,
+								},
+							},
+						},
+						"entry_hyperlink": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":              sizeSchema,
+									"link_content_type": linkContentTypeSchema,
+									"message":           messageSchema,
+								},
+							},
+						},
+						"embedded_asset_block": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":    sizeSchema,
+									"message": messageSchema,
+								},
+							},
+						},
+						"embedded_entry_block": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":              sizeSchema,
+									"link_content_type": linkContentTypeSchema,
+									"message":           messageSchema,
+								},
+							},
+						},
+						"embedded_entry_inline": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":              sizeSchema,
+									"message":           messageSchema,
+									"link_content_type": linkContentTypeSchema,
+								},
+							},
+						},
+					},
 				},
 			},
 			Validators: []validator.Object{
