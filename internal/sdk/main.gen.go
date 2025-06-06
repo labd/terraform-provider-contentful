@@ -524,6 +524,12 @@ type AssetFile struct {
 	Upload string `json:"upload"`
 }
 
+// AssetHyperlinkValidation defines model for AssetHyperlinkValidation.
+type AssetHyperlinkValidation struct {
+	Message *string      `json:"message,omitempty"`
+	Size    *RangeMinMax `json:"size,omitempty"`
+}
+
 // ContentType defines model for ContentType.
 type ContentType struct {
 	// Description Description of the content type
@@ -676,6 +682,26 @@ type EditorInterfaceUpdate struct {
 	Sidebar       *[]EditorInterfaceSidebarItem `json:"sidebar,omitempty"`
 }
 
+// EmbeddedAssetBlockValidation defines model for EmbeddedAssetBlockValidation.
+type EmbeddedAssetBlockValidation struct {
+	Message *string      `json:"message,omitempty"`
+	Size    *RangeMinMax `json:"size,omitempty"`
+}
+
+// EmbeddedEntryBlockValidation defines model for EmbeddedEntryBlockValidation.
+type EmbeddedEntryBlockValidation struct {
+	LinkContentType *[]string    `json:"linkContentType,omitempty"`
+	Message         *string      `json:"message,omitempty"`
+	Size            *RangeMinMax `json:"size,omitempty"`
+}
+
+// EmbeddedEntryInlineValidation defines model for EmbeddedEntryInlineValidation.
+type EmbeddedEntryInlineValidation struct {
+	LinkContentType *[]string    `json:"linkContentType,omitempty"`
+	Message         *string      `json:"message,omitempty"`
+	Size            *RangeMinMax `json:"size,omitempty"`
+}
+
 // Entry defines model for Entry.
 type Entry struct {
 	// Fields Content fields with values by locale
@@ -707,6 +733,13 @@ type EntryCollectionSysType string
 type EntryDraft struct {
 	// Fields Content fields with values by locale
 	Fields *orderedmap.OrderedMap `json:"fields,omitempty"`
+}
+
+// EntryHyperlinkValidation defines model for EntryHyperlinkValidation.
+type EntryHyperlinkValidation struct {
+	LinkContentType *[]string    `json:"linkContentType,omitempty"`
+	Message         *string      `json:"message,omitempty"`
+	Size            *RangeMinMax `json:"size,omitempty"`
 }
 
 // Environment defines model for Environment.
@@ -864,6 +897,7 @@ type FieldValidation struct {
 
 	// Message Custom error message
 	Message *string               `json:"message,omitempty"`
+	Nodes   *NodesValidation      `json:"nodes,omitempty"`
 	Range   *RangeMinMax          `json:"range,omitempty"`
 	Regexp  *RegexValidationValue `json:"regexp,omitempty"`
 	Size    *RangeMinMax          `json:"size,omitempty"`
@@ -960,6 +994,15 @@ type LocaleUpdate struct {
 
 	// Optional Whether this locale is optional for content
 	Optional *bool `json:"optional,omitempty"`
+}
+
+// NodesValidation defines model for NodesValidation.
+type NodesValidation struct {
+	AssetHyperlink      *[]AssetHyperlinkValidation      `json:"asset-hyperlink,omitempty"`
+	EmbeddedAssetBlock  *[]EmbeddedAssetBlockValidation  `json:"embedded-asset-block,omitempty"`
+	EmbeddedEntryBlock  *[]EmbeddedEntryBlockValidation  `json:"embedded-entry-block,omitempty"`
+	EmbeddedEntryInline *[]EmbeddedEntryInlineValidation `json:"embedded-entry-inline,omitempty"`
+	EntryHyperlink      *[]EntryHyperlinkValidation      `json:"entry-hyperlink,omitempty"`
 }
 
 // PreviewApiKey defines model for PreviewApiKey.
