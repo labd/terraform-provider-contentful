@@ -79,6 +79,7 @@ type Validation struct {
 	EnabledMarks      []types.String `tfsdk:"enabled_marks"`
 	EnabledNodeTypes  []types.String `tfsdk:"enabled_node_types"`
 	Message           types.String   `tfsdk:"message"`
+	Nodes             *Nodes         `tfsdk:"nodes"`
 }
 
 func (v Validation) Draft() (*sdk.FieldValidation, error) {
@@ -163,6 +164,12 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 		return base, nil
 	}
 
+	if v.Nodes != nil {
+		value := v.Nodes.Draft()
+		base.Nodes = value
+		return base, nil
+	}
+
 	return nil, fmt.Errorf("unsupported validation used, %s. Please implement", reflect.TypeOf(v).String())
 }
 
@@ -173,6 +180,309 @@ type Size struct {
 
 type Regexp struct {
 	Pattern types.String `tfsdk:"pattern"`
+}
+
+type Nodes struct {
+	AssetHyperlink         []AssetHyperlinkValidation        `tfsdk:"asset_hyperlink"`
+	EntryHyperlink         []EntryHyperlinkValidation        `tfsdk:"entry_hyperlink"`
+	EmbeddedAssetBlock     []EmbeddedAssetBlockValidation    `tfsdk:"embedded_asset_block"`
+	EmbeddedEntryBlock     []EmbeddedEntryBlockValidation    `tfsdk:"embedded_entry_block"`
+	EmbeddedEntryInline    []EmbeddedEntryInlineValidation   `tfsdk:"embedded_entry_inline"`
+	EmbeddedResourceBlock  *EmbeddedResourceBlockValidation  `tfsdk:"embedded_resource_block"`
+	EmbeddedResourceInline *EmbeddedResourceInlineValidation `tfsdk:"embedded_resource_inline"`
+	ResourceHyperlink      *ResourceHyperlinkValidation      `tfsdk:"resource_hyperlink"`
+}
+
+type AssetHyperlinkValidation struct {
+	Message types.String `tfsdk:"message"`
+	Size    *Size        `tfsdk:"size"`
+}
+
+type EntryHyperlinkValidation struct {
+	Message         types.String    `tfsdk:"message"`
+	Size            *Size           `tfsdk:"size"`
+	LinkContentType *[]types.String `tfsdk:"link_content_type"`
+}
+
+type EmbeddedAssetBlockValidation struct {
+	Message types.String `tfsdk:"message"`
+	Size    *Size        `tfsdk:"size"`
+}
+
+type EmbeddedEntryBlockValidation struct {
+	Message         types.String    `tfsdk:"message"`
+	Size            *Size           `tfsdk:"size"`
+	LinkContentType *[]types.String `tfsdk:"link_content_type"`
+}
+
+type EmbeddedEntryInlineValidation struct {
+	Message         types.String    `tfsdk:"message"`
+	Size            *Size           `tfsdk:"size"`
+	LinkContentType *[]types.String `tfsdk:"link_content_type"`
+}
+
+type EmbeddedResourceBlockValidation struct {
+	Validations      *[]Validations     `tfsdk:"validations"`
+	AllowedResources *[]AllowedResource `tfsdk:"allowed_resources"`
+}
+
+type EmbeddedResourceInlineValidation struct {
+	Validations      *[]Validations     `tfsdk:"validations"`
+	AllowedResources *[]AllowedResource `tfsdk:"allowed_resources"`
+}
+
+type ResourceHyperlinkValidation struct {
+	Validations      *[]Validations     `tfsdk:"validations"`
+	AllowedResources *[]AllowedResource `tfsdk:"allowed_resources"`
+}
+
+type Validations struct {
+	Message types.String `tfsdk:"message"`
+	Size    *Size        `tfsdk:"size"`
+}
+
+type AllowedResource struct {
+	Type         types.String   `tfsdk:"type"`
+	Source       types.String   `tfsdk:"source"`
+	ContentTypes []types.String `tfsdk:"content_types"`
+}
+
+func (n *Nodes) Draft() *sdk.NodesValidation {
+	base := &sdk.NodesValidation{}
+
+	if n.AssetHyperlink != nil {
+		value := pie.Map(n.AssetHyperlink, func(v AssetHyperlinkValidation) sdk.AssetHyperlinkValidation {
+			var size *sdk.RangeMinMax
+			if v.Size != nil {
+				size = &sdk.RangeMinMax{
+					Min: v.Size.Min.ValueFloat64Pointer(),
+					Max: v.Size.Max.ValueFloat64Pointer(),
+				}
+			}
+
+			return sdk.AssetHyperlinkValidation{
+				Message: v.Message.ValueStringPointer(),
+				Size:    size,
+			}
+		})
+		base.AssetHyperlink = &value
+	}
+
+	if n.EntryHyperlink != nil {
+		value := pie.Map(n.EntryHyperlink, func(v EntryHyperlinkValidation) sdk.EntryHyperlinkValidation {
+			var linkContentType *[]string
+			if v.LinkContentType != nil {
+				v := pie.Map(*v.LinkContentType, func(t types.String) string { return t.ValueString() })
+				linkContentType = &v
+			}
+
+			var size *sdk.RangeMinMax
+			if v.Size != nil {
+				size = &sdk.RangeMinMax{
+					Min: v.Size.Min.ValueFloat64Pointer(),
+					Max: v.Size.Max.ValueFloat64Pointer(),
+				}
+			}
+			return sdk.EntryHyperlinkValidation{
+				Message:         v.Message.ValueStringPointer(),
+				LinkContentType: linkContentType,
+				Size:            size,
+			}
+		})
+		base.EntryHyperlink = &value
+	}
+
+	if n.EmbeddedAssetBlock != nil {
+		value := pie.Map(n.EmbeddedAssetBlock, func(v EmbeddedAssetBlockValidation) sdk.EmbeddedAssetBlockValidation {
+			var size *sdk.RangeMinMax
+			if v.Size != nil {
+				size = &sdk.RangeMinMax{
+					Min: v.Size.Min.ValueFloat64Pointer(),
+					Max: v.Size.Max.ValueFloat64Pointer(),
+				}
+			}
+			return sdk.EmbeddedAssetBlockValidation{
+				Message: v.Message.ValueStringPointer(),
+				Size:    size,
+			}
+		})
+		base.EmbeddedAssetBlock = &value
+	}
+
+	if n.EmbeddedEntryBlock != nil {
+		value := pie.Map(n.EmbeddedEntryBlock, func(v EmbeddedEntryBlockValidation) sdk.EmbeddedEntryBlockValidation {
+			var linkContentType *[]string
+			if v.LinkContentType != nil {
+				v := pie.Map(*v.LinkContentType, func(t types.String) string { return t.ValueString() })
+				linkContentType = &v
+			}
+			var size *sdk.RangeMinMax
+			if v.Size != nil {
+				size = &sdk.RangeMinMax{
+					Min: v.Size.Min.ValueFloat64Pointer(),
+					Max: v.Size.Max.ValueFloat64Pointer(),
+				}
+			}
+
+			return sdk.EmbeddedEntryBlockValidation{
+				Message:         v.Message.ValueStringPointer(),
+				LinkContentType: linkContentType,
+				Size:            size,
+			}
+		})
+		base.EmbeddedEntryBlock = &value
+	}
+
+	if n.EmbeddedEntryInline != nil {
+		value := pie.Map(n.EmbeddedEntryInline, func(v EmbeddedEntryInlineValidation) sdk.EmbeddedEntryInlineValidation {
+			var linkContentType *[]string
+			if v.LinkContentType != nil {
+				v := pie.Map(*v.LinkContentType, func(t types.String) string { return t.ValueString() })
+				linkContentType = &v
+			}
+			var size *sdk.RangeMinMax
+			if v.Size != nil {
+				size = &sdk.RangeMinMax{
+					Min: v.Size.Min.ValueFloat64Pointer(),
+					Max: v.Size.Max.ValueFloat64Pointer(),
+				}
+			}
+
+			return sdk.EmbeddedEntryInlineValidation{
+				Message:         v.Message.ValueStringPointer(),
+				LinkContentType: linkContentType,
+				Size:            size,
+			}
+		})
+		base.EmbeddedEntryInline = &value
+	}
+
+	if n.EmbeddedResourceBlock != nil {
+		er := &sdk.EmbeddedResourceBlockValidation{}
+
+		if n.EmbeddedResourceBlock.Validations != nil {
+			v := pie.Map(*n.EmbeddedResourceBlock.Validations, func(v Validations) sdk.EmbeddedValidation {
+				var size *sdk.RangeMinMax
+				if v.Size != nil {
+					size = &sdk.RangeMinMax{
+						Min: v.Size.Min.ValueFloat64Pointer(),
+						Max: v.Size.Max.ValueFloat64Pointer(),
+					}
+				}
+
+				return sdk.EmbeddedValidation{
+					Message: v.Message.ValueStringPointer(),
+					Size:    size,
+				}
+			})
+
+			er.Validations = &v
+		}
+
+		if n.EmbeddedResourceBlock.AllowedResources != nil {
+			ar := pie.Map(*n.EmbeddedResourceBlock.AllowedResources, func(v AllowedResource) sdk.AllowedResource {
+				return MapInternalAllowedResource(v)
+			})
+			er.AllowedResources = &ar
+		}
+
+		base.EmbeddedResourceBlock = er
+	}
+
+	if n.EmbeddedResourceInline != nil {
+		ri := &sdk.EmbeddedResourceInlineValidation{}
+
+		if n.EmbeddedResourceInline.Validations != nil {
+			v := pie.Map(*n.EmbeddedResourceInline.Validations, func(v Validations) sdk.EmbeddedValidation {
+				var size *sdk.RangeMinMax
+				if v.Size != nil {
+					size = &sdk.RangeMinMax{
+						Min: v.Size.Min.ValueFloat64Pointer(),
+						Max: v.Size.Max.ValueFloat64Pointer(),
+					}
+				}
+
+				return sdk.EmbeddedValidation{
+					Message: v.Message.ValueStringPointer(),
+					Size:    size,
+				}
+			})
+			ri.Validations = &v
+
+		}
+
+		if n.EmbeddedResourceInline.AllowedResources != nil {
+			ar := pie.Map(*n.EmbeddedResourceInline.AllowedResources, func(v AllowedResource) sdk.AllowedResource {
+				return MapInternalAllowedResource(v)
+			})
+			ri.AllowedResources = &ar
+		}
+
+		base.EmbeddedResourceInline = ri
+	}
+
+	if n.ResourceHyperlink != nil {
+		rl := &sdk.ResourceHyperlinkValidation{}
+
+		if n.ResourceHyperlink.Validations != nil {
+			v := pie.Map(*n.ResourceHyperlink.Validations, func(v Validations) sdk.EmbeddedValidation {
+				var size *sdk.RangeMinMax
+				if v.Size != nil {
+					size = &sdk.RangeMinMax{
+						Min: v.Size.Min.ValueFloat64Pointer(),
+						Max: v.Size.Max.ValueFloat64Pointer(),
+					}
+				}
+
+				return sdk.EmbeddedValidation{
+					Message: v.Message.ValueStringPointer(),
+					Size:    size,
+				}
+			})
+			rl.Validations = &v
+
+		}
+
+		if n.ResourceHyperlink.AllowedResources != nil {
+			ar := pie.Map(*n.ResourceHyperlink.AllowedResources, func(v AllowedResource) sdk.AllowedResource {
+				return MapInternalAllowedResource(v)
+			})
+			rl.AllowedResources = &ar
+		}
+
+		base.ResourceHyperlink = rl
+	}
+
+	return base
+}
+
+func MapInternalAllowedResource(allowedResource AllowedResource) sdk.AllowedResource {
+	ar := sdk.AllowedResource{
+		Type:   allowedResource.Type.ValueStringPointer(),
+		Source: allowedResource.Source.ValueStringPointer(),
+	}
+
+	var contentTypes = pie.Map(allowedResource.ContentTypes, func(t types.String) string {
+		return t.ValueString()
+	})
+
+	if len(contentTypes) != 0 {
+		ar.ContentTypes = &contentTypes
+	}
+
+	return ar
+}
+
+func MapSdkAllowedResource(allowedResource sdk.AllowedResource) AllowedResource {
+	var contentTypes = pie.Map(*allowedResource.ContentTypes, func(t string) types.String {
+		return types.StringValue(t)
+	})
+
+	return AllowedResource{
+		Type:         types.StringPointerValue(allowedResource.Type),
+		Source:       types.StringPointerValue(allowedResource.Source),
+		ContentTypes: contentTypes,
+	}
 }
 
 func (f *Field) Equal(n sdk.Field) bool {
@@ -734,7 +1044,211 @@ func getValidation(cfVal sdk.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
+	if cfVal.Nodes != nil {
+		nodes := getNodesValidation(*cfVal.Nodes)
+
+		return &Validation{
+			Nodes:   &nodes,
+			Message: types.StringPointerValue(cfVal.Message),
+		}, nil
+	}
+
 	return nil, fmt.Errorf("unsupported validation used, %s. Please implement", reflect.TypeOf(cfVal).String())
+}
+
+func getNodesValidation(cfVal sdk.NodesValidation) Nodes {
+	nodes := Nodes{}
+
+	if cfVal.AssetHyperlink != nil {
+		nodes.AssetHyperlink = pie.Map(*cfVal.AssetHyperlink, func(v sdk.AssetHyperlinkValidation) AssetHyperlinkValidation {
+			var size *Size
+			if v.Size != nil {
+				size = &Size{
+					Min: types.Float64PointerValue(v.Size.Min),
+					Max: types.Float64PointerValue(v.Size.Max),
+				}
+			}
+			return AssetHyperlinkValidation{
+				Message: types.StringPointerValue(v.Message),
+				Size:    size,
+			}
+		})
+	}
+
+	if cfVal.EntryHyperlink != nil {
+		nodes.EntryHyperlink = pie.Map(*cfVal.EntryHyperlink, func(v sdk.EntryHyperlinkValidation) EntryHyperlinkValidation {
+			var size *Size
+			if v.Size != nil {
+				size = &Size{
+					Min: types.Float64PointerValue(v.Size.Min),
+					Max: types.Float64PointerValue(v.Size.Max),
+				}
+			}
+
+			var linkContentType []types.String
+			if v.LinkContentType != nil {
+				linkContentType = pie.Map(*v.LinkContentType, func(t string) types.String {
+					return types.StringValue(t)
+				})
+			}
+
+			return EntryHyperlinkValidation{
+				Message:         types.StringPointerValue(v.Message),
+				Size:            size,
+				LinkContentType: &linkContentType,
+			}
+		})
+	}
+
+	if cfVal.EmbeddedAssetBlock != nil {
+		nodes.EmbeddedAssetBlock = pie.Map(*cfVal.EmbeddedAssetBlock, func(v sdk.EmbeddedAssetBlockValidation) EmbeddedAssetBlockValidation {
+			var size *Size
+			if v.Size != nil {
+				size = &Size{
+					Min: types.Float64PointerValue(v.Size.Min),
+					Max: types.Float64PointerValue(v.Size.Max),
+				}
+			}
+			return EmbeddedAssetBlockValidation{
+				Message: types.StringPointerValue(v.Message),
+				Size:    size,
+			}
+		})
+	}
+
+	if cfVal.EmbeddedEntryBlock != nil {
+		nodes.EmbeddedEntryBlock = pie.Map(*cfVal.EmbeddedEntryBlock, func(v sdk.EmbeddedEntryBlockValidation) EmbeddedEntryBlockValidation {
+			var size *Size
+			if v.Size != nil {
+				size = &Size{
+					Min: types.Float64PointerValue(v.Size.Min),
+					Max: types.Float64PointerValue(v.Size.Max),
+				}
+			}
+
+			var linkContentType []types.String
+			if v.LinkContentType != nil {
+				linkContentType = pie.Map(*v.LinkContentType, func(t string) types.String {
+					return types.StringValue(t)
+				})
+			}
+
+			return EmbeddedEntryBlockValidation{
+				Message:         types.StringPointerValue(v.Message),
+				Size:            size,
+				LinkContentType: &linkContentType,
+			}
+		})
+	}
+
+	if cfVal.EmbeddedEntryInline != nil {
+		nodes.EmbeddedEntryInline = pie.Map(*cfVal.EmbeddedEntryInline, func(v sdk.EmbeddedEntryInlineValidation) EmbeddedEntryInlineValidation {
+			var size *Size
+			if v.Size != nil {
+				size = &Size{
+					Min: types.Float64PointerValue(v.Size.Min),
+					Max: types.Float64PointerValue(v.Size.Max),
+				}
+			}
+
+			var linkContentType []types.String
+			if v.LinkContentType != nil {
+				linkContentType = pie.Map(*v.LinkContentType, func(t string) types.String {
+					return types.StringValue(t)
+				})
+			}
+
+			return EmbeddedEntryInlineValidation{
+				Message:         types.StringPointerValue(v.Message),
+				Size:            size,
+				LinkContentType: &linkContentType,
+			}
+		})
+	}
+
+	if cfVal.EmbeddedResourceBlock != nil {
+		var allowedResources []AllowedResource
+		if cfVal.EmbeddedResourceBlock.AllowedResources != nil {
+			allowedResources = pie.Map(*cfVal.EmbeddedResourceBlock.AllowedResources, MapSdkAllowedResource)
+		}
+
+		var validations = pie.Map(*cfVal.EmbeddedResourceBlock.Validations, func(v sdk.EmbeddedValidation) Validations {
+			var size *Size
+			if v.Size != nil {
+				size = &Size{
+					Min: types.Float64PointerValue(v.Size.Min),
+					Max: types.Float64PointerValue(v.Size.Max),
+				}
+			}
+
+			return Validations{
+				Message: types.StringPointerValue(v.Message),
+				Size:    size,
+			}
+		})
+
+		nodes.EmbeddedResourceBlock = &EmbeddedResourceBlockValidation{
+			AllowedResources: &allowedResources,
+			Validations:      &validations,
+		}
+	}
+
+	if cfVal.EmbeddedResourceInline != nil {
+		var allowedResources []AllowedResource
+		if cfVal.EmbeddedResourceInline.AllowedResources != nil {
+			allowedResources = pie.Map(*cfVal.EmbeddedResourceInline.AllowedResources, MapSdkAllowedResource)
+		}
+
+		var validations = pie.Map(*cfVal.EmbeddedResourceInline.Validations, func(v sdk.EmbeddedValidation) Validations {
+			var size *Size
+			if v.Size != nil {
+				size = &Size{
+					Min: types.Float64PointerValue(v.Size.Min),
+					Max: types.Float64PointerValue(v.Size.Max),
+				}
+			}
+
+			return Validations{
+				Message: types.StringPointerValue(v.Message),
+				Size:    size,
+			}
+		})
+
+		nodes.EmbeddedResourceInline = &EmbeddedResourceInlineValidation{
+			AllowedResources: &allowedResources,
+			Validations:      &validations,
+		}
+	}
+
+	if cfVal.ResourceHyperlink != nil {
+
+		var allowedResources []AllowedResource
+		if cfVal.ResourceHyperlink.AllowedResources != nil {
+			allowedResources = pie.Map(*cfVal.ResourceHyperlink.AllowedResources, MapSdkAllowedResource)
+		}
+
+		var validations = pie.Map(*cfVal.ResourceHyperlink.Validations, func(v sdk.EmbeddedValidation) Validations {
+			var size *Size
+			if v.Size != nil {
+				size = &Size{
+					Min: types.Float64PointerValue(v.Size.Min),
+					Max: types.Float64PointerValue(v.Size.Max),
+				}
+			}
+
+			return Validations{
+				Message: types.StringPointerValue(v.Message),
+				Size:    size,
+			}
+		})
+
+		nodes.ResourceHyperlink = &ResourceHyperlinkValidation{
+			AllowedResources: &allowedResources,
+			Validations:      &validations,
+		}
+	}
+
+	return nodes
 }
 
 func compareValidations(a []Validation, b *[]sdk.FieldValidation) bool {
