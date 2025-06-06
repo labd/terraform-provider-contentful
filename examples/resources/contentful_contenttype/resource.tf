@@ -1,3 +1,19 @@
+resource "contentful_contenttype" "some_other_content_type" {
+  space_id      = "space-id"
+  environment   = "provider-test"
+  id            = "some_other_content_type"
+  name          = "some_other_content_type"
+  description   = "some other content type description"
+  display_field = "content"
+
+  fields = [{
+    id       = "content"
+    name     = "Content"
+    type     = "RichText"
+    required = true
+  }]
+}
+
 resource "contentful_contenttype" "example_contenttype" {
   space_id      = "space-id"
   environment   = "master"
@@ -44,6 +60,33 @@ resource "contentful_contenttype" "example_contenttype" {
           ]
         }
       ]
+    },
+    {
+      id   = "content"
+      name = "Content"
+      type = "RichText"
+      validations = [
+        {
+          nodes = {
+            entry_hyperlink = [
+              {
+                size = {
+                  min = 1
+                  max = 1
+                },
+                message = "test",
+              },
+              {
+                link_content_type = [
+                  contentful_contenttype.some_other_content_type.id
+                ],
+                message = "test"
+              },
+            ]
+          }
+        }
+      ]
+      required = false
     }
   ]
 }

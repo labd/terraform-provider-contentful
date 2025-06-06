@@ -1852,6 +1852,146 @@ components:
         message:
           type: string
           description: Custom error message
+        nodes:
+          $ref: '#/components/schemas/NodesValidation'
+
+    AssetHyperlinkValidation:
+      type: object
+      properties:
+        size:
+          $ref: '#/components/schemas/RangeMinMax'
+        message:
+          type: string
+
+    EmbeddedAssetBlockValidation:
+      type: object
+      properties:
+        size:
+          $ref: '#/components/schemas/RangeMinMax'
+        message:
+          type: string
+
+    EmbeddedEntryBlockValidation:
+      type: object
+      properties:
+        size:
+          $ref: '#/components/schemas/RangeMinMax'
+        linkContentType:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+
+    EmbeddedEntryInlineValidation:
+      type: object
+      properties:
+        size:
+          $ref: '#/components/schemas/RangeMinMax'
+        linkContentType:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+
+    EntryHyperlinkValidation:
+      type: object
+      properties:
+        size:
+          $ref: '#/components/schemas/RangeMinMax'
+        linkContentType:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+
+    EmbeddedResourceBlockValidation:
+      type: object
+      properties:
+        validations:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddedValidation'
+        allowedResources:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllowedResource'
+
+    EmbeddedResourceInlineValidation:
+      type: object
+      properties:
+        validations:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddedValidation'
+        allowedResources:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllowedResource'
+
+    ResourceHyperlinkValidation:
+      type: object
+      properties:
+        validations:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddedValidation'
+        allowedResources:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllowedResource'
+
+    EmbeddedValidation:
+      type: object
+      properties:
+        size:
+          $ref: '#/components/schemas/RangeMinMax'
+        message:
+          type: string
+
+    NodesValidation:
+      type: object
+      properties:
+        asset-hyperlink:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetHyperlinkValidation'
+        embedded-asset-block:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddedAssetBlockValidation'
+        embedded-entry-block:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddedEntryBlockValidation'
+        embedded-entry-inline:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddedEntryInlineValidation'
+        entry-hyperlink:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntryHyperlinkValidation'
+        embedded-resource-block:
+          $ref: '#/components/schemas/EmbeddedResourceBlockValidation'
+        embedded-resource-inline:
+          $ref: '#/components/schemas/EmbeddedResourceInlineValidation'
+        resource-hyperlink:
+          $ref: '#/components/schemas/ResourceHyperlinkValidation'
+
+    AllowedResource:
+      type: object
+      properties:
+        type:
+          type: string
+        source:
+          type: string
+        contentTypes:
+          type: array
+          items:
+            type: string
 
     RangeDate:
       type: object

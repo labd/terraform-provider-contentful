@@ -61,7 +61,6 @@ var arrayItemTypes = []string{"Symbol", "Link", "ResourceLink"}
 //https://www.contentful.com/developers/docs/extensibility/app-framework/editor-interfaces/
 
 func (e *contentTypeResource) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
-
 	sizeSchema := schema.SingleNestedAttribute{
 		Optional: true,
 		Attributes: map[string]schema.Attribute{
@@ -70,6 +69,35 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 			},
 			"max": schema.Float64Attribute{
 				Optional: true,
+			},
+		},
+	}
+
+	linkContentTypeSchema := schema.ListAttribute{
+		Optional:    true,
+		ElementType: types.StringType,
+	}
+
+	messageSchema := schema.StringAttribute{
+		MarkdownDescription: "Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.",
+		Optional:            true,
+	}
+
+	allowedResourcesSchema := schema.ListNestedAttribute{
+		Optional:            true,
+		MarkdownDescription: "Defines the entities that can be referenced by the field. It is only used for cross-space references.",
+		NestedObject: schema.NestedAttributeObject{
+			Attributes: map[string]schema.Attribute{
+				"type": schema.StringAttribute{
+					Optional: true,
+				},
+				"source": schema.StringAttribute{
+					Optional: true,
+				},
+				"content_types": schema.ListAttribute{
+					Optional:    true,
+					ElementType: types.StringType,
+				},
 			},
 		},
 	}
@@ -96,10 +124,7 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 					Optional:    true,
 					ElementType: types.StringType,
 				},
-				"link_content_type": schema.ListAttribute{
-					Optional:    true,
-					ElementType: types.StringType,
-				},
+				"link_content_type": linkContentTypeSchema,
 				"in": schema.ListAttribute{
 					Optional:    true,
 					ElementType: types.StringType,
@@ -112,8 +137,104 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 					Optional:    true,
 					ElementType: types.StringType,
 				},
-				"message": schema.StringAttribute{
+				"message": messageSchema,
+				"nodes": schema.SingleNestedAttribute{
 					Optional: true,
+					Attributes: map[string]schema.Attribute{
+						"asset_hyperlink": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":    sizeSchema,
+									"message": messageSchema,
+								},
+							},
+						},
+						"entry_hyperlink": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":              sizeSchema,
+									"link_content_type": linkContentTypeSchema,
+									"message":           messageSchema,
+								},
+							},
+						},
+						"embedded_asset_block": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":    sizeSchema,
+									"message": messageSchema,
+								},
+							},
+						},
+						"embedded_entry_block": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":              sizeSchema,
+									"link_content_type": linkContentTypeSchema,
+									"message":           messageSchema,
+								},
+							},
+						},
+						"embedded_entry_inline": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":              sizeSchema,
+									"message":           messageSchema,
+									"link_content_type": linkContentTypeSchema,
+								},
+							},
+						},
+						"embedded_resource_block": schema.SingleNestedAttribute{
+							Optional: true,
+							Attributes: map[string]schema.Attribute{
+								"validations": schema.ListNestedAttribute{
+									Optional: true,
+									NestedObject: schema.NestedAttributeObject{
+										Attributes: map[string]schema.Attribute{
+											"size":    sizeSchema,
+											"message": messageSchema,
+										},
+									},
+								},
+								"allowed_resources": allowedResourcesSchema,
+							},
+						},
+						"embedded_resource_inline": schema.SingleNestedAttribute{
+							Optional: true,
+							Attributes: map[string]schema.Attribute{
+								"validations": schema.ListNestedAttribute{
+									Optional: true,
+									NestedObject: schema.NestedAttributeObject{
+										Attributes: map[string]schema.Attribute{
+											"size":    sizeSchema,
+											"message": messageSchema,
+										},
+									},
+								},
+								"allowed_resources": allowedResourcesSchema,
+							},
+						},
+						"resource_hyperlink": schema.SingleNestedAttribute{
+							Optional: true,
+							Attributes: map[string]schema.Attribute{
+								"validations": schema.ListNestedAttribute{
+									Optional: true,
+									NestedObject: schema.NestedAttributeObject{
+										Attributes: map[string]schema.Attribute{
+											"size":    sizeSchema,
+											"message": messageSchema,
+										},
+									},
+								},
+								"allowed_resources": allowedResourcesSchema,
+							},
+						},
+					},
 				},
 			},
 			Validators: []validator.Object{
