@@ -15,5 +15,19 @@ resource "contentful_contenttype" "{{ .identifier }}" {
     name     = "Field 3 new field"
     required = true
     type     = "Integer"
+  }, {
+    id          = "field4"
+    name        = "Field 4 new field"
+    required    = true
+    type        = "RichText"
+    validations = [
+      {
+        enabled_marks = ["bold"]
+        message       = "Supports only bold."
+      },
+      {
+        enabled_node_types = ["embedded-asset-block"]
+      }
+    ]
   }]
 }
