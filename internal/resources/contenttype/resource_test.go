@@ -84,7 +84,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 							Validations: utils.Pointer([]sdk.FieldValidation{
 								{
 									EnabledMarks: utils.Pointer([]string{"bold"}),
-									Message:      utils.Pointer("blabla"),
+									Message:      utils.Pointer("Supports only bold."),
 								},
 								{
 									EnabledNodeTypes: utils.Pointer([]string{"embedded-asset-block"}),
