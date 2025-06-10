@@ -230,7 +230,19 @@ func TestContentTypeResource_Create(t *testing.T) {
 						assert.EqualValues(t, "tf_test2", contentType.Sys.Id)
 						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
 						assert.EqualValues(t, "field1", contentType.DisplayField)
-						// assert.Len(t, contentType.Fields, 2)
+						assert.Len(t, contentType.Fields, 3)
+						assert.Equal(t, sdk.Field{
+							Id:           "field1",
+							Name:         "Field 1 name change",
+							Type:         "Text",
+							DefaultValue: nil,
+							LinkType:     nil,
+							Required:     true,
+							Localized:    false,
+							Disabled:     utils.Pointer(false),
+							Omitted:      utils.Pointer(false),
+							Validations:  utils.Pointer(make([]sdk.FieldValidation, 0)),
+						}, contentType.Fields[0])
 						assert.Equal(t, sdk.Field{
 							Id:           "field3",
 							Name:         "Field 3 new field",
