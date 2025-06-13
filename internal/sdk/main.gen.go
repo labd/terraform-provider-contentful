@@ -767,6 +767,19 @@ type EnvironmentUpdate struct {
 	Name string `json:"name"`
 }
 
+// Error defines model for Error.
+type Error struct {
+	// Details Additional error details
+	Details *map[string]interface{} `json:"details,omitempty"`
+
+	// Message Error message
+	Message *string `json:"message,omitempty"`
+
+	// RequestId Unique identifier for the request
+	RequestId string               `json:"requestId"`
+	Sys       SystemPropertiesBase `json:"sys"`
+}
+
 // Field defines model for Field.
 type Field struct {
 	// DefaultValue Default value for the field
