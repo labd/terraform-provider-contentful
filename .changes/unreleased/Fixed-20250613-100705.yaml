@@ -1,0 +1,3 @@
+kind: Fixed
+body: Fixed contenttype validation interpretation of slice nill pointer instead of empty slice
+time: 2025-06-13T10:07:05.376465096+02:00
