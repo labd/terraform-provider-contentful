@@ -14,7 +14,7 @@ servers:
     description: Contentful Content Management API
 
 security:
-  - bearerAuth: []
+  - bearerAuth: [ ]
 
 paths:
   /spaces:
@@ -1404,7 +1404,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -1493,7 +1493,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -1558,7 +1558,7 @@ components:
           type: object
           x-go-type: orderedmap.OrderedMap
           x-go-type-import:
-            path:  "github.com/iancoleman/orderedmap"
+            path: "github.com/iancoleman/orderedmap"
         sys:
           $ref: '#/components/schemas/SystemPropertiesEntry'
       required:
@@ -1581,7 +1581,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -1597,7 +1597,7 @@ components:
           type: object
           x-go-type: orderedmap.OrderedMap
           x-go-type-import:
-            path:  "github.com/iancoleman/orderedmap"
+            path: "github.com/iancoleman/orderedmap"
 
     Environment:
       type: object
@@ -1627,7 +1627,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -1656,10 +1656,10 @@ components:
           description: Environment ID
           type: string
         linkType:
-          enum: [Environment]
+          enum: [ Environment ]
           type: string
         type:
-          enum: [Link]
+          enum: [ Link ]
           type: string
       required:
         - id
@@ -1733,7 +1733,7 @@ components:
           $ref: '#/components/schemas/FieldItem'
         linkType:
           description: For Link fields, defines what type of resource it links to
-          enum: [Entry, Asset]
+          enum: [ Entry, Asset ]
           type: string
         localized:
           description: Whether the field is localized
@@ -1959,7 +1959,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -2056,7 +2056,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -2241,10 +2241,10 @@ components:
                   description: Content type ID
                   type: string
                 linkType:
-                  enum: [ContentType]
+                  enum: [ ContentType ]
                   type: string
                 type:
-                  enum: [Link]
+                  enum: [ Link ]
                   type: string
               type: object
           type: object
@@ -2356,7 +2356,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -2395,8 +2395,8 @@ components:
           description: Filters to apply to the webhook
           type: array
           items:
-              type: object
-              additionalProperties: true
+            type: object
+            additionalProperties: true
       required:
         - name
         - url
@@ -2480,8 +2480,8 @@ components:
             type: object
             additionalProperties: true
       required:
-       - sys
-       - controls
+        - sys
+        - controls
 
     EditorInterfaceUpdate:
       type: object
@@ -2508,7 +2508,7 @@ components:
             type: object
             additionalProperties: true
       required:
-       - controls
+        - controls
 
     EditorInterfaceControl:
       type: object
@@ -2522,7 +2522,7 @@ components:
         widgetNamespace:
           type: string
           description: Namespace of the widget (optional)
-          enum: [builtin, app, extension]
+          enum: [ builtin, app, extension ]
         disabled:
           type: boolean
           description: Whether the field is disabled
@@ -2540,7 +2540,7 @@ components:
         widgetNamespace:
           type: string
           description: Namespace of the widget (optional)
-          enum: [builtin, app, extension]
+          enum: [ builtin, app, extension ]
         disabled:
           type: boolean
           description: Whether the field is disabled
@@ -2603,7 +2603,7 @@ components:
                   description: ID of the preview API key
                 type:
                   type: string
-                  enum: [PreviewApiKey]
+                  enum: [ PreviewApiKey ]
         environments:
           type: array
           items:
@@ -2635,7 +2635,7 @@ components:
           properties:
             type:
               type: string
-              enum: [Array]
+              enum: [ Array ]
         items:
           type: array
           items:
@@ -2702,7 +2702,7 @@ components:
           properties:
             type:
               type: string
-              enum: [Array]
+              enum: [ Array ]
         items:
           type: array
           items:
@@ -2744,10 +2744,10 @@ components:
               description: ID of the app definition
             type:
               type: string
-              enum: [Link]
+              enum: [ Link ]
             linkType:
               type: string
-              enum: [AppDefinition]
+              enum: [ AppDefinition ]
       required:
         - sys
 
@@ -2772,7 +2772,7 @@ components:
           properties:
             type:
               type: string
-              enum: [Array]
+              enum: [ Array ]
         total:
           type: integer
           description: Total number of app installations
@@ -2812,7 +2812,7 @@ components:
               properties:
                 type:
                   type: string
-                  enum: [Symbol, Boolean, Number, Object]
+                  enum: [ Symbol, Boolean, Number, Object ]
                 name:
                   type: string
                   description: Name of the parameter
@@ -2834,7 +2834,7 @@ components:
               properties:
                 type:
                   type: string
-                  enum: [Symbol, Boolean, Number, Object]
+                  enum: [ Symbol, Boolean, Number, Object ]
                 name:
                   type: string
                   description: Name of the parameter
@@ -2895,7 +2895,7 @@ components:
           properties:
             type:
               type: string
-              enum: [Array]
+              enum: [ Array ]
         total:
           type: integer
           description: Total number of app definitions
@@ -3046,3 +3046,22 @@ components:
         - name
         - description
         - configurations
+
+    Error:
+      type: object
+      properties:
+        sys:
+          $ref: "#/components/schemas/SystemPropertiesBase"
+        requestId:
+          type: string
+          description: Unique identifier for the request
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+      required:
+        - sys
+        - requestId

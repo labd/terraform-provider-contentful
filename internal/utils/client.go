@@ -2,12 +2,14 @@ package utils
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
 
 	"github.com/deepmap/oapi-codegen/pkg/securityprovider"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
 )
@@ -86,7 +88,31 @@ func ExtractErrorResponse(resp Response) error {
 	if body.IsValid() && !body.IsZero() {
 		value := body.Interface()
 		if v, ok := value.([]byte); ok {
-			return fmt.Errorf("response from Contentful API (%d):\n\n  %s", resp.StatusCode(), string(v))
+			var apiError sdk.Error
+			err := json.Unmarshal(v, &apiError)
+			if err != nil {
+				return fmt.Errorf("error unmarshalling Contentful API error response: %w", err)
+			}
+
+			var details []byte
+			if apiError.Details != nil {
+				details, err = json.MarshalIndent(apiError.Details, "", "  ")
+				if err != nil {
+					tflog.Warn(context.TODO(), fmt.Sprintf("error marshalling details: %s", err.Error()))
+				}
+			} else {
+				details = []byte("N/A")
+			}
+
+			var message string
+			if apiError.Message != nil {
+				message = *apiError.Message
+			} else {
+				message = apiError.Sys.Id
+			}
+
+			//TODO: we should probably use a more structured error type here, so we can handle the outputs better downstream
+			return fmt.Errorf("response from Contentful API (%d): %s\n\nDetails: %s", resp.StatusCode(), message, string(details))
 		}
 	}
 

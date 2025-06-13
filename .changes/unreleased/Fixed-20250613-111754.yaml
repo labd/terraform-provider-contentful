@@ -1,0 +1,3 @@
+kind: Fixed
+body: Added better error logging to include details and descriptive message
+time: 2025-06-13T11:17:54.899109137+02:00
