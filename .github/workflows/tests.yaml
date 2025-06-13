@@ -23,6 +23,11 @@ jobs:
 
       - name: Run tests
         run: go test -race -coverprofile=coverage.out -covermode=atomic -coverpkg=./... -v ./...
+        env:
+          TF_ACC: 1
+          CONTENTFUL_MANAGEMENT_TOKEN: ${{secrets.CONTENTFUL_MANAGEMENT_TOKEN}}
+          CONTENTFUL_ORGANIZATION_ID: ${{vars.CONTENTFUL_ORGANIZATION_ID}}
+          CONTENTFUL_SPACE_ID: ${{vars.CONTENTFUL_SPACE_ID}}
 
       - name: Upload to codecov
         uses: codecov/codecov-action@v3
