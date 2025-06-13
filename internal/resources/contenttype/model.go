@@ -123,7 +123,7 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 		return base, nil
 	}
 
-	if len(v.LinkContentType) > 0 {
+	if v.LinkContentType != nil {
 		value := pie.Map(v.LinkContentType, func(t types.String) string {
 			return t.ValueString()
 		})
@@ -131,7 +131,7 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 		return base, nil
 	}
 
-	if len(v.LinkMimetypeGroup) > 0 {
+	if v.LinkMimetypeGroup != nil {
 		value := pie.Map(v.LinkMimetypeGroup, func(t types.String) string {
 			return t.ValueString()
 		})
@@ -139,7 +139,7 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 		return base, nil
 	}
 
-	if len(v.In) > 0 {
+	if v.In != nil {
 		value := pie.Map(v.In, func(t types.String) string {
 			return t.ValueString()
 		})
@@ -147,7 +147,7 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 		return base, nil
 	}
 
-	if len(v.EnabledMarks) > 0 {
+	if v.EnabledMarks != nil {
 		value := pie.Map(v.EnabledMarks, func(t types.String) string {
 			return t.ValueString()
 		})
@@ -155,7 +155,7 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 		return base, nil
 	}
 
-	if len(v.EnabledNodeTypes) > 0 {
+	if v.EnabledNodeTypes != nil {
 		value := pie.Map(v.EnabledNodeTypes, func(t types.String) string {
 			return t.ValueString()
 		})
