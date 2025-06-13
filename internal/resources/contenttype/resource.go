@@ -23,7 +23,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
 	"github.com/labd/terraform-provider-contentful/internal/custommodifier"
 	"github.com/labd/terraform-provider-contentful/internal/customvalidator"
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
@@ -285,15 +284,23 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 	var contentType *sdk.ContentType
 
 	if !plan.ID.IsUnknown() && !plan.ID.IsNull() {
+		existingContentType, err := e.client.GetContentTypeWithResponse(ctx, spaceId, environment, plan.ID.ValueString())
+		if err != nil {
+			response.Diagnostics.AddError("Error creating contenttype", "Could not retrieve contenttype with id "+plan.ID.ValueString()+", unexpected error: "+err.Error())
+			return
+		}
+
+		if existingContentType.StatusCode() == http.StatusOK {
+			response.Diagnostics.AddError("Error creating contenttype", "Content type with id "+plan.ID.ValueString()+" already exists. Please import it and use the update resource to modify it, or remove before retrying.")
+			return
+		}
+
 		draft, err := plan.Update()
 		if err != nil {
 			response.Diagnostics.AddError("Error creating contenttype", err.Error())
 			return
 		}
-		params := &sdk.UpdateContentTypeParams{
-			// XContentfulVersion: 1,
-		}
-		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.ID.ValueString(), params, *draft)
+		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.ID.ValueString(), nil, *draft)
 		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
 			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype with id "+plan.ID.ValueString()+", unexpected error: "+err.Error())
 			return
@@ -305,10 +312,7 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 			response.Diagnostics.AddError("Error creating contenttype", err.Error())
 			return
 		}
-		params := &sdk.UpdateContentTypeParams{
-			// XContentfulVersion: 1,
-		}
-		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.Name.ValueString(), params, *draft)
+		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.Name.ValueString(), nil, *draft)
 		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
 			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype with name, unexpected error: "+err.Error())
 			return
@@ -562,7 +566,14 @@ func (e *contentTypeResource) ImportState(ctx context.Context, request resource.
 	}
 
 	state := &ContentType{}
-	state.Import(resp.JSON200)
+	err = state.Import(resp.JSON200)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error importing contenttype to state",
+			"Could not import contenttype to state, unexpected error: "+err.Error(),
+		)
+		return
+	}
 	state.SpaceId = types.StringValue(spaceId)
 	state.Environment = types.StringValue(environment)
 
