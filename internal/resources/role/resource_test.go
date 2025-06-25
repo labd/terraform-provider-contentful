@@ -19,7 +19,6 @@ import (
 
 func TestRoleResource_Basic(t *testing.T) {
 	spaceID := os.Getenv("CONTENTFUL_SPACE_ID")
-	// roleID := "example_role"
 	resourceName := "contentful_role.example_role"
 
 	resource.Test(t, resource.TestCase{
@@ -38,19 +37,19 @@ func TestRoleResource_Basic(t *testing.T) {
 					}),
 				),
 			},
-			// {
-			// 	Config: testEntryUpdateConfig(spaceID),
-			// 	Check: resource.ComposeTestCheckFunc(
-			// 		testAccCheckContentfulRoleExists(t, resourceName, func(t *testing.T, role *sdk.Role) {
-			// 			assert.Equal(t, "my-custom-role", role.Sys.Id)
-			// 			// assert.Equal(t, spaceID, entry.Sys.Space.Sys.Id)
-			// 		}),
-			// 	),
-			// },
+			{
+				Config: testEntryUpdateConfig(spaceID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckContentfulRoleExists(t, resourceName, func(t *testing.T, role *sdk.Role) {
+						assert.Equal(t, "custom-role-name", role.Name)
+						assert.Equal(t, spaceID, role.Sys.Space.Sys.Id)
+					}),
+				),
+			},
 			{
 				ResourceName:            resourceName,
 				ImportState:             true,
-				ImportStateVerify:       false,
+				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"role_id"},
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					rs, ok := s.RootModule().Resources[resourceName]
@@ -168,12 +167,11 @@ resource "contentful_role" "example_role" {
 
     constraint = jsonencode({
       and = [
-        {
-          equals = [
-            { doc = "sys.type" },
+        [
+          "equals",
+			{ doc = "sys.type" },
             "Entry"
-          ]
-        }
+        ]
       ]
     })
   }
@@ -181,39 +179,45 @@ resource "contentful_role" "example_role" {
 `, spaceID)
 }
 
-func testEntryUpdateConfig(spaceID, roleID string) string {
+func testEntryUpdateConfig(spaceID string) string {
 	return fmt.Sprintf(`
 resource "contentful_role" "example_role" {
-  id = "%s"
   space_id = "%s"
 
 
-  role_id     = "%s"
   name        = "custom-role-name"
   description = "Custom Role Description"
 
   permission {
     id     = "ContentModel"
-    values = ["read", "delete", "publish"]
+    values = ["read"]
   }
 
   policy {
     effect = "allow"
     actions = {
-      value = ["update"]
+    	values = [
+			"read",
+			"create",
+			"update",
+			"delete",
+			"publish",
+			"unpublish",
+			"archive",
+			"unarchive"
+		]
     }
 
     constraint = jsonencode({
       and = [
-        {
-          equals = [
-            { doc = "sys.type" },
-            "Entry"
-          ]
-        }
+	  	[
+			"equals",
+			{ doc = "sys.type" },
+			"Entry"
+		]
       ]
     })
   }
 }
-`, spaceID, spaceID, roleID)
+`, spaceID)
 }

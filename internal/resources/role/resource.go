@@ -6,12 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
@@ -178,7 +176,7 @@ func (e *roleResource) Read(ctx context.Context, request resource.ReadRequest, r
 		return
 	}
 
-	resp, err := e.client.GetRoleWithResponse(ctx, state.SpaceID.ValueString(), state.RoleID.ValueString())
+	resp, err := e.client.GetRoleWithResponse(ctx, state.SpaceID.ValueString(), state.ID.ValueString())
 	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 		if resp.StatusCode() == 404 {
 			response.State.RemoveResource(ctx)
@@ -217,7 +215,7 @@ func (e *roleResource) Update(ctx context.Context, request resource.UpdateReques
 	resp, err := e.client.UpdateRoleWithResponse(
 		ctx,
 		plan.SpaceID.ValueString(),
-		plan.RoleID.ValueString(),
+		plan.ID.ValueString(),
 		params,
 		draft,
 	)
@@ -306,15 +304,15 @@ func (e *roleResource) ImportState(ctx context.Context, request resource.ImportS
 		return
 	}
 
-	roleID := idParts[0]
+	roleId := idParts[0]
 	spaceID := idParts[1]
 
-	resp, err := e.client.GetRoleWithResponse(ctx, spaceID, roleID)
+	resp, err := e.client.GetRoleWithResponse(ctx, spaceID, roleId)
 
 	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 		response.Diagnostics.AddError(
 			"Error importing asset",
-			fmt.Sprintf("Could not import role with ID %s: %s", roleID, err.Error()),
+			fmt.Sprintf("Could not import role with ID %s:%s", roleId, err.Error()),
 		)
 		return
 	}
@@ -323,44 +321,4 @@ func (e *roleResource) ImportState(ctx context.Context, request resource.ImportS
 	role.Import(resp.JSON200)
 
 	response.Diagnostics.Append(response.State.Set(ctx, role)...)
-}
-
-func (e *roleResource) doRead(ctx context.Context, role *Role, state *tfsdk.State, d *diag.Diagnostics) {
-	resp, err := e.client.GetRoleWithResponse(
-		ctx,
-		role.SpaceID.ValueString(),
-		role.ID.ValueString(),
-	)
-
-	if err != nil {
-		d.AddError(
-			"Error reading role",
-			"Could not read role: "+err.Error(),
-		)
-		return
-	}
-
-	// Handle 404 Not Found
-	if resp.StatusCode() == 404 {
-		d.AddWarning(
-			"Role not found",
-			fmt.Sprintf("role %s was not found, removing from state",
-				role.ID.ValueString()),
-		)
-		return
-	}
-
-	if resp.StatusCode() != 200 {
-		d.AddError(
-			"Error reading role",
-			fmt.Sprintf("Received unexpected status code: %d", resp.StatusCode()),
-		)
-		return
-	}
-
-	// Map response to state
-	role.Import(resp.JSON200)
-
-	// Set state
-	d.Append(state.Set(ctx, role)...)
 }

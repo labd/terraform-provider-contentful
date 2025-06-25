@@ -86,6 +86,7 @@ resource "contentful_role" "example_role" {
 - `description` (String) The description of the role
 - `permission` (Block List) The list of permissions defined (see [below for nested schema](#nestedblock--permission))
 - `policy` (Block List) The list of policies defined. (see [below for nested schema](#nestedblock--policy))
+- `role_id` (String) Role Identifier
 
 ### Read-Only
 
