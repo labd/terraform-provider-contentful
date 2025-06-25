@@ -12,7 +12,7 @@ import (
 // Role is the main resource schema data
 type Role struct {
 	ID      types.String `tfsdk:"id"`
-	RoleID  types.String `tfsdk:"role_id"`
+	RoleId  types.String `tfsdk:"role_id"`
 	Version types.Int64  `tfsdk:"version"`
 	SpaceID types.String `tfsdk:"space_id"`
 
@@ -42,7 +42,7 @@ type Action struct {
 // Import populates the Role struct from an sdk.Role object
 func (r *Role) Import(role *sdk.Role) {
 	r.ID = types.StringValue(role.Sys.Id)
-	r.RoleID = types.StringValue(role.Sys.Id)
+	r.RoleId = types.StringValue(role.Sys.Id)
 	r.SpaceID = types.StringValue(role.Sys.Space.Sys.Id)
 	r.Version = types.Int64Value(int64(role.Sys.Version))
 	r.Name = types.StringValue(role.Name)
@@ -62,6 +62,7 @@ func (r *Role) DraftForCreate() sdk.RoleCreate {
 }
 
 func (r *Role) DraftForUpdate() sdk.RoleUpdate {
+
 	return sdk.RoleUpdate{
 		Name:        r.Name.ValueString(),
 		Description: r.Description.ValueString(),
@@ -76,11 +77,11 @@ func convertPermissions(p []Permission) *orderedmap.OrderedMap {
 	for _, permission := range p {
 		id := permission.ID.ValueString()
 		if v := permission.Value.ValueString(); v != "" {
-			permissions.Set(id, permission.Value.String())
+			permissions.Set(id, v)
 		} else if len(permission.Values) > 0 {
 			strVals := make([]string, len(permission.Values))
 			for i, val := range permission.Values {
-				strVals[i] = val.ValueString() // extract the raw string
+				strVals[i] = val.ValueString()
 			}
 			permissions.Set(id, strVals)
 		}
