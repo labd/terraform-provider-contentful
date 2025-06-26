@@ -8,7 +8,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -85,6 +87,19 @@ func (e *webhookResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "List of topics this webhook should be triggered for",
 				ElementType: types.StringType,
 			},
+			"active": schema.BoolAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "Whether the webhook is active or not",
+				Default:     booldefault.StaticBool(true),
+			},
+			"filters": schema.StringAttribute{
+				Computed: true,
+				Optional: true,
+				Description: "List of filters this webhook should match for before triggering. The filters should be " +
+					"provided as a JSON string. For example: {\"sys\":{\"type\":\"Entry\"}}",
+				Default: stringdefault.StaticString("[]"),
+			},
 		},
 	}
 }
@@ -107,7 +122,14 @@ func (e *webhookResource) Create(ctx context.Context, request resource.CreateReq
 	}
 
 	// Create the webhook
-	draft := plan.DraftForCreate()
+	draft, err := plan.DraftForCreate()
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error creating webhook",
+			"Could not create webhook: "+err.Error(),
+		)
+		return
+	}
 
 	resp, err := e.client.CreateWebhookWithResponse(ctx, plan.SpaceId.ValueString(), draft)
 	if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
@@ -120,7 +142,15 @@ func (e *webhookResource) Create(ctx context.Context, request resource.CreateReq
 
 	// Map response to state
 	state := &Webhook{}
-	state.Import(resp.JSON201)
+	err = state.MapFromSDK(resp.JSON201)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error mapping webhook",
+			"Could not import webhook: "+err.Error(),
+		)
+		return
+	}
+
 	state.HttpBasicAuthPassword = plan.HttpBasicAuthPassword
 
 	// Set state
@@ -145,9 +175,16 @@ func (e *webhookResource) Read(ctx context.Context, request resource.ReadRequest
 		response.Diagnostics.AddError("Error reading webhook", err.Error())
 	}
 
-	state.Import(resp.JSON200)
+	err = state.MapFromSDK(resp.JSON200)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error mapping webhook",
+			"Could not import webhook: "+err.Error(),
+		)
+		return
+	}
 
-	response.Diagnostics.Append(request.State.Set(ctx, &state)...)
+	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 
 func (e *webhookResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
@@ -171,7 +208,15 @@ func (e *webhookResource) Update(ctx context.Context, request resource.UpdateReq
 	}
 
 	// Update the webhook
-	draft := plan.DraftForUpdate()
+	draft, err := plan.DraftForUpdate()
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error updating webhook",
+			"Could not update webhook: "+err.Error(),
+		)
+		return
+	}
+
 	resp, err := e.client.UpdateWebhookWithResponse(
 		ctx,
 		plan.SpaceId.ValueString(),
@@ -187,7 +232,14 @@ func (e *webhookResource) Update(ctx context.Context, request resource.UpdateReq
 		return
 	}
 
-	state.Import(resp.JSON200)
+	err = state.MapFromSDK(resp.JSON200)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error mapping webhook",
+			"Could not import webhook: "+err.Error(),
+		)
+		return
+	}
 	state.HttpBasicAuthPassword = plan.HttpBasicAuthPassword
 
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
@@ -226,7 +278,7 @@ func (e *webhookResource) ImportState(ctx context.Context, request resource.Impo
 
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		response.Diagnostics.AddError(
-			"Unexpected Import Identifier",
+			"Unexpected MapFromSDK Identifier",
 			fmt.Sprintf("Expected import identifier with format: webhookId:spaceId. Got: %q", request.ID),
 		)
 		return
@@ -245,6 +297,13 @@ func (e *webhookResource) ImportState(ctx context.Context, request resource.Impo
 	}
 
 	state := &Webhook{}
-	state.Import(resp.JSON200)
+	err = state.MapFromSDK(resp.JSON200)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error mapping webhook",
+			"Could not import webhook: "+err.Error(),
+		)
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }

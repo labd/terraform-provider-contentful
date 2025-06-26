@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -62,6 +63,12 @@ func (e *spaceResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Computed:    true,
 				Description: "Default locale for the space",
 				Default:     stringdefault.StaticString("en"),
+			},
+			"deletion_protection": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Allow deletion of the space",
+				Default:     booldefault.StaticBool(false),
 			},
 		},
 	}
@@ -183,6 +190,15 @@ func (e *spaceResource) Delete(ctx context.Context, request resource.DeleteReque
 	var state Space
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
+		return
+	}
+
+	// Deletion protection
+	if state.AllowDeletion.ValueBool() {
+		response.Diagnostics.AddError(
+			"Space deletion not allowed",
+			"Space deletion is not allowed. Set allow_deletion to true to be able to delete the space.",
+		)
 		return
 	}
 

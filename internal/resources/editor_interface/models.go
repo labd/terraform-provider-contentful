@@ -120,10 +120,15 @@ func (e *EditorInterface) Import(editorInterface *sdk.EditorInterface) {
 
 	controls := make([]Control, 0, len(editorInterface.Controls))
 	for _, control := range editorInterface.Controls {
+		widgetNamespace := types.StringValue("")
+		if control.WidgetNamespace != nil {
+			widgetNamespace = types.StringValue(string(*control.WidgetNamespace))
+		}
+
 		newControl := Control{
 			FieldID:         types.StringValue(control.FieldId),
 			WidgetID:        types.StringPointerValue(control.WidgetId),
-			WidgetNamespace: types.StringValue(string(*control.WidgetNamespace)),
+			WidgetNamespace: widgetNamespace,
 		}
 
 		if control.Settings != nil {

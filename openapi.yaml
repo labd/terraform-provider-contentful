@@ -14,7 +14,7 @@ servers:
     description: Contentful Content Management API
 
 security:
-  - bearerAuth: []
+  - bearerAuth: [ ]
 
 paths:
   /spaces:
@@ -168,6 +168,74 @@ paths:
       summary: Delete an environment
       description: Deletes an environment
       operationId: deleteEnvironment
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
+  /spaces/{spaceId}/preview_environments:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+
+    post:
+      summary: Create a preview environment
+      description: Creates a new preview environment
+      operationId: createPreviewEnvironment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewEnvironmentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviewEnvironment"
+
+
+  /spaces/{spaceId}/preview_environments/{resourceId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/resourceId"
+
+    get:
+      summary: Get a preview environment
+      description: Retrieves a specific preview environment by ID
+      operationId: getPreviewEnvironment
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviewEnvironment"
+    put:
+      summary: Create a preview environment
+      description: Creates a new preview environment
+      operationId: updatePreviewEnvironment
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewEnvironmentInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviewEnvironment"
+    delete:
+      summary: Delete a preview environment
+      description: Deletes a preview environment
+      operationId: deletePreviewEnvironment
       parameters:
         - $ref: "#/components/parameters/resourceVersion"
       responses:
@@ -1423,7 +1491,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -1512,7 +1580,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -1577,7 +1645,7 @@ components:
           type: object
           x-go-type: orderedmap.OrderedMap
           x-go-type-import:
-            path:  "github.com/iancoleman/orderedmap"
+            path: "github.com/iancoleman/orderedmap"
         sys:
           $ref: '#/components/schemas/SystemPropertiesEntry'
       required:
@@ -1600,7 +1668,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -1616,7 +1684,7 @@ components:
           type: object
           x-go-type: orderedmap.OrderedMap
           x-go-type-import:
-            path:  "github.com/iancoleman/orderedmap"
+            path: "github.com/iancoleman/orderedmap"
 
     Environment:
       type: object
@@ -1646,7 +1714,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -1675,10 +1743,10 @@ components:
           description: Environment ID
           type: string
         linkType:
-          enum: [Environment]
+          enum: [ Environment ]
           type: string
         type:
-          enum: [Link]
+          enum: [ Link ]
           type: string
       required:
         - id
@@ -1752,7 +1820,7 @@ components:
           $ref: '#/components/schemas/FieldItem'
         linkType:
           description: For Link fields, defines what type of resource it links to
-          enum: [Entry, Asset]
+          enum: [ Entry, Asset ]
           type: string
         localized:
           description: Whether the field is localized
@@ -1871,6 +1939,146 @@ components:
         message:
           type: string
           description: Custom error message
+        nodes:
+          $ref: '#/components/schemas/NodesValidation'
+
+    AssetHyperlinkValidation:
+      type: object
+      properties:
+        size:
+          $ref: '#/components/schemas/RangeMinMax'
+        message:
+          type: string
+
+    EmbeddedAssetBlockValidation:
+      type: object
+      properties:
+        size:
+          $ref: '#/components/schemas/RangeMinMax'
+        message:
+          type: string
+
+    EmbeddedEntryBlockValidation:
+      type: object
+      properties:
+        size:
+          $ref: '#/components/schemas/RangeMinMax'
+        linkContentType:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+
+    EmbeddedEntryInlineValidation:
+      type: object
+      properties:
+        size:
+          $ref: '#/components/schemas/RangeMinMax'
+        linkContentType:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+
+    EntryHyperlinkValidation:
+      type: object
+      properties:
+        size:
+          $ref: '#/components/schemas/RangeMinMax'
+        linkContentType:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+
+    EmbeddedResourceBlockValidation:
+      type: object
+      properties:
+        validations:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddedValidation'
+        allowedResources:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllowedResource'
+
+    EmbeddedResourceInlineValidation:
+      type: object
+      properties:
+        validations:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddedValidation'
+        allowedResources:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllowedResource'
+
+    ResourceHyperlinkValidation:
+      type: object
+      properties:
+        validations:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddedValidation'
+        allowedResources:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllowedResource'
+
+    EmbeddedValidation:
+      type: object
+      properties:
+        size:
+          $ref: '#/components/schemas/RangeMinMax'
+        message:
+          type: string
+
+    NodesValidation:
+      type: object
+      properties:
+        asset-hyperlink:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetHyperlinkValidation'
+        embedded-asset-block:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddedAssetBlockValidation'
+        embedded-entry-block:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddedEntryBlockValidation'
+        embedded-entry-inline:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddedEntryInlineValidation'
+        entry-hyperlink:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntryHyperlinkValidation'
+        embedded-resource-block:
+          $ref: '#/components/schemas/EmbeddedResourceBlockValidation'
+        embedded-resource-inline:
+          $ref: '#/components/schemas/EmbeddedResourceInlineValidation'
+        resource-hyperlink:
+          $ref: '#/components/schemas/ResourceHyperlinkValidation'
+
+    AllowedResource:
+      type: object
+      properties:
+        type:
+          type: string
+        source:
+          type: string
+        contentTypes:
+          type: array
+          items:
+            type: string
 
     RangeDate:
       type: object
@@ -1978,7 +2186,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -2175,7 +2383,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -2315,6 +2523,32 @@ components:
           required:
             - contentType
 
+    SystemPropertiesPreviewEnvironment:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/SystemPropertiesBase'
+        - properties:
+            type:
+              type: string
+              enum:
+                - PreviewEnvironment
+            space:
+              $ref: '#/components/schemas/SystemPropertiesReference'
+            version:
+              description: Resource version
+              type: integer
+              format: int64
+            createdAt:
+              description: Creation timestamp
+              format: date-time
+              type: string
+            updatedAt:
+              description: Last update timestamp
+              format: date-time
+              type: string
+
+
+
     # TODO: Sync with https://www.contentful.com/developers/docs/references/content-management-api/#/introduction/common-resource-attributes
     SystemProperties:
       type: object
@@ -2334,10 +2568,10 @@ components:
                   description: Content type ID
                   type: string
                 linkType:
-                  enum: [ContentType]
+                  enum: [ ContentType ]
                   type: string
                 type:
-                  enum: [Link]
+                  enum: [ Link ]
                   type: string
               type: object
           type: object
@@ -2398,7 +2632,6 @@ components:
           description: HTTP headers to send with the webhook request
           items:
             $ref: '#/components/schemas/WebhookHeader'
-            type: object
           type: array
         httpBasicPassword:
           description: Password for HTTP basic authentication
@@ -2419,6 +2652,15 @@ components:
         url:
           description: URL to call when the webhook is triggered
           type: string
+        active:
+          description: Whether the webhook is active
+          type: boolean
+        filters:
+          description: Filters to apply to the webhook
+          type: array
+          items:
+            type: object
+            additionalProperties: true
       required:
         - name
         - url
@@ -2441,7 +2683,7 @@ components:
         sys:
           properties:
             type:
-              enum: [Array]
+              enum: [ Array ]
               type: string
           type: object
         total:
@@ -2455,7 +2697,6 @@ components:
           description: HTTP headers to send with the webhook request
           items:
             $ref: '#/components/schemas/WebhookHeader'
-            type: object
           type: array
         httpBasicPassword:
           description: Password for HTTP basic authentication
@@ -2474,6 +2715,15 @@ components:
         url:
           description: URL to call when the webhook is triggered
           type: string
+        active:
+          description: Whether the webhook is active
+          type: boolean
+        filters:
+          description: Filters to apply to the webhook
+          type: array
+          items:
+            type: object
+            additionalProperties: true
       required:
         - name
         - url
@@ -2516,6 +2766,15 @@ components:
         url:
           description: URL to call when the webhook is triggered
           type: string
+        active:
+          description: Whether the webhook is active
+          type: boolean
+        filters:
+          description: Filters to apply to the webhook
+          type: array
+          items:
+            type: object
+            additionalProperties: true
       required:
         - name
         - url
@@ -2548,8 +2807,8 @@ components:
             type: object
             additionalProperties: true
       required:
-       - sys
-       - controls
+        - sys
+        - controls
 
     EditorInterfaceUpdate:
       type: object
@@ -2576,7 +2835,7 @@ components:
             type: object
             additionalProperties: true
       required:
-       - controls
+        - controls
 
     EditorInterfaceControl:
       type: object
@@ -2590,7 +2849,7 @@ components:
         widgetNamespace:
           type: string
           description: Namespace of the widget (optional)
-          enum: [builtin, app, extension]
+          enum: [ builtin, app, extension ]
         disabled:
           type: boolean
           description: Whether the field is disabled
@@ -2608,7 +2867,7 @@ components:
         widgetNamespace:
           type: string
           description: Namespace of the widget (optional)
-          enum: [builtin, app, extension]
+          enum: [ builtin, app, extension ]
         disabled:
           type: boolean
           description: Whether the field is disabled
@@ -2671,7 +2930,7 @@ components:
                   description: ID of the preview API key
                 type:
                   type: string
-                  enum: [PreviewApiKey]
+                  enum: [ PreviewApiKey ]
         environments:
           type: array
           items:
@@ -2703,7 +2962,7 @@ components:
           properties:
             type:
               type: string
-              enum: [Array]
+              enum: [ Array ]
         items:
           type: array
           items:
@@ -2770,7 +3029,7 @@ components:
           properties:
             type:
               type: string
-              enum: [Array]
+              enum: [ Array ]
         items:
           type: array
           items:
@@ -2812,10 +3071,10 @@ components:
               description: ID of the app definition
             type:
               type: string
-              enum: [Link]
+              enum: [ Link ]
             linkType:
               type: string
-              enum: [AppDefinition]
+              enum: [ AppDefinition ]
       required:
         - sys
 
@@ -2840,7 +3099,7 @@ components:
           properties:
             type:
               type: string
-              enum: [Array]
+              enum: [ Array ]
         total:
           type: integer
           description: Total number of app installations
@@ -2880,7 +3139,7 @@ components:
               properties:
                 type:
                   type: string
-                  enum: [Symbol, Boolean, Number, Object]
+                  enum: [ Symbol, Boolean, Number, Object ]
                 name:
                   type: string
                   description: Name of the parameter
@@ -2902,7 +3161,7 @@ components:
               properties:
                 type:
                   type: string
-                  enum: [Symbol, Boolean, Number, Object]
+                  enum: [ Symbol, Boolean, Number, Object ]
                 name:
                   type: string
                   description: Name of the parameter
@@ -2963,7 +3222,7 @@ components:
           properties:
             type:
               type: string
-              enum: [Array]
+              enum: [ Array ]
         total:
           type: integer
           description: Total number of app definitions
@@ -3051,3 +3310,85 @@ components:
       required:
         - comment
         - upload
+
+    PreviewConfiguration:
+      type: object
+      properties:
+        contentType:
+          type: string
+          description: Content type ID
+        enabled:
+          type: boolean
+          description: Whether the content type is enabled
+        example:
+          type: boolean
+        url:
+          type: string
+          description: URL for the preview env of the content type
+      required:
+        - contentType
+        - enabled
+        - url
+
+    PreviewEnvironment:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the preview environment
+        sys:
+          $ref: '#/components/schemas/SystemPropertiesPreviewEnvironment'
+        description:
+          type: string
+          description: Description of the preview environment
+        configurations:
+          type: array
+          description: Configuration for the preview environment
+          items:
+            $ref: '#/components/schemas/PreviewConfiguration'
+
+      required:
+        - name
+        - sys
+        - description
+        - configurations
+
+
+    PreviewEnvironmentInput:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the preview environment
+        description:
+          type: string
+          description: Description of the preview environment
+        configurations:
+          type: array
+          description: Configuration for the preview environment
+          items:
+            $ref: '#/components/schemas/PreviewConfiguration'
+
+      required:
+        - name
+        - description
+        - configurations
+
+    Error:
+      type: object
+      properties:
+        sys:
+          $ref: "#/components/schemas/SystemPropertiesBase"
+        requestId:
+          type: string
+          description: Unique identifier for the request
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+      required:
+        - sys
+        - requestId

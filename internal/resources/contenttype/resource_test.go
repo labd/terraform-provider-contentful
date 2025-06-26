@@ -44,7 +44,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 						assert.EqualValues(t, "tf_test1", contentType.Sys.Id)
 						assert.EqualValues(t, "none", *contentType.Description)
 						assert.EqualValues(t, "field1", contentType.DisplayField)
-						assert.Len(t, contentType.Fields, 2)
+						assert.Len(t, contentType.Fields, 3)
 						assert.Equal(t, sdk.Field{
 							Id:           "field1",
 							Name:         "Field 1 name change",
@@ -71,6 +71,27 @@ func TestContentTypeResource_Create(t *testing.T) {
 							Validations:  utils.Pointer(make([]sdk.FieldValidation, 0)),
 							DefaultValue: nil,
 						}, contentType.Fields[1])
+						assert.Equal(t, sdk.Field{
+							Id:        "field4",
+							Name:      "Field 4 new field",
+							Type:      "RichText",
+							LinkType:  nil,
+							Items:     nil,
+							Required:  true,
+							Localized: false,
+							Disabled:  utils.Pointer(false),
+							Omitted:   utils.Pointer(false),
+							Validations: utils.Pointer([]sdk.FieldValidation{
+								{
+									EnabledMarks: utils.Pointer([]string{"bold"}),
+									Message:      utils.Pointer("Supports only bold."),
+								},
+								{
+									EnabledNodeTypes: utils.Pointer([]string{"embedded-asset-block"}),
+								},
+							}),
+							DefaultValue: nil,
+						}, contentType.Fields[2])
 					}),
 				),
 			},
@@ -78,10 +99,10 @@ func TestContentTypeResource_Create(t *testing.T) {
 				Config: testContentTypeUpdateWithDifferentOrderOfFields("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID")),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
-					resource.TestCheckResourceAttr(resourceName, "version", "4"),
+					resource.TestCheckResourceAttr(resourceName, "version", "6"),
 					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *sdk.ContentType) {
 						assert.EqualValues(t, "tf_test1", contentType.Name)
-						assert.Equal(t, int64(4), contentType.Sys.Version)
+						assert.Equal(t, int64(6), contentType.Sys.Version)
 						assert.EqualValues(t, "tf_test1", contentType.Sys.Id)
 						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
 						assert.EqualValues(t, "field1", contentType.DisplayField)
@@ -115,10 +136,10 @@ func TestContentTypeResource_Create(t *testing.T) {
 				Config: testContentTypeUpdate("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID")),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
-					resource.TestCheckResourceAttr(resourceName, "version", "6"),
+					resource.TestCheckResourceAttr(resourceName, "version", "8"),
 					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *sdk.ContentType) {
 						assert.EqualValues(t, "tf_test1", contentType.Name)
-						assert.Equal(t, int64(6), contentType.Sys.Version)
+						assert.Equal(t, int64(8), contentType.Sys.Version)
 						assert.EqualValues(t, "tf_test1", contentType.Sys.Id)
 						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
 						assert.EqualValues(t, "field1", contentType.DisplayField)
@@ -209,7 +230,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 						assert.EqualValues(t, "tf_test2", contentType.Sys.Id)
 						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
 						assert.EqualValues(t, "field1", contentType.DisplayField)
-						assert.Len(t, contentType.Fields, 2)
+						assert.Len(t, contentType.Fields, 3)
 						assert.Equal(t, sdk.Field{
 							Id:           "field1",
 							Name:         "Field 1 name change",
@@ -393,7 +414,6 @@ func testContentTypeLinkConfig(identifier string, spaceId string, linkIdentifier
 		"linkIdentifier": linkIdentifier,
 		"spaceId":        spaceId,
 	})
-
 }
 
 func toPointer[T string | bool](value T) *T {

@@ -23,7 +23,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
 	"github.com/labd/terraform-provider-contentful/internal/custommodifier"
 	"github.com/labd/terraform-provider-contentful/internal/customvalidator"
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
@@ -62,7 +61,6 @@ var arrayItemTypes = []string{"Symbol", "Link", "ResourceLink"}
 //https://www.contentful.com/developers/docs/extensibility/app-framework/editor-interfaces/
 
 func (e *contentTypeResource) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
-
 	sizeSchema := schema.SingleNestedAttribute{
 		Optional: true,
 		Attributes: map[string]schema.Attribute{
@@ -71,6 +69,35 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 			},
 			"max": schema.Float64Attribute{
 				Optional: true,
+			},
+		},
+	}
+
+	linkContentTypeSchema := schema.ListAttribute{
+		Optional:    true,
+		ElementType: types.StringType,
+	}
+
+	messageSchema := schema.StringAttribute{
+		MarkdownDescription: "Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.",
+		Optional:            true,
+	}
+
+	allowedResourcesSchema := schema.ListNestedAttribute{
+		Optional:            true,
+		MarkdownDescription: "Defines the entities that can be referenced by the field. It is only used for cross-space references.",
+		NestedObject: schema.NestedAttributeObject{
+			Attributes: map[string]schema.Attribute{
+				"type": schema.StringAttribute{
+					Optional: true,
+				},
+				"source": schema.StringAttribute{
+					Optional: true,
+				},
+				"content_types": schema.ListAttribute{
+					Optional:    true,
+					ElementType: types.StringType,
+				},
 			},
 		},
 	}
@@ -97,10 +124,7 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 					Optional:    true,
 					ElementType: types.StringType,
 				},
-				"link_content_type": schema.ListAttribute{
-					Optional:    true,
-					ElementType: types.StringType,
-				},
+				"link_content_type": linkContentTypeSchema,
 				"in": schema.ListAttribute{
 					Optional:    true,
 					ElementType: types.StringType,
@@ -113,8 +137,104 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 					Optional:    true,
 					ElementType: types.StringType,
 				},
-				"message": schema.StringAttribute{
+				"message": messageSchema,
+				"nodes": schema.SingleNestedAttribute{
 					Optional: true,
+					Attributes: map[string]schema.Attribute{
+						"asset_hyperlink": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":    sizeSchema,
+									"message": messageSchema,
+								},
+							},
+						},
+						"entry_hyperlink": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":              sizeSchema,
+									"link_content_type": linkContentTypeSchema,
+									"message":           messageSchema,
+								},
+							},
+						},
+						"embedded_asset_block": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":    sizeSchema,
+									"message": messageSchema,
+								},
+							},
+						},
+						"embedded_entry_block": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":              sizeSchema,
+									"link_content_type": linkContentTypeSchema,
+									"message":           messageSchema,
+								},
+							},
+						},
+						"embedded_entry_inline": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"size":              sizeSchema,
+									"message":           messageSchema,
+									"link_content_type": linkContentTypeSchema,
+								},
+							},
+						},
+						"embedded_resource_block": schema.SingleNestedAttribute{
+							Optional: true,
+							Attributes: map[string]schema.Attribute{
+								"validations": schema.ListNestedAttribute{
+									Optional: true,
+									NestedObject: schema.NestedAttributeObject{
+										Attributes: map[string]schema.Attribute{
+											"size":    sizeSchema,
+											"message": messageSchema,
+										},
+									},
+								},
+								"allowed_resources": allowedResourcesSchema,
+							},
+						},
+						"embedded_resource_inline": schema.SingleNestedAttribute{
+							Optional: true,
+							Attributes: map[string]schema.Attribute{
+								"validations": schema.ListNestedAttribute{
+									Optional: true,
+									NestedObject: schema.NestedAttributeObject{
+										Attributes: map[string]schema.Attribute{
+											"size":    sizeSchema,
+											"message": messageSchema,
+										},
+									},
+								},
+								"allowed_resources": allowedResourcesSchema,
+							},
+						},
+						"resource_hyperlink": schema.SingleNestedAttribute{
+							Optional: true,
+							Attributes: map[string]schema.Attribute{
+								"validations": schema.ListNestedAttribute{
+									Optional: true,
+									NestedObject: schema.NestedAttributeObject{
+										Attributes: map[string]schema.Attribute{
+											"size":    sizeSchema,
+											"message": messageSchema,
+										},
+									},
+								},
+								"allowed_resources": allowedResourcesSchema,
+							},
+						},
+					},
 				},
 			},
 			Validators: []validator.Object{
@@ -285,15 +405,23 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 	var contentType *sdk.ContentType
 
 	if !plan.ID.IsUnknown() && !plan.ID.IsNull() {
+		existingContentType, err := e.client.GetContentTypeWithResponse(ctx, spaceId, environment, plan.ID.ValueString())
+		if err != nil {
+			response.Diagnostics.AddError("Error creating contenttype", "Could not retrieve contenttype with id "+plan.ID.ValueString()+", unexpected error: "+err.Error())
+			return
+		}
+
+		if existingContentType.StatusCode() == http.StatusOK {
+			response.Diagnostics.AddError("Error creating contenttype", "Content type with id "+plan.ID.ValueString()+" already exists. Please import it and use the update resource to modify it, or remove before retrying.")
+			return
+		}
+
 		draft, err := plan.Update()
 		if err != nil {
 			response.Diagnostics.AddError("Error creating contenttype", err.Error())
 			return
 		}
-		params := &sdk.UpdateContentTypeParams{
-			// XContentfulVersion: 1,
-		}
-		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.ID.ValueString(), params, *draft)
+		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.ID.ValueString(), nil, *draft)
 		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
 			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype with id "+plan.ID.ValueString()+", unexpected error: "+err.Error())
 			return
@@ -305,10 +433,7 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 			response.Diagnostics.AddError("Error creating contenttype", err.Error())
 			return
 		}
-		params := &sdk.UpdateContentTypeParams{
-			// XContentfulVersion: 1,
-		}
-		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.Name.ValueString(), params, *draft)
+		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.Name.ValueString(), nil, *draft)
 		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
 			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype with name, unexpected error: "+err.Error())
 			return
@@ -562,7 +687,16 @@ func (e *contentTypeResource) ImportState(ctx context.Context, request resource.
 	}
 
 	state := &ContentType{}
-	state.Import(resp.JSON200)
+	err = state.Import(resp.JSON200)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error importing contenttype to state",
+			"Could not import contenttype to state, unexpected error: "+err.Error(),
+		)
+		return
+	}
+	state.SpaceId = types.StringValue(spaceId)
+	state.Environment = types.StringValue(environment)
 
 	// Set refreshed state
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)

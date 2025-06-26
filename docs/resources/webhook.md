@@ -16,6 +16,8 @@ A Contentful Webhook represents a webhook that can be used to notify external se
 resource "contentful_webhook" "example_webhook" {
   space_id = "space-id"
 
+  active = true
+
   name = "webhook-name"
   url  = "https://www.example.com/test"
   topics = [
@@ -28,6 +30,11 @@ resource "contentful_webhook" "example_webhook" {
   }
   http_basic_auth_username = "username"
   http_basic_auth_password = "password"
+
+  filters = jsonencode([
+    { in : [{ "doc" : "sys.environment.sys.id" }, ["testing", "staging"]] },
+    { not : { equals : [{ "doc" : "sys.environment.sys.id" }, "master"] } },
+  ])
 }
 ```
 
@@ -43,6 +50,8 @@ resource "contentful_webhook" "example_webhook" {
 
 ### Optional
 
+- `active` (Boolean) Whether the webhook is active or not
+- `filters` (String) List of filters this webhook should match for before triggering. The filters should be provided as a JSON string. For example: {"sys":{"type":"Entry"}}
 - `headers` (Map of String) HTTP headers to send with the webhook request
 - `http_basic_auth_password` (String, Sensitive) HTTP basic auth password
 - `http_basic_auth_username` (String) HTTP basic auth username
