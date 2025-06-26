@@ -62,7 +62,6 @@ func (r *Role) DraftForCreate() sdk.RoleCreate {
 }
 
 func (r *Role) DraftForUpdate() sdk.RoleUpdate {
-
 	return sdk.RoleUpdate{
 		Name:        r.Name.ValueString(),
 		Description: r.Description.ValueString(),
@@ -92,6 +91,7 @@ func convertPermissions(p []Permission) *orderedmap.OrderedMap {
 
 func convertPolicies(policies []Policy) *[]any {
 	var out []any
+
 	for _, policy := range policies {
 		policyMap := map[string]interface{}{
 			"effect": policy.Effect.ValueString(),
@@ -101,6 +101,7 @@ func convertPolicies(policies []Policy) *[]any {
 		if v := policy.Actions.Value.ValueString(); v != "" {
 			policyMap["actions"] = v
 		}
+
 		if len(policy.Actions.Values) > 0 {
 			strVals := make([]string, len(policy.Actions.Values))
 			for i, val := range policy.Actions.Values {
@@ -112,8 +113,10 @@ func convertPolicies(policies []Policy) *[]any {
 		if c := policy.Constraint.ValueString(); c != "" {
 			policyMap["constraint"] = ParseContentValue(c)
 		}
+
 		out = append(out, policyMap)
 	}
+
 	return &out
 }
 
@@ -145,6 +148,7 @@ func (r *Role) BuildPermissionsFromAPIResponse(role *sdk.Role) {
 		}
 
 		permission.ID = types.StringValue(key)
+
 		// If the permission is ["all"], set Value, not Values
 		if len(actions) == 1 && actions[0] == "all" {
 			permission.Value = types.StringValue("all")
@@ -218,6 +222,7 @@ func (r *Role) BuildPoliciesFromAPIResponse(role *sdk.Role) {
 // parseContentValue tries to parse a string as JSON, otherwise returns the original value
 func ParseContentValue(value string) interface{} {
 	var content any
+
 	err := json.Unmarshal([]byte(value), &content)
 	if err != nil {
 		return value
