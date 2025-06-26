@@ -21,7 +21,7 @@ resource "contentful_role" "example_role" {
 
   permission {
     id     = "ContentModel"
-    values = ["read", "delete", "publish"]
+    values = ["read"]
   }
 
   permission {
@@ -42,12 +42,11 @@ resource "contentful_role" "example_role" {
 
     constraint = jsonencode({
       and = [
-        {
-          equals = [
-            { doc = "sys.type" },
-            "Entry"
-          ]
-        }
+        [
+          "equals",
+          { doc = "sys.type" },
+          "Entry"
+        ]
       ]
     })
   }
@@ -61,12 +60,11 @@ resource "contentful_role" "example_role" {
 
     constraint = jsonencode({
       and = [
-        {
-          equals = [
-            { doc = "sys.type" },
-            "Entry"
-          ]
-        }
+        [
+          "equals",
+          { doc = "sys.type" },
+          "Entry"
+        ]
       ]
     })
   }
