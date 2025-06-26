@@ -140,14 +140,13 @@ func (e *roleResource) Configure(_ context.Context, request resource.ConfigureRe
 }
 
 func (e *roleResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
-	// Get plan values
 	var plan Role
+
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 
-	// Create the webhook
 	draft := plan.DraftForCreate()
 
 	resp, err := e.client.CreateRoleWithResponse(ctx, plan.SpaceID.ValueString(), draft)
@@ -159,17 +158,15 @@ func (e *roleResource) Create(ctx context.Context, request resource.CreateReques
 		return
 	}
 
-	// Map response to state
 	state := &Role{}
 	state.Import(resp.JSON201)
 
-	// Set state
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 
 func (e *roleResource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
-	// Get current state
 	var state Role
+
 	diags := request.State.Get(ctx, &state)
 	response.Diagnostics.Append(diags...)
 	if response.Diagnostics.HasError() {
@@ -191,8 +188,8 @@ func (e *roleResource) Read(ctx context.Context, request resource.ReadRequest, r
 }
 
 func (e *roleResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
-	// Get plan values
 	var plan Role
+
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -294,7 +291,7 @@ func (e *roleResource) Delete(ctx context.Context, request resource.DeleteReques
 }
 
 func (e *roleResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	// Extract the role ID and space ID from the import ID
+	// Extract the role ID and space ID from the import
 	idParts := strings.Split(request.ID, ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		response.Diagnostics.AddError(
