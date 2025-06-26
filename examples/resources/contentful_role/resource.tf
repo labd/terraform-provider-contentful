@@ -29,8 +29,8 @@ resource "contentful_role" "example_role" {
       and = [
         [
           "equals",
-            { doc = "sys.type" },
-            "Entry"
+          { doc = "sys.type" },
+          "Entry"
         ]
       ]
     })
@@ -47,8 +47,8 @@ resource "contentful_role" "example_role" {
       and = [
         [
           "equals",
-            { doc = "sys.type" },
-            "Entry"
+          { doc = "sys.type" },
+          "Entry"
         ]
       ]
     })
