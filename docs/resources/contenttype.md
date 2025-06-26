@@ -226,10 +226,10 @@ Optional:
 - `embedded_asset_block` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_asset_block))
 - `embedded_entry_block` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_entry_block))
 - `embedded_entry_inline` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_entry_inline))
-- `embedded_resource_block` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_resource_block))
-- `embedded_resource_inline` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_resource_inline))
+- `embedded_resource_block` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_resource_block))
+- `embedded_resource_inline` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_resource_inline))
 - `entry_hyperlink` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--entry_hyperlink))
-- `resource_hyperlink` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--resource_hyperlink))
+- `resource_hyperlink` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--resource_hyperlink))
 
 <a id="nestedatt--fields--items--validations--unique--asset_hyperlink"></a>
 ### Nested Schema for `fields.items.validations.unique.asset_hyperlink`
@@ -311,8 +311,7 @@ Optional:
 Optional:
 
 - `allowed_resources` (Attributes List) Defines the entities that can be referenced by the field. It is only used for cross-space references. (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_resource_block--allowed_resources))
-- `message` (String) Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.
-- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_resource_block--size))
+- `validations` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_resource_block--validations))
 
 <a id="nestedatt--fields--items--validations--unique--embedded_resource_block--allowed_resources"></a>
 ### Nested Schema for `fields.items.validations.unique.embedded_resource_block.allowed_resources`
@@ -324,13 +323,22 @@ Optional:
 - `type` (String)
 
 
-<a id="nestedatt--fields--items--validations--unique--embedded_resource_block--size"></a>
-### Nested Schema for `fields.items.validations.unique.embedded_resource_block.size`
+<a id="nestedatt--fields--items--validations--unique--embedded_resource_block--validations"></a>
+### Nested Schema for `fields.items.validations.unique.embedded_resource_block.validations`
+
+Optional:
+
+- `message` (String) Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_resource_block--validations--size))
+
+<a id="nestedatt--fields--items--validations--unique--embedded_resource_block--validations--size"></a>
+### Nested Schema for `fields.items.validations.unique.embedded_resource_block.validations.size`
 
 Optional:
 
 - `max` (Number)
 - `min` (Number)
+
 
 
 
@@ -340,8 +348,7 @@ Optional:
 Optional:
 
 - `allowed_resources` (Attributes List) Defines the entities that can be referenced by the field. It is only used for cross-space references. (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_resource_inline--allowed_resources))
-- `message` (String) Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.
-- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_resource_inline--size))
+- `validations` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_resource_inline--validations))
 
 <a id="nestedatt--fields--items--validations--unique--embedded_resource_inline--allowed_resources"></a>
 ### Nested Schema for `fields.items.validations.unique.embedded_resource_inline.allowed_resources`
@@ -353,13 +360,22 @@ Optional:
 - `type` (String)
 
 
-<a id="nestedatt--fields--items--validations--unique--embedded_resource_inline--size"></a>
-### Nested Schema for `fields.items.validations.unique.embedded_resource_inline.size`
+<a id="nestedatt--fields--items--validations--unique--embedded_resource_inline--validations"></a>
+### Nested Schema for `fields.items.validations.unique.embedded_resource_inline.validations`
+
+Optional:
+
+- `message` (String) Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--embedded_resource_inline--validations--size))
+
+<a id="nestedatt--fields--items--validations--unique--embedded_resource_inline--validations--size"></a>
+### Nested Schema for `fields.items.validations.unique.embedded_resource_inline.validations.size`
 
 Optional:
 
 - `max` (Number)
 - `min` (Number)
+
 
 
 
@@ -388,8 +404,7 @@ Optional:
 Optional:
 
 - `allowed_resources` (Attributes List) Defines the entities that can be referenced by the field. It is only used for cross-space references. (see [below for nested schema](#nestedatt--fields--items--validations--unique--resource_hyperlink--allowed_resources))
-- `message` (String) Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.
-- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--resource_hyperlink--size))
+- `validations` (Attributes List) (see [below for nested schema](#nestedatt--fields--items--validations--unique--resource_hyperlink--validations))
 
 <a id="nestedatt--fields--items--validations--unique--resource_hyperlink--allowed_resources"></a>
 ### Nested Schema for `fields.items.validations.unique.resource_hyperlink.allowed_resources`
@@ -401,13 +416,22 @@ Optional:
 - `type` (String)
 
 
-<a id="nestedatt--fields--items--validations--unique--resource_hyperlink--size"></a>
-### Nested Schema for `fields.items.validations.unique.resource_hyperlink.size`
+<a id="nestedatt--fields--items--validations--unique--resource_hyperlink--validations"></a>
+### Nested Schema for `fields.items.validations.unique.resource_hyperlink.validations`
+
+Optional:
+
+- `message` (String) Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--items--validations--unique--resource_hyperlink--validations--size))
+
+<a id="nestedatt--fields--items--validations--unique--resource_hyperlink--validations--size"></a>
+### Nested Schema for `fields.items.validations.unique.resource_hyperlink.validations.size`
 
 Optional:
 
 - `max` (Number)
 - `min` (Number)
+
 
 
 
@@ -476,10 +500,10 @@ Optional:
 - `embedded_asset_block` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--embedded_asset_block))
 - `embedded_entry_block` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--embedded_entry_block))
 - `embedded_entry_inline` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--embedded_entry_inline))
-- `embedded_resource_block` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--embedded_resource_block))
-- `embedded_resource_inline` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--embedded_resource_inline))
+- `embedded_resource_block` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--embedded_resource_block))
+- `embedded_resource_inline` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--embedded_resource_inline))
 - `entry_hyperlink` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--entry_hyperlink))
-- `resource_hyperlink` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink))
+- `resource_hyperlink` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink))
 
 <a id="nestedatt--fields--validations--nodes--asset_hyperlink"></a>
 ### Nested Schema for `fields.validations.nodes.asset_hyperlink`
@@ -561,8 +585,7 @@ Optional:
 Optional:
 
 - `allowed_resources` (Attributes List) Defines the entities that can be referenced by the field. It is only used for cross-space references. (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink--allowed_resources))
-- `message` (String) Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.
-- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink--size))
+- `validations` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink--validations))
 
 <a id="nestedatt--fields--validations--nodes--resource_hyperlink--allowed_resources"></a>
 ### Nested Schema for `fields.validations.nodes.resource_hyperlink.allowed_resources`
@@ -574,13 +597,22 @@ Optional:
 - `type` (String)
 
 
-<a id="nestedatt--fields--validations--nodes--resource_hyperlink--size"></a>
-### Nested Schema for `fields.validations.nodes.resource_hyperlink.size`
+<a id="nestedatt--fields--validations--nodes--resource_hyperlink--validations"></a>
+### Nested Schema for `fields.validations.nodes.resource_hyperlink.validations`
+
+Optional:
+
+- `message` (String) Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink--validations--size))
+
+<a id="nestedatt--fields--validations--nodes--resource_hyperlink--validations--size"></a>
+### Nested Schema for `fields.validations.nodes.resource_hyperlink.validations.size`
 
 Optional:
 
 - `max` (Number)
 - `min` (Number)
+
 
 
 
@@ -590,8 +622,7 @@ Optional:
 Optional:
 
 - `allowed_resources` (Attributes List) Defines the entities that can be referenced by the field. It is only used for cross-space references. (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink--allowed_resources))
-- `message` (String) Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.
-- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink--size))
+- `validations` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink--validations))
 
 <a id="nestedatt--fields--validations--nodes--resource_hyperlink--allowed_resources"></a>
 ### Nested Schema for `fields.validations.nodes.resource_hyperlink.allowed_resources`
@@ -603,13 +634,22 @@ Optional:
 - `type` (String)
 
 
-<a id="nestedatt--fields--validations--nodes--resource_hyperlink--size"></a>
-### Nested Schema for `fields.validations.nodes.resource_hyperlink.size`
+<a id="nestedatt--fields--validations--nodes--resource_hyperlink--validations"></a>
+### Nested Schema for `fields.validations.nodes.resource_hyperlink.validations`
+
+Optional:
+
+- `message` (String) Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink--validations--size))
+
+<a id="nestedatt--fields--validations--nodes--resource_hyperlink--validations--size"></a>
+### Nested Schema for `fields.validations.nodes.resource_hyperlink.validations.size`
 
 Optional:
 
 - `max` (Number)
 - `min` (Number)
+
 
 
 
@@ -638,8 +678,7 @@ Optional:
 Optional:
 
 - `allowed_resources` (Attributes List) Defines the entities that can be referenced by the field. It is only used for cross-space references. (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink--allowed_resources))
-- `message` (String) Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.
-- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink--size))
+- `validations` (Attributes List) (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink--validations))
 
 <a id="nestedatt--fields--validations--nodes--resource_hyperlink--allowed_resources"></a>
 ### Nested Schema for `fields.validations.nodes.resource_hyperlink.allowed_resources`
@@ -651,13 +690,22 @@ Optional:
 - `type` (String)
 
 
-<a id="nestedatt--fields--validations--nodes--resource_hyperlink--size"></a>
-### Nested Schema for `fields.validations.nodes.resource_hyperlink.size`
+<a id="nestedatt--fields--validations--nodes--resource_hyperlink--validations"></a>
+### Nested Schema for `fields.validations.nodes.resource_hyperlink.validations`
+
+Optional:
+
+- `message` (String) Defines the message that is shown to the user when the validation fails. It can be used to provide more information about the validation.
+- `size` (Attributes) (see [below for nested schema](#nestedatt--fields--validations--nodes--resource_hyperlink--validations--size))
+
+<a id="nestedatt--fields--validations--nodes--resource_hyperlink--validations--size"></a>
+### Nested Schema for `fields.validations.nodes.resource_hyperlink.validations.size`
 
 Optional:
 
 - `max` (Number)
 - `min` (Number)
+
 
 
 
