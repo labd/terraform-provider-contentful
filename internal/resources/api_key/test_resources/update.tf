@@ -1,6 +1,6 @@
 resource "contentful_apikey" "myapikey" {
-  space_id      = "{{ .spaceId }}"
+  space_id = "{{ .spaceId }}"
 
-  name = "{{ .name }}-updated"
+  name        = "{{ .name }}-updated"
   description = "{{ .description }}-updated"
 }

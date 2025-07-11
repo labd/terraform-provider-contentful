@@ -3,7 +3,6 @@ package editor_interface
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strconv"
 
 	"github.com/elliotchance/pie/v2"
@@ -23,9 +22,17 @@ type EditorInterface struct {
 	Version     types.Int64  `tfsdk:"version"`
 	Controls    []Control    `tfsdk:"controls"`
 	Sidebar     []Sidebar    `tfsdk:"sidebar"`
+	Editors     []Editor     `tfsdk:"editors"`
 }
 
 type Sidebar struct {
+	WidgetId        types.String         `tfsdk:"widget_id"`
+	WidgetNamespace types.String         `tfsdk:"widget_namespace"`
+	Settings        jsontypes.Normalized `tfsdk:"settings"`
+	Disabled        types.Bool           `tfsdk:"disabled"`
+}
+
+type Editor struct {
 	WidgetId        types.String         `tfsdk:"widget_id"`
 	WidgetNamespace types.String         `tfsdk:"widget_namespace"`
 	Settings        jsontypes.Normalized `tfsdk:"settings"`
@@ -103,6 +110,34 @@ func (e *EditorInterface) ToUpdateBody() sdk.EditorInterfaceUpdate {
 		result.Sidebar = nil
 	}
 
+	editors := pie.Map(e.Editors, func(t Editor) sdk.EditorInterfaceEditor {
+		var namespace sdk.EditorInterfaceEditorWidgetNamespace
+		if !t.WidgetNamespace.IsNull() {
+			namespace = sdk.EditorInterfaceEditorWidgetNamespace(t.WidgetNamespace.ValueString())
+		}
+
+		editor := sdk.EditorInterfaceEditor{
+			WidgetNamespace: &namespace,
+			WidgetId:        t.WidgetId.ValueStringPointer(),
+			Disabled:        t.Disabled.ValueBoolPointer(),
+		}
+
+		if !*editor.Disabled {
+			settings := sdk.EditorInterfaceSettings{}
+
+			t.Settings.Unmarshal(settings)
+			editor.Settings = &settings
+		}
+
+		return editor
+	})
+
+	if len(editors) > 0 {
+		result.Editors = &editors
+	} else {
+		result.Editors = nil
+	}
+
 	return result
 }
 
@@ -157,6 +192,28 @@ func (e *EditorInterface) Import(editorInterface *sdk.EditorInterface) {
 				Disabled:        types.BoolPointerValue(t.Disabled),
 			}
 		})
+	} else {
+		e.Sidebar = nil
+	}
+
+	if editorInterface.Editors != nil {
+		e.Editors = pie.Map(*editorInterface.Editors, func(t sdk.EditorInterfaceEditor) Editor {
+
+			settings := jsontypes.NewNormalizedValue("{}")
+
+			if t.Settings != nil {
+				data, _ := json.Marshal(t.Settings)
+				settings = jsontypes.NewNormalizedValue(string(data))
+			}
+			return Editor{
+				WidgetId:        types.StringValue(*t.WidgetId),
+				WidgetNamespace: types.StringValue(string(*t.WidgetNamespace)),
+				Settings:        settings,
+				Disabled:        types.BoolPointerValue(t.Disabled),
+			}
+		})
+	} else {
+		e.Editors = nil
 	}
 
 }
@@ -194,92 +251,4 @@ func (s *Settings) Draft() *sdk.EditorInterfaceSettings {
 	settings.BulkEditing = s.BulkEditing.ValueBoolPointer()
 	settings.TrackingFieldId = s.TrackingFieldId.ValueStringPointer()
 	return settings
-}
-
-func (c *EditorInterface) Equal(n *sdk.EditorInterface) bool {
-
-	for _, target := range c.Controls {
-		idx := pie.FindFirstUsing(n.Controls, func(t sdk.EditorInterfaceControl) bool {
-			return t.FieldId == target.FieldID.ValueString()
-		})
-
-		if idx == -1 {
-			return false
-		}
-		source := n.Controls[idx]
-
-		if target.WidgetID.ValueString() != *source.WidgetId {
-			return false
-		}
-
-		var namespace *string = nil
-		if source.WidgetNamespace != nil {
-			namespace = utils.Pointer(string(*source.WidgetNamespace))
-		}
-		if target.WidgetNamespace.ValueStringPointer() != namespace {
-			return false
-		}
-
-		if target.Settings == nil && source.Settings != nil {
-			return false
-		}
-
-		if target.Settings != nil && !reflect.DeepEqual(target.Settings.Draft(), source.Settings) {
-			return false
-		}
-	}
-
-	if n.Sidebar == nil && len(c.Sidebar) > 0 {
-		return false
-	}
-
-	if len(c.Sidebar) != len(*n.Sidebar) {
-		return false
-	}
-
-	sidebar := *n.Sidebar
-
-	for idxOrg, s := range c.Sidebar {
-		idx := pie.FindFirstUsing(sidebar, func(t sdk.EditorInterfaceSidebarItem) bool {
-			return t.WidgetId == s.WidgetId.ValueStringPointer()
-		})
-
-		if idx == -1 {
-			return false
-		}
-
-		// field was moved, it is the same as before but different position
-		if idxOrg != idx {
-			return false
-		}
-
-		sidebar := sidebar[idx]
-
-		if sidebar.Disabled != s.Disabled.ValueBoolPointer() {
-			return false
-		}
-
-		if sidebar.WidgetId != s.WidgetId.ValueStringPointer() {
-			return false
-		}
-
-		var namespace *string = nil
-		if !s.WidgetNamespace.IsNull() {
-			namespace = utils.Pointer(s.WidgetNamespace.ValueString())
-		}
-
-		if namespace != s.WidgetNamespace.ValueStringPointer() {
-			return false
-		}
-
-		a := make(map[string]string)
-
-		s.Settings.Unmarshal(a)
-
-		if !reflect.DeepEqual(sidebar.Settings, a) {
-			return false
-		}
-	}
-
-	return true
 }

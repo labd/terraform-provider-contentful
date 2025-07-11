@@ -90,26 +90,3 @@ resource "contentful_contenttype" "example_contenttype" {
     }
   ]
 }
-
-resource "contentful_editor_interface" "example_editor_interface" {
-  space_id     = "space-id"
-  environment  = "master"
-  content_type = contentful_contenttype.example_contenttype.id
-  controls = [
-    {
-      field_id         = "asset_field"
-      widget_id        = "entryLinkEditor"
-      widget_namespace = "builtin"
-    },
-    {
-      field_id         = "entry_link_field"
-      widget_id        = "entryLinkEditor"
-      widget_namespace = "builtin"
-      settings = {
-        show_linked_entries = true
-        show_linked_assets  = false
-      }
-    }
-  ]
-}
-

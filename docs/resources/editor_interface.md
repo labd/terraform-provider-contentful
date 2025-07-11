@@ -24,6 +24,7 @@ Contentful Editor Interface customizes the appearance and behavior of field edit
 
 ### Optional
 
+- `editors` (Attributes List) You can add or replace the default entry editor with a custom editor (App or UI Extension) by configuring the optional editors property, which allows passing instance parameters and disabling the default editor if desired. (see [below for nested schema](#nestedatt--editors))
 - `sidebar` (Attributes List) (see [below for nested schema](#nestedatt--sidebar))
 
 ### Read-Only
@@ -58,6 +59,20 @@ Optional:
 - `tracking_field_id` (String)
 - `true_label` (String)
 
+
+
+<a id="nestedatt--editors"></a>
+### Nested Schema for `editors`
+
+Required:
+
+- `widget_id` (String)
+- `widget_namespace` (String)
+
+Optional:
+
+- `disabled` (Boolean)
+- `settings` (String)
 
 
 <a id="nestedatt--sidebar"></a>

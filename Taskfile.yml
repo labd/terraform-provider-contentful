@@ -4,6 +4,7 @@ dotenv: [ '.env' ]
 
 tasks:
   default:
+    silent: true
     cmd: task --list-all
 
   format:
@@ -36,6 +37,11 @@ tasks:
       VERSION: 99.0.0
       PLATFORM:
         sh: echo "$(go env GOOS)_$(go env GOARCH)"
+
+  build:
+    env:
+      GORELEASER_CURRENT_TAG: "v0.0.0"
+    cmd: goreleaser build --snapshot --clean --single-target --output terraform-provider-contentful
 
   coverage:
     cmds:

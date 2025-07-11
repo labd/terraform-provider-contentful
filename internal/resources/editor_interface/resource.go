@@ -184,6 +184,37 @@ func (e *editorInterfaceResource) Schema(_ context.Context, _ resource.SchemaReq
 					},
 				},
 			},
+			"editors": schema.ListNestedAttribute{
+				Optional: true,
+				Description: "You can add or replace the default entry editor with a custom editor (App or UI " +
+					"Extension) by configuring the optional editors property, which allows passing instance " +
+					"parameters and disabling the default editor if desired.",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"disabled": schema.BoolAttribute{
+							Optional: true,
+							Computed: true,
+							PlanModifiers: []planmodifier.Bool{
+								custommodifier.BoolDefault(false),
+							},
+						},
+						"widget_id": schema.StringAttribute{
+							Required: true,
+						},
+						"widget_namespace": schema.StringAttribute{
+							Required: true,
+						},
+						"settings": schema.StringAttribute{
+							CustomType: jsontypes.NormalizedType{},
+							Optional:   true,
+							Computed:   true,
+							PlanModifiers: []planmodifier.String{
+								custommodifier.StringDefault("{}"),
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 }

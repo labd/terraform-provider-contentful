@@ -63,6 +63,11 @@ func TestAccEditorInterfaceResource_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "controls.1.field_id", "description"),
 					resource.TestCheckResourceAttr(resourceName, "controls.1.widget_id", "richTextEditor"),
 					resource.TestCheckResourceAttr(resourceName, "controls.1.settings.help_text", "Rich text content"),
+					resource.TestCheckResourceAttr(resourceName, "sidebar.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "sidebar.0.widget_id", "content-preview-widget"),
+					resource.TestCheckResourceAttr(resourceName, "sidebar.1.widget_id", "translation-widget"),
+					resource.TestCheckResourceAttr(resourceName, "editors.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "editors.0.widget_id", "default-editor"),
 				),
 			},
 			// Test import
@@ -247,6 +252,25 @@ resource "contentful_editor_interface" "test_editor_interface" {
       settings = {
         help_text = "Rich text content"
       }
+    }
+  ]
+	
+	sidebar = [
+    {
+      widget_id        = "content-preview-widget"
+      widget_namespace = "sidebar-builtin"
+    },
+    {
+      widget_id        = "translation-widget"
+      widget_namespace = "sidebar-builtin"
+    }
+  ]
+	
+	  editors = [
+    {
+      widget_namespace = "editor-builtin",
+      widget_id = "default-editor",
+      disabled = true
     }
   ]
 }
