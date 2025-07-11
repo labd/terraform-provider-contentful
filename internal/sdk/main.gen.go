@@ -105,11 +105,18 @@ const (
 	EditorInterfaceControlWidgetNamespaceExtension EditorInterfaceControlWidgetNamespace = "extension"
 )
 
+// Defines values for EditorInterfaceEditorWidgetNamespace.
+const (
+	EditorInterfaceEditorWidgetNamespaceApp       EditorInterfaceEditorWidgetNamespace = "app"
+	EditorInterfaceEditorWidgetNamespaceBuiltin   EditorInterfaceEditorWidgetNamespace = "builtin"
+	EditorInterfaceEditorWidgetNamespaceExtension EditorInterfaceEditorWidgetNamespace = "extension"
+)
+
 // Defines values for EditorInterfaceSidebarItemWidgetNamespace.
 const (
-	EditorInterfaceSidebarItemWidgetNamespaceApp       EditorInterfaceSidebarItemWidgetNamespace = "app"
-	EditorInterfaceSidebarItemWidgetNamespaceBuiltin   EditorInterfaceSidebarItemWidgetNamespace = "builtin"
-	EditorInterfaceSidebarItemWidgetNamespaceExtension EditorInterfaceSidebarItemWidgetNamespace = "extension"
+	App       EditorInterfaceSidebarItemWidgetNamespace = "app"
+	Builtin   EditorInterfaceSidebarItemWidgetNamespace = "builtin"
+	Extension EditorInterfaceSidebarItemWidgetNamespace = "extension"
 )
 
 // Defines values for EntryCollectionSysType.
@@ -604,6 +611,7 @@ type EditorInterface struct {
 
 	// EditorLayout To be implemented
 	EditorLayout *[]map[string]interface{} `json:"editorLayout,omitempty"`
+	Editors      *[]EditorInterfaceEditor  `json:"editors,omitempty"`
 
 	// GroupControls To be implemented
 	GroupControls *[]map[string]interface{}     `json:"groupControls,omitempty"`
@@ -631,6 +639,24 @@ type EditorInterfaceControl struct {
 
 // EditorInterfaceControlWidgetNamespace Namespace of the widget (optional)
 type EditorInterfaceControlWidgetNamespace string
+
+// EditorInterfaceEditor defines model for EditorInterfaceEditor.
+type EditorInterfaceEditor struct {
+	// Disabled Whether the field is disabled
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// Settings Widget-specific settings (optional)
+	Settings *EditorInterfaceSettings `json:"settings,omitempty"`
+
+	// WidgetId ID of the widget to use for this field (optional)
+	WidgetId *string `json:"widgetId,omitempty"`
+
+	// WidgetNamespace Namespace of the widget (optional)
+	WidgetNamespace *EditorInterfaceEditorWidgetNamespace `json:"widgetNamespace,omitempty"`
+}
+
+// EditorInterfaceEditorWidgetNamespace Namespace of the widget (optional)
+type EditorInterfaceEditorWidgetNamespace string
 
 // EditorInterfaceSettings Widget-specific settings (optional)
 type EditorInterfaceSettings struct {
@@ -683,6 +709,7 @@ type EditorInterfaceUpdate struct {
 
 	// EditorLayout To be implemented
 	EditorLayout *[]map[string]interface{} `json:"editorLayout,omitempty"`
+	Editors      *[]EditorInterfaceEditor  `json:"editors,omitempty"`
 
 	// GroupControls To be implemented
 	GroupControls *[]map[string]interface{}     `json:"groupControls,omitempty"`

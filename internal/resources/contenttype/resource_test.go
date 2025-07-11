@@ -415,7 +415,3 @@ func testContentTypeLinkConfig(identifier string, spaceId string, linkIdentifier
 		"spaceId":        spaceId,
 	})
 }
-
-func toPointer[T string | bool](value T) *T {
-	return &value
-}

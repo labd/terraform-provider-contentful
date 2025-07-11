@@ -668,7 +668,7 @@ func (e *contentTypeResource) ImportState(ctx context.Context, request resource.
 	if len(idParts) != 3 || idParts[0] == "" || idParts[1] == "" || idParts[2] == "" {
 		response.Diagnostics.AddError(
 			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: localeId:env:spaceId. Got: %q", request.ID),
+			fmt.Sprintf("Expected import identifier with format: contentTypeId:env:spaceId. Got: %q", request.ID),
 		)
 		return
 	}
