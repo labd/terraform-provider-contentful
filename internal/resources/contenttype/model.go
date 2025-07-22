@@ -1027,16 +1027,6 @@ func getValidation(cfVal sdk.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
-	if cfVal.AssetFileSize != nil {
-		return &Validation{
-			AssetFileSize: &Size{
-				Max: types.Float64PointerValue(cfVal.AssetFileSize.Max),
-				Min: types.Float64PointerValue(cfVal.AssetFileSize.Min),
-			},
-			Message: types.StringPointerValue(cfVal.Message),
-		}, nil
-	}
-
 	if cfVal.Unique != nil {
 		return &Validation{
 			Unique:  types.BoolPointerValue(cfVal.Unique),
