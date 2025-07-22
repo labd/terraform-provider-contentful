@@ -963,6 +963,16 @@ func getValidation(cfVal sdk.FieldValidation) (*Validation, error) {
 		}, nil
 	}
 
+	if cfVal.Range != nil {
+		return &Validation{
+			Range: &Size{
+				Max: types.Float64PointerValue(cfVal.Range.Max),
+				Min: types.Float64PointerValue(cfVal.Range.Min),
+			},
+			Message: types.StringPointerValue(cfVal.Message),
+		}, nil
+	}
+
 	if cfVal.Regexp != nil {
 		return &Validation{
 			Regexp: &Regexp{
