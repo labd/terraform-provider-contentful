@@ -955,7 +955,7 @@ func getValidation(cfVal sdk.FieldValidation) (*Validation, error) {
 
 	if cfVal.AssetFileSize != nil {
 		return &Validation{
-			Range: &Size{
+			AssetFileSize: &Size{
 				Max: types.Float64PointerValue(cfVal.AssetFileSize.Max),
 				Min: types.Float64PointerValue(cfVal.AssetFileSize.Min),
 			},
