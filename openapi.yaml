@@ -1294,6 +1294,55 @@ paths:
                 required:
                   - sys
 
+  /organizations/{organizationId}/app_definitions/{resourceId}/event_subscription:
+    parameters:
+      - $ref: "#/components/parameters/organizationId"
+      - $ref: "#/components/parameters/resourceId"
+
+    get:
+      summary: Get an app event subscription
+      description: Gets a new app event subscription
+      operationId: getAppEventSubscription
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppEventSubscription"
+
+    put:
+      summary: Update or subscribe to an app event subscription
+      description: Updates or subscribes to an app event subscription
+      operationId: updateAppEventSubscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppEventSubscriptionDraft"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppEventSubscription"
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppEventSubscription"
+
+    delete:
+      summary: Delete an app event subscription
+      description: Deletes an app event subscription
+      operationId: deleteAppEventSubscription
+      responses:
+        "204":
+          description: No Content
+
 components:
   parameters:
     spaceId:
@@ -3332,6 +3381,32 @@ components:
       required:
         - comment
         - upload
+
+    AppEventSubscription:
+      type: object
+      properties:
+        targetUrl:
+          type: string
+        topics:
+          type: array
+          items:
+              type: string
+      required:
+        - targetUrl
+        - topics
+        -
+    AppEventSubscriptionDraft:
+      type: object
+      properties:
+        targetUrl:
+          type: string
+        topics:
+          type: array
+          items:
+            type: string
+      required:
+        - targetUrl
+        - topics
 
     PreviewConfiguration:
       type: object

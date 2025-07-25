@@ -394,6 +394,18 @@ type AppDefinitionLinkSysLinkType string
 // AppDefinitionLinkSysType defines model for AppDefinitionLink.Sys.Type.
 type AppDefinitionLinkSysType string
 
+// AppEventSubscription defines model for AppEventSubscription.
+type AppEventSubscription struct {
+	TargetUrl string   `json:"targetUrl"`
+	Topics    []string `json:"topics"`
+}
+
+// AppEventSubscriptionDraft defines model for AppEventSubscriptionDraft.
+type AppEventSubscriptionDraft struct {
+	TargetUrl string   `json:"targetUrl"`
+	Topics    []string `json:"topics"`
+}
+
 // AppFieldType defines model for AppFieldType.
 type AppFieldType struct {
 	Items    *FieldItem            `json:"items,omitempty"`
@@ -1987,6 +1999,9 @@ type UpdateAppDefinitionJSONRequestBody = AppDefinitionDraft
 // CreateAppBundleJSONRequestBody defines body for CreateAppBundle for application/json ContentType.
 type CreateAppBundleJSONRequestBody = AppBundleDraft
 
+// UpdateAppEventSubscriptionJSONRequestBody defines body for UpdateAppEventSubscription for application/json ContentType.
+type UpdateAppEventSubscriptionJSONRequestBody = AppEventSubscriptionDraft
+
 // CreateSpaceJSONRequestBody defines body for CreateSpace for application/json ContentType.
 type CreateSpaceJSONRequestBody = SpaceCreate
 
@@ -2412,6 +2427,17 @@ type ClientInterface interface {
 
 	CreateAppBundle(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, body CreateAppBundleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteAppEventSubscription request
+	DeleteAppEventSubscription(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAppEventSubscription request
+	GetAppEventSubscription(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateAppEventSubscriptionWithBody request with any body
+	UpdateAppEventSubscriptionWithBody(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateAppEventSubscription(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, body UpdateAppEventSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UploadAppWithBody request with any body
 	UploadAppWithBody(ctx context.Context, organizationId OrganizationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -2762,6 +2788,54 @@ func (c *Client) CreateAppBundleWithBody(ctx context.Context, organizationId Org
 
 func (c *Client) CreateAppBundle(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, body CreateAppBundleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateAppBundleRequest(c.Server, organizationId, resourceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteAppEventSubscription(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAppEventSubscriptionRequest(c.Server, organizationId, resourceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAppEventSubscription(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAppEventSubscriptionRequest(c.Server, organizationId, resourceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateAppEventSubscriptionWithBody(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateAppEventSubscriptionRequestWithBody(c.Server, organizationId, resourceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateAppEventSubscription(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, body UpdateAppEventSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateAppEventSubscriptionRequest(c.Server, organizationId, resourceId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4190,6 +4264,142 @@ func NewCreateAppBundleRequestWithBody(server string, organizationId Organizatio
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteAppEventSubscriptionRequest generates requests for DeleteAppEventSubscription
+func NewDeleteAppEventSubscriptionRequest(server string, organizationId OrganizationId, resourceId ResourceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "organizationId", runtime.ParamLocationPath, organizationId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "resourceId", runtime.ParamLocationPath, resourceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/app_definitions/%s/event_subscription", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetAppEventSubscriptionRequest generates requests for GetAppEventSubscription
+func NewGetAppEventSubscriptionRequest(server string, organizationId OrganizationId, resourceId ResourceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "organizationId", runtime.ParamLocationPath, organizationId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "resourceId", runtime.ParamLocationPath, resourceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/app_definitions/%s/event_subscription", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateAppEventSubscriptionRequest calls the generic UpdateAppEventSubscription builder with application/json body
+func NewUpdateAppEventSubscriptionRequest(server string, organizationId OrganizationId, resourceId ResourceId, body UpdateAppEventSubscriptionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateAppEventSubscriptionRequestWithBody(server, organizationId, resourceId, "application/json", bodyReader)
+}
+
+// NewUpdateAppEventSubscriptionRequestWithBody generates requests for UpdateAppEventSubscription with any type of body
+func NewUpdateAppEventSubscriptionRequestWithBody(server string, organizationId OrganizationId, resourceId ResourceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "organizationId", runtime.ParamLocationPath, organizationId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "resourceId", runtime.ParamLocationPath, resourceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/app_definitions/%s/event_subscription", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -8347,6 +8557,17 @@ type ClientWithResponsesInterface interface {
 
 	CreateAppBundleWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, body CreateAppBundleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateAppBundleResponse, error)
 
+	// DeleteAppEventSubscriptionWithResponse request
+	DeleteAppEventSubscriptionWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*DeleteAppEventSubscriptionResponse, error)
+
+	// GetAppEventSubscriptionWithResponse request
+	GetAppEventSubscriptionWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetAppEventSubscriptionResponse, error)
+
+	// UpdateAppEventSubscriptionWithBodyWithResponse request with any body
+	UpdateAppEventSubscriptionWithBodyWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateAppEventSubscriptionResponse, error)
+
+	UpdateAppEventSubscriptionWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, body UpdateAppEventSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAppEventSubscriptionResponse, error)
+
 	// UploadAppWithBodyWithResponse request with any body
 	UploadAppWithBodyWithResponse(ctx context.Context, organizationId OrganizationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadAppResponse, error)
 
@@ -8726,6 +8947,72 @@ func (r CreateAppBundleResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CreateAppBundleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteAppEventSubscriptionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAppEventSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAppEventSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetAppEventSubscriptionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AppEventSubscription
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAppEventSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAppEventSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateAppEventSubscriptionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AppEventSubscription
+	JSON201      *AppEventSubscription
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateAppEventSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateAppEventSubscriptionResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -10322,6 +10609,41 @@ func (c *ClientWithResponses) CreateAppBundleWithResponse(ctx context.Context, o
 	return ParseCreateAppBundleResponse(rsp)
 }
 
+// DeleteAppEventSubscriptionWithResponse request returning *DeleteAppEventSubscriptionResponse
+func (c *ClientWithResponses) DeleteAppEventSubscriptionWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*DeleteAppEventSubscriptionResponse, error) {
+	rsp, err := c.DeleteAppEventSubscription(ctx, organizationId, resourceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAppEventSubscriptionResponse(rsp)
+}
+
+// GetAppEventSubscriptionWithResponse request returning *GetAppEventSubscriptionResponse
+func (c *ClientWithResponses) GetAppEventSubscriptionWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetAppEventSubscriptionResponse, error) {
+	rsp, err := c.GetAppEventSubscription(ctx, organizationId, resourceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAppEventSubscriptionResponse(rsp)
+}
+
+// UpdateAppEventSubscriptionWithBodyWithResponse request with arbitrary body returning *UpdateAppEventSubscriptionResponse
+func (c *ClientWithResponses) UpdateAppEventSubscriptionWithBodyWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateAppEventSubscriptionResponse, error) {
+	rsp, err := c.UpdateAppEventSubscriptionWithBody(ctx, organizationId, resourceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateAppEventSubscriptionResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateAppEventSubscriptionWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, body UpdateAppEventSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAppEventSubscriptionResponse, error) {
+	rsp, err := c.UpdateAppEventSubscription(ctx, organizationId, resourceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateAppEventSubscriptionResponse(rsp)
+}
+
 // UploadAppWithBodyWithResponse request with arbitrary body returning *UploadAppResponse
 func (c *ClientWithResponses) UploadAppWithBodyWithResponse(ctx context.Context, organizationId OrganizationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadAppResponse, error) {
 	rsp, err := c.UploadAppWithBody(ctx, organizationId, contentType, body, reqEditors...)
@@ -11257,6 +11579,81 @@ func ParseCreateAppBundleResponse(rsp *http.Response) (*CreateAppBundleResponse,
 		var dest struct {
 			Sys SystemPropertiesBase `json:"sys"`
 		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteAppEventSubscriptionResponse parses an HTTP response from a DeleteAppEventSubscriptionWithResponse call
+func ParseDeleteAppEventSubscriptionResponse(rsp *http.Response) (*DeleteAppEventSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAppEventSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetAppEventSubscriptionResponse parses an HTTP response from a GetAppEventSubscriptionWithResponse call
+func ParseGetAppEventSubscriptionResponse(rsp *http.Response) (*GetAppEventSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAppEventSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AppEventSubscription
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateAppEventSubscriptionResponse parses an HTTP response from a UpdateAppEventSubscriptionWithResponse call
+func ParseUpdateAppEventSubscriptionResponse(rsp *http.Response) (*UpdateAppEventSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateAppEventSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AppEventSubscription
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest AppEventSubscription
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
