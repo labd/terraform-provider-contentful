@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"github.com/labd/terraform-provider-contentful/internal/resources/app_event_subscription"
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -150,6 +151,7 @@ func (c contentfulProvider) Resources(_ context.Context) []func() resource.Resou
 		api_key.NewApiKeyResource,
 		app_definition.NewAppDefinitionResource,
 		app_installation.NewAppInstallationResource,
+		app_event_subscription.NewAppEventSubscriptionResource,
 		asset.NewAssetResource,
 		contenttype.NewContentTypeResource,
 		editor_interface.NewEditorInterfaceResource,

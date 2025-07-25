@@ -1,5 +1,5 @@
 resource "contentful_contenttype" "example_contenttype" {
-  space_id      =  "space-id"
+  space_id      = "space-id"
   environment   = "master"
   id            = "example_contenttype"
   name          = "name"
@@ -8,15 +8,15 @@ resource "contentful_contenttype" "example_contenttype" {
 
   fields = [
     {
-      id   = "name"
-      name = "Name"
-      type = "Text"
+      id       = "name"
+      name     = "Name"
+      type     = "Text"
       required = true
     },
     {
-      id   = "content"
-      name = "Content"
-      type = "RichText"
+      id       = "content"
+      name     = "Content"
+      type     = "RichText"
       required = false
     },
     {
@@ -32,8 +32,8 @@ resource "contentful_contenttype" "example_contenttype" {
 }
 
 resource "contentful_editor_interface" "example_editor_interface" {
-  space_id      =  "space-id"
-  environment   = "master"
+  space_id     = "space-id"
+  environment  = "master"
   content_type = contentful_contenttype.example_contenttype.id
   controls = [
     {
@@ -65,8 +65,8 @@ resource "contentful_editor_interface" "example_editor_interface" {
   editors = [
     {
       widget_namespace = "editor-builtin",
-      widget_id = "default-editor",
-      disabled = true
+      widget_id        = "default-editor",
+      disabled         = true
     }
   ]
 }
