@@ -275,7 +275,7 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 				Required: true,
 			},
 			"display_field": schema.StringAttribute{
-				Required: true,
+				Optional: true,
 			},
 			"description": schema.StringAttribute{
 				Optional: true,
