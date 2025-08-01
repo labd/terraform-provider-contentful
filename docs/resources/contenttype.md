@@ -112,7 +112,6 @@ resource "contentful_contenttype" "example_contenttype" {
 
 ### Required
 
-- `display_field` (String)
 - `environment` (String)
 - `fields` (Attributes List) (see [below for nested schema](#nestedatt--fields))
 - `name` (String)
@@ -121,6 +120,7 @@ resource "contentful_contenttype" "example_contenttype" {
 ### Optional
 
 - `description` (String)
+- `display_field` (String)
 - `id` (String) content type id
 
 ### Read-Only

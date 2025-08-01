@@ -28,11 +28,13 @@ func (p *PreviewEnvironment) Import(env *sdk.PreviewEnvironment) {
 	p.ID = types.StringValue(env.Sys.Id)
 	p.SpaceID = types.StringValue(env.Sys.Space.Sys.Id)
 	p.Name = types.StringValue(env.Name)
-	p.Version = types.Int64Value(int64(*env.Sys.Version))
-	p.Description = types.StringValue(env.Description)
+	p.Version = types.Int64PointerValue(env.Sys.Version)
+	if env.Description != nil && *env.Description != "" {
+		p.Description = types.StringPointerValue(env.Description)
+	}
 
 	// Map configurations
-	configurations := []Configuration{}
+	var configurations []Configuration
 	for _, config := range env.Configurations {
 		configurations = append(configurations, Configuration{
 			ContentType: types.StringValue(config.ContentType),
@@ -50,7 +52,7 @@ func (p *PreviewEnvironment) Draft() *sdk.PreviewEnvironmentInput {
 	}
 
 	if !p.Description.IsNull() && !p.Description.IsUnknown() {
-		description := p.Description.ValueString()
+		description := p.Description.ValueStringPointer()
 		draft.Description = description
 	}
 
