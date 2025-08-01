@@ -827,7 +827,7 @@ func (c *ContentType) Create() (*sdk.ContentTypeCreate, error) {
 
 	contentfulType := &sdk.ContentTypeCreate{
 		Name:         c.Name.ValueString(),
-		DisplayField: c.DisplayField.ValueString(),
+		DisplayField: c.DisplayField.ValueStringPointer(),
 		Fields:       fields,
 	}
 
@@ -853,7 +853,7 @@ func (c *ContentType) Update() (*sdk.ContentTypeUpdate, error) {
 
 	contentfulType := &sdk.ContentTypeUpdate{
 		Name:         c.Name.ValueString(),
-		DisplayField: c.DisplayField.ValueString(),
+		DisplayField: c.DisplayField.ValueStringPointer(),
 		Fields:       fields,
 	}
 
@@ -871,7 +871,7 @@ func (c *ContentType) Import(n *sdk.ContentType) error {
 	c.Description = types.StringPointerValue(n.Description)
 
 	c.Name = types.StringValue(n.Name)
-	c.DisplayField = types.StringValue(n.DisplayField)
+	c.DisplayField = types.StringPointerValue(n.DisplayField)
 
 	var fields []Field
 
@@ -900,7 +900,7 @@ func (c *ContentType) Equal(n *sdk.ContentType) bool {
 		return false
 	}
 
-	if c.DisplayField.ValueString() != n.DisplayField {
+	if c.DisplayField.ValueStringPointer() != n.DisplayField {
 		return false
 	}
 
