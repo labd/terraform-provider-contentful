@@ -1140,7 +1140,7 @@ type PreviewEnvironment struct {
 	Configurations []PreviewConfiguration `json:"configurations"`
 
 	// Description Description of the preview environment
-	Description string `json:"description"`
+	Description *string `json:"description,omitempty"`
 
 	// Name Name of the preview environment
 	Name string                             `json:"name"`
@@ -1153,7 +1153,7 @@ type PreviewEnvironmentInput struct {
 	Configurations []PreviewConfiguration `json:"configurations"`
 
 	// Description Description of the preview environment
-	Description string `json:"description"`
+	Description *string `json:"description,omitempty"`
 
 	// Name Name of the preview environment
 	Name string `json:"name"`

@@ -3447,7 +3447,6 @@ components:
       required:
         - name
         - sys
-        - description
         - configurations
 
 
@@ -3468,7 +3467,6 @@ components:
 
       required:
         - name
-        - description
         - configurations
 
     Error:

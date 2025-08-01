@@ -1,0 +1,3 @@
+kind: Fixed
+body: Fixed error thrown when no description is provided for preview environment resource
+time: 2025-08-01T15:24:22.052061489+02:00
