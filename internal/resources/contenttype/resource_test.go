@@ -43,7 +43,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 						assert.Equal(t, int64(2), contentType.Sys.Version)
 						assert.EqualValues(t, "tf_test1", contentType.Sys.Id)
 						assert.EqualValues(t, "none", *contentType.Description)
-						assert.EqualValues(t, "field1", contentType.DisplayField)
+						assert.EqualValues(t, "field1", *contentType.DisplayField)
 						assert.Len(t, contentType.Fields, 3)
 						assert.Equal(t, sdk.Field{
 							Id:           "field1",
@@ -105,7 +105,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 						assert.Equal(t, int64(6), contentType.Sys.Version)
 						assert.EqualValues(t, "tf_test1", contentType.Sys.Id)
 						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
-						assert.EqualValues(t, "field1", contentType.DisplayField)
+						assert.EqualValues(t, "field1", *contentType.DisplayField)
 						assert.Len(t, contentType.Fields, 2)
 						assert.Equal(t, sdk.Field{
 							Id:          "field1",
@@ -142,7 +142,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 						assert.Equal(t, int64(8), contentType.Sys.Version)
 						assert.EqualValues(t, "tf_test1", contentType.Sys.Id)
 						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
-						assert.EqualValues(t, "field1", contentType.DisplayField)
+						assert.EqualValues(t, "field1", *contentType.DisplayField)
 						assert.Len(t, contentType.Fields, 2)
 						assert.Equal(t, sdk.Field{
 							Id:          "field1",
@@ -178,7 +178,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 						assert.Equal(t, int64(2), contentType.Sys.Version)
 						assert.EqualValues(t, "tf_linked", contentType.Sys.Id)
 						assert.EqualValues(t, "Terraform Acc Test Content Type with links", *contentType.Description)
-						assert.EqualValues(t, "asset_field", contentType.DisplayField)
+						assert.EqualValues(t, "asset_field", *contentType.DisplayField)
 						assert.Len(t, contentType.Fields, 2)
 
 						expectedItems := sdk.FieldItemLink{
@@ -229,7 +229,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 						assert.Equal(t, int64(2), contentType.Sys.Version)
 						assert.EqualValues(t, "tf_test2", contentType.Sys.Id)
 						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
-						assert.EqualValues(t, "field1", contentType.DisplayField)
+						assert.EqualValues(t, "field1", *contentType.DisplayField)
 						assert.Len(t, contentType.Fields, 3)
 						assert.Equal(t, sdk.Field{
 							Id:           "field1",
