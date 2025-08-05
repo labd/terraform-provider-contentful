@@ -120,3 +120,32 @@ func TestField_ToNative_ArrayFieldWithDefaultValue(t *testing.T) {
 	// After fix, it should be nil consistently
 	assert.Nil(t, result.DefaultValue)
 }
+
+func TestField_ToNative_SymbolFieldWithDefaultValue(t *testing.T) {
+	// Test case for @mvantellingen's use case with Symbol field having default value
+	field := &Field{
+		Id:   types.StringValue("themeColor"),
+		Name: types.StringValue("Theme Color"),
+		Type: types.StringValue("Symbol"),
+		DefaultValue: &DefaultValue{
+			Bool: types.MapNull(types.BoolType),
+			String: types.MapValueMust(types.StringType, map[string]attr.Value{
+				"en": types.StringValue("green"),
+			}),
+		},
+		Required:    types.BoolValue(false),
+		Localized:   types.BoolValue(false),
+		Disabled:    types.BoolValue(false),
+		Omitted:     types.BoolValue(false),
+		Validations: []Validation{},
+	}
+
+	result, err := field.ToNative()
+	
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	
+	// This should work correctly - DefaultValue should be set because it has content
+	assert.NotNil(t, result.DefaultValue)
+	assert.Equal(t, "green", (*result.DefaultValue)["en"])
+}
