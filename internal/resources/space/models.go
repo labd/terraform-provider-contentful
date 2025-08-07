@@ -14,6 +14,7 @@ type Space struct {
 	Name          types.String `tfsdk:"name"`
 	DefaultLocale types.String `tfsdk:"default_locale"`
 	AllowDeletion types.Bool   `tfsdk:"deletion_protection"`
+	AdminRoleID   types.String `tfsdk:"admin_role_id"`
 }
 
 // Space is the main datasource schema data
@@ -22,6 +23,7 @@ type SpaceData struct {
 	Version       types.Int64  `tfsdk:"version"`
 	Name          types.String `tfsdk:"name"`
 	DefaultLocale types.String `tfsdk:"default_locale"`
+	AdminRoleID   types.String `tfsdk:"admin_role_id"`
 }
 
 // Import populates the Space struct from an SDK space object
