@@ -197,7 +197,7 @@ const (
 
 // Defines values for SystemPropertiesContentTypeSysType.
 const (
-	Link SystemPropertiesContentTypeSysType = "Link"
+	SystemPropertiesContentTypeSysTypeLink SystemPropertiesContentTypeSysType = "Link"
 )
 
 // Defines values for SystemPropertiesPreviewEnvironmentType.
@@ -205,9 +205,49 @@ const (
 	SystemPropertiesPreviewEnvironmentTypePreviewEnvironment SystemPropertiesPreviewEnvironmentType = "PreviewEnvironment"
 )
 
+// Defines values for SystemPropertiesTaxonomyConceptContentTypeSysLinkType.
+const (
+	SystemPropertiesTaxonomyConceptContentTypeSysLinkTypeContentType SystemPropertiesTaxonomyConceptContentTypeSysLinkType = "ContentType"
+)
+
+// Defines values for SystemPropertiesTaxonomyConceptContentTypeSysType.
+const (
+	SystemPropertiesTaxonomyConceptContentTypeSysTypeLink SystemPropertiesTaxonomyConceptContentTypeSysType = "Link"
+)
+
+// Defines values for SystemPropertiesTaxonomyConceptType.
+const (
+	SystemPropertiesTaxonomyConceptTypeTaxonomyConcept SystemPropertiesTaxonomyConceptType = "TaxonomyConcept"
+)
+
+// Defines values for TaxonomyConceptCollectionSysType.
+const (
+	TaxonomyConceptCollectionSysTypeArray TaxonomyConceptCollectionSysType = "Array"
+)
+
+// Defines values for TaxonomyConceptLinkSysLinkType.
+const (
+	TaxonomyConceptLinkSysLinkTypeTaxonomyConcept TaxonomyConceptLinkSysLinkType = "TaxonomyConcept"
+)
+
+// Defines values for TaxonomyConceptLinkSysType.
+const (
+	TaxonomyConceptLinkSysTypeLink TaxonomyConceptLinkSysType = "Link"
+)
+
+// Defines values for TaxonomyConceptSchemeSysLinkType.
+const (
+	TaxonomyConceptSchemeSysLinkTypeTaxonomyConceptScheme TaxonomyConceptSchemeSysLinkType = "TaxonomyConceptScheme"
+)
+
+// Defines values for TaxonomyConceptSchemeSysType.
+const (
+	TaxonomyConceptSchemeSysTypeLink TaxonomyConceptSchemeSysType = "Link"
+)
+
 // Defines values for WebhookCollectionSysType.
 const (
-	WebhookCollectionSysTypeArray WebhookCollectionSysType = "Array"
+	Array WebhookCollectionSysType = "Array"
 )
 
 // AllowedResource defines model for AllowedResource.
@@ -1508,6 +1548,202 @@ type SystemPropertiesSpace struct {
 	Version int64 `json:"version"`
 }
 
+// SystemPropertiesTaxonomyConcept defines model for SystemPropertiesTaxonomyConcept.
+type SystemPropertiesTaxonomyConcept struct {
+	// ArchivedAt Archival timestamp
+	ArchivedAt  *time.Time `json:"archivedAt,omitempty"`
+	ContentType *struct {
+		Sys *struct {
+			// Id Content type ID
+			Id       *string                                                `json:"id,omitempty"`
+			LinkType *SystemPropertiesTaxonomyConceptContentTypeSysLinkType `json:"linkType,omitempty"`
+			Type     *SystemPropertiesTaxonomyConceptContentTypeSysType     `json:"type,omitempty"`
+		} `json:"sys,omitempty"`
+	} `json:"contentType,omitempty"`
+
+	// CreatedAt Creation timestamp
+	CreatedAt   *time.Time                   `json:"createdAt,omitempty"`
+	Environment *EnvironmentSystemProperties `json:"environment,omitempty"`
+
+	// Id Resource ID
+	Id *string `json:"id,omitempty"`
+
+	// PublishedAt Publication timestamp
+	PublishedAt *time.Time                          `json:"publishedAt,omitempty"`
+	Space       *EnvironmentSystemProperties        `json:"space,omitempty"`
+	Type        SystemPropertiesTaxonomyConceptType `json:"type"`
+
+	// UpdatedAt Last update timestamp
+	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
+
+	// Version Resource version
+	Version *int64 `json:"version,omitempty"`
+}
+
+// SystemPropertiesTaxonomyConceptContentTypeSysLinkType defines model for SystemPropertiesTaxonomyConcept.ContentType.Sys.LinkType.
+type SystemPropertiesTaxonomyConceptContentTypeSysLinkType string
+
+// SystemPropertiesTaxonomyConceptContentTypeSysType defines model for SystemPropertiesTaxonomyConcept.ContentType.Sys.Type.
+type SystemPropertiesTaxonomyConceptContentTypeSysType string
+
+// SystemPropertiesTaxonomyConceptType defines model for SystemPropertiesTaxonomyConcept.Type.
+type SystemPropertiesTaxonomyConceptType string
+
+// TaxonomyConcept defines model for TaxonomyConcept.
+type TaxonomyConcept struct {
+	// AltLabel Alternative labels in different locales
+	AltLabel *map[string][]string `json:"altLabel,omitempty"`
+
+	// Broader References to broader concepts
+	Broader       *[]TaxonomyConceptLink `json:"broader,omitempty"`
+	ConceptScheme TaxonomyConceptScheme  `json:"conceptScheme"`
+
+	// Definition Definition in different locales
+	Definition *map[string]string `json:"definition,omitempty"`
+
+	// Example Examples in different locales
+	Example *map[string]string `json:"example,omitempty"`
+
+	// HiddenLabel Hidden labels in different locales
+	HiddenLabel *map[string][]string `json:"hiddenLabel,omitempty"`
+
+	// Narrower References to narrower concepts
+	Narrower *[]TaxonomyConceptLink `json:"narrower,omitempty"`
+
+	// Notations Notation codes for the concept
+	Notations *[]string `json:"notations,omitempty"`
+
+	// Note Notes in different locales
+	Note *map[string]string `json:"note,omitempty"`
+
+	// PrefLabel Preferred label in different locales
+	PrefLabel map[string]string `json:"prefLabel"`
+
+	// Related References to related concepts
+	Related *[]TaxonomyConceptLink          `json:"related,omitempty"`
+	Sys     SystemPropertiesTaxonomyConcept `json:"sys"`
+}
+
+// TaxonomyConceptCollection defines model for TaxonomyConceptCollection.
+type TaxonomyConceptCollection struct {
+	Items *[]TaxonomyConcept `json:"items,omitempty"`
+
+	// Limit Maximum number of taxonomy concepts returned
+	Limit *int `json:"limit,omitempty"`
+
+	// Skip Number of taxonomy concepts skipped
+	Skip *int `json:"skip,omitempty"`
+	Sys  *struct {
+		Type *TaxonomyConceptCollectionSysType `json:"type,omitempty"`
+	} `json:"sys,omitempty"`
+
+	// Total Total number of taxonomy concepts
+	Total *int `json:"total,omitempty"`
+}
+
+// TaxonomyConceptCollectionSysType defines model for TaxonomyConceptCollection.Sys.Type.
+type TaxonomyConceptCollectionSysType string
+
+// TaxonomyConceptCreate defines model for TaxonomyConceptCreate.
+type TaxonomyConceptCreate struct {
+	// AltLabel Alternative labels in different locales
+	AltLabel *map[string][]string `json:"altLabel,omitempty"`
+
+	// Broader References to broader concepts
+	Broader       *[]TaxonomyConceptLink `json:"broader,omitempty"`
+	ConceptScheme TaxonomyConceptScheme  `json:"conceptScheme"`
+
+	// Definition Definition in different locales
+	Definition *map[string]string `json:"definition,omitempty"`
+
+	// Example Examples in different locales
+	Example *map[string]string `json:"example,omitempty"`
+
+	// HiddenLabel Hidden labels in different locales
+	HiddenLabel *map[string][]string `json:"hiddenLabel,omitempty"`
+
+	// Narrower References to narrower concepts
+	Narrower *[]TaxonomyConceptLink `json:"narrower,omitempty"`
+
+	// Notations Notation codes for the concept
+	Notations *[]string `json:"notations,omitempty"`
+
+	// Note Notes in different locales
+	Note *map[string]string `json:"note,omitempty"`
+
+	// PrefLabel Preferred label in different locales
+	PrefLabel map[string]string `json:"prefLabel"`
+
+	// Related References to related concepts
+	Related *[]TaxonomyConceptLink `json:"related,omitempty"`
+}
+
+// TaxonomyConceptLink defines model for TaxonomyConceptLink.
+type TaxonomyConceptLink struct {
+	Sys struct {
+		// Id Concept ID
+		Id       *string                         `json:"id,omitempty"`
+		LinkType *TaxonomyConceptLinkSysLinkType `json:"linkType,omitempty"`
+		Type     *TaxonomyConceptLinkSysType     `json:"type,omitempty"`
+	} `json:"sys"`
+}
+
+// TaxonomyConceptLinkSysLinkType defines model for TaxonomyConceptLink.Sys.LinkType.
+type TaxonomyConceptLinkSysLinkType string
+
+// TaxonomyConceptLinkSysType defines model for TaxonomyConceptLink.Sys.Type.
+type TaxonomyConceptLinkSysType string
+
+// TaxonomyConceptScheme defines model for TaxonomyConceptScheme.
+type TaxonomyConceptScheme struct {
+	Sys struct {
+		// Id Concept scheme ID
+		Id       *string                           `json:"id,omitempty"`
+		LinkType *TaxonomyConceptSchemeSysLinkType `json:"linkType,omitempty"`
+		Type     *TaxonomyConceptSchemeSysType     `json:"type,omitempty"`
+	} `json:"sys"`
+}
+
+// TaxonomyConceptSchemeSysLinkType defines model for TaxonomyConceptScheme.Sys.LinkType.
+type TaxonomyConceptSchemeSysLinkType string
+
+// TaxonomyConceptSchemeSysType defines model for TaxonomyConceptScheme.Sys.Type.
+type TaxonomyConceptSchemeSysType string
+
+// TaxonomyConceptUpdate defines model for TaxonomyConceptUpdate.
+type TaxonomyConceptUpdate struct {
+	// AltLabel Alternative labels in different locales
+	AltLabel *map[string][]string `json:"altLabel,omitempty"`
+
+	// Broader References to broader concepts
+	Broader       *[]TaxonomyConceptLink `json:"broader,omitempty"`
+	ConceptScheme TaxonomyConceptScheme  `json:"conceptScheme"`
+
+	// Definition Definition in different locales
+	Definition *map[string]string `json:"definition,omitempty"`
+
+	// Example Examples in different locales
+	Example *map[string]string `json:"example,omitempty"`
+
+	// HiddenLabel Hidden labels in different locales
+	HiddenLabel *map[string][]string `json:"hiddenLabel,omitempty"`
+
+	// Narrower References to narrower concepts
+	Narrower *[]TaxonomyConceptLink `json:"narrower,omitempty"`
+
+	// Notations Notation codes for the concept
+	Notations *[]string `json:"notations,omitempty"`
+
+	// Note Notes in different locales
+	Note *map[string]string `json:"note,omitempty"`
+
+	// PrefLabel Preferred label in different locales
+	PrefLabel map[string]string `json:"prefLabel"`
+
+	// Related References to related concepts
+	Related *[]TaxonomyConceptLink `json:"related,omitempty"`
+}
+
 // Webhook defines model for Webhook.
 type Webhook struct {
 	// Active Whether the webhook is active
@@ -1927,6 +2163,36 @@ type UpdateLocaleParams struct {
 	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
 }
 
+// GetAllTaxonomyConceptsParams defines parameters for GetAllTaxonomyConcepts.
+type GetAllTaxonomyConceptsParams struct {
+	// Limit Maximum number of items to return
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Skip Number of items to skip
+	Skip *Skip `form:"skip,omitempty" json:"skip,omitempty"`
+}
+
+// CreateTaxonomyConceptParams defines parameters for CreateTaxonomyConcept.
+type CreateTaxonomyConceptParams struct {
+	// ContentType Contentful Management API version header
+	ContentType ContentTypeHeader `json:"Content-Type"`
+}
+
+// DeleteTaxonomyConceptParams defines parameters for DeleteTaxonomyConcept.
+type DeleteTaxonomyConceptParams struct {
+	// XContentfulVersion The version of the locale to update.
+	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
+}
+
+// UpdateTaxonomyConceptParams defines parameters for UpdateTaxonomyConcept.
+type UpdateTaxonomyConceptParams struct {
+	// ContentType Contentful Management API version header
+	ContentType ContentTypeHeader `json:"Content-Type"`
+
+	// XContentfulVersion The version of the locale to update.
+	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
+}
+
 // GetAllPreviewApiKeysParams defines parameters for GetAllPreviewApiKeys.
 type GetAllPreviewApiKeysParams struct {
 	// Limit Maximum number of items to return
@@ -2049,6 +2315,12 @@ type CreateLocaleJSONRequestBody = LocaleCreate
 
 // UpdateLocaleJSONRequestBody defines body for UpdateLocale for application/json ContentType.
 type UpdateLocaleJSONRequestBody = LocaleUpdate
+
+// CreateTaxonomyConceptJSONRequestBody defines body for CreateTaxonomyConcept for application/json ContentType.
+type CreateTaxonomyConceptJSONRequestBody = TaxonomyConceptCreate
+
+// UpdateTaxonomyConceptJSONRequestBody defines body for UpdateTaxonomyConcept for application/json ContentType.
+type UpdateTaxonomyConceptJSONRequestBody = TaxonomyConceptUpdate
 
 // CreatePreviewEnvironmentJSONRequestBody defines body for CreatePreviewEnvironment for application/json ContentType.
 type CreatePreviewEnvironmentJSONRequestBody = PreviewEnvironmentInput
@@ -2628,6 +2900,25 @@ type ClientInterface interface {
 	UpdateLocaleWithBody(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, localeId LocaleId, params *UpdateLocaleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateLocale(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, localeId LocaleId, params *UpdateLocaleParams, body UpdateLocaleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAllTaxonomyConcepts request
+	GetAllTaxonomyConcepts(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *GetAllTaxonomyConceptsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateTaxonomyConceptWithBody request with any body
+	CreateTaxonomyConceptWithBody(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *CreateTaxonomyConceptParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateTaxonomyConcept(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *CreateTaxonomyConceptParams, body CreateTaxonomyConceptJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteTaxonomyConcept request
+	DeleteTaxonomyConcept(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *DeleteTaxonomyConceptParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetTaxonomyConcept request
+	GetTaxonomyConcept(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateTaxonomyConceptWithBody request with any body
+	UpdateTaxonomyConceptWithBody(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *UpdateTaxonomyConceptParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateTaxonomyConcept(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *UpdateTaxonomyConceptParams, body UpdateTaxonomyConceptJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAllPreviewApiKeys request
 	GetAllPreviewApiKeys(ctx context.Context, spaceId SpaceId, params *GetAllPreviewApiKeysParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3664,6 +3955,90 @@ func (c *Client) UpdateLocaleWithBody(ctx context.Context, spaceId SpaceId, envi
 
 func (c *Client) UpdateLocale(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, localeId LocaleId, params *UpdateLocaleParams, body UpdateLocaleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateLocaleRequest(c.Server, spaceId, environmentId, localeId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAllTaxonomyConcepts(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *GetAllTaxonomyConceptsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAllTaxonomyConceptsRequest(c.Server, spaceId, environmentId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateTaxonomyConceptWithBody(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *CreateTaxonomyConceptParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateTaxonomyConceptRequestWithBody(c.Server, spaceId, environmentId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateTaxonomyConcept(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *CreateTaxonomyConceptParams, body CreateTaxonomyConceptJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateTaxonomyConceptRequest(c.Server, spaceId, environmentId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteTaxonomyConcept(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *DeleteTaxonomyConceptParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteTaxonomyConceptRequest(c.Server, spaceId, environmentId, conceptId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetTaxonomyConcept(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetTaxonomyConceptRequest(c.Server, spaceId, environmentId, conceptId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateTaxonomyConceptWithBody(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *UpdateTaxonomyConceptParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateTaxonomyConceptRequestWithBody(c.Server, spaceId, environmentId, conceptId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateTaxonomyConcept(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *UpdateTaxonomyConceptParams, body UpdateTaxonomyConceptJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateTaxonomyConceptRequest(c.Server, spaceId, environmentId, conceptId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -7606,6 +7981,344 @@ func NewUpdateLocaleRequestWithBody(server string, spaceId SpaceId, environmentI
 	return req, nil
 }
 
+// NewGetAllTaxonomyConceptsRequest generates requests for GetAllTaxonomyConcepts
+func NewGetAllTaxonomyConceptsRequest(server string, spaceId SpaceId, environmentId EnvironmentId, params *GetAllTaxonomyConceptsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "environmentId", runtime.ParamLocationPath, environmentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/environments/%s/taxonomy/concepts", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Skip != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "skip", runtime.ParamLocationQuery, *params.Skip); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateTaxonomyConceptRequest calls the generic CreateTaxonomyConcept builder with application/json body
+func NewCreateTaxonomyConceptRequest(server string, spaceId SpaceId, environmentId EnvironmentId, params *CreateTaxonomyConceptParams, body CreateTaxonomyConceptJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateTaxonomyConceptRequestWithBody(server, spaceId, environmentId, params, "application/json", bodyReader)
+}
+
+// NewCreateTaxonomyConceptRequestWithBody generates requests for CreateTaxonomyConcept with any type of body
+func NewCreateTaxonomyConceptRequestWithBody(server string, spaceId SpaceId, environmentId EnvironmentId, params *CreateTaxonomyConceptParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "environmentId", runtime.ParamLocationPath, environmentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/environments/%s/taxonomy/concepts", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Content-Type", runtime.ParamLocationHeader, params.ContentType)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Content-Type", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewDeleteTaxonomyConceptRequest generates requests for DeleteTaxonomyConcept
+func NewDeleteTaxonomyConceptRequest(server string, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *DeleteTaxonomyConceptParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "environmentId", runtime.ParamLocationPath, environmentId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "conceptId", runtime.ParamLocationPath, conceptId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/environments/%s/taxonomy/concepts/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Contentful-Version", runtime.ParamLocationHeader, params.XContentfulVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Contentful-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetTaxonomyConceptRequest generates requests for GetTaxonomyConcept
+func NewGetTaxonomyConceptRequest(server string, spaceId SpaceId, environmentId EnvironmentId, conceptId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "environmentId", runtime.ParamLocationPath, environmentId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "conceptId", runtime.ParamLocationPath, conceptId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/environments/%s/taxonomy/concepts/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateTaxonomyConceptRequest calls the generic UpdateTaxonomyConcept builder with application/json body
+func NewUpdateTaxonomyConceptRequest(server string, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *UpdateTaxonomyConceptParams, body UpdateTaxonomyConceptJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateTaxonomyConceptRequestWithBody(server, spaceId, environmentId, conceptId, params, "application/json", bodyReader)
+}
+
+// NewUpdateTaxonomyConceptRequestWithBody generates requests for UpdateTaxonomyConcept with any type of body
+func NewUpdateTaxonomyConceptRequestWithBody(server string, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *UpdateTaxonomyConceptParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "environmentId", runtime.ParamLocationPath, environmentId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "conceptId", runtime.ParamLocationPath, conceptId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/environments/%s/taxonomy/concepts/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Content-Type", runtime.ParamLocationHeader, params.ContentType)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Content-Type", headerParam0)
+
+		var headerParam1 string
+
+		headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Contentful-Version", runtime.ParamLocationHeader, params.XContentfulVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Contentful-Version", headerParam1)
+
+	}
+
+	return req, nil
+}
+
 // NewGetAllPreviewApiKeysRequest generates requests for GetAllPreviewApiKeys
 func NewGetAllPreviewApiKeysRequest(server string, spaceId SpaceId, params *GetAllPreviewApiKeysParams) (*http.Request, error) {
 	var err error
@@ -8758,6 +9471,25 @@ type ClientWithResponsesInterface interface {
 	UpdateLocaleWithBodyWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, localeId LocaleId, params *UpdateLocaleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateLocaleResponse, error)
 
 	UpdateLocaleWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, localeId LocaleId, params *UpdateLocaleParams, body UpdateLocaleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateLocaleResponse, error)
+
+	// GetAllTaxonomyConceptsWithResponse request
+	GetAllTaxonomyConceptsWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *GetAllTaxonomyConceptsParams, reqEditors ...RequestEditorFn) (*GetAllTaxonomyConceptsResponse, error)
+
+	// CreateTaxonomyConceptWithBodyWithResponse request with any body
+	CreateTaxonomyConceptWithBodyWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *CreateTaxonomyConceptParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateTaxonomyConceptResponse, error)
+
+	CreateTaxonomyConceptWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *CreateTaxonomyConceptParams, body CreateTaxonomyConceptJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateTaxonomyConceptResponse, error)
+
+	// DeleteTaxonomyConceptWithResponse request
+	DeleteTaxonomyConceptWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *DeleteTaxonomyConceptParams, reqEditors ...RequestEditorFn) (*DeleteTaxonomyConceptResponse, error)
+
+	// GetTaxonomyConceptWithResponse request
+	GetTaxonomyConceptWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, reqEditors ...RequestEditorFn) (*GetTaxonomyConceptResponse, error)
+
+	// UpdateTaxonomyConceptWithBodyWithResponse request with any body
+	UpdateTaxonomyConceptWithBodyWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *UpdateTaxonomyConceptParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTaxonomyConceptResponse, error)
+
+	UpdateTaxonomyConceptWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *UpdateTaxonomyConceptParams, body UpdateTaxonomyConceptJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTaxonomyConceptResponse, error)
 
 	// GetAllPreviewApiKeysWithResponse request
 	GetAllPreviewApiKeysWithResponse(ctx context.Context, spaceId SpaceId, params *GetAllPreviewApiKeysParams, reqEditors ...RequestEditorFn) (*GetAllPreviewApiKeysResponse, error)
@@ -10182,6 +10914,115 @@ func (r UpdateLocaleResponse) StatusCode() int {
 	return 0
 }
 
+type GetAllTaxonomyConceptsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *TaxonomyConceptCollection
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAllTaxonomyConceptsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAllTaxonomyConceptsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateTaxonomyConceptResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *TaxonomyConcept
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateTaxonomyConceptResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateTaxonomyConceptResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteTaxonomyConceptResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteTaxonomyConceptResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteTaxonomyConceptResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetTaxonomyConceptResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *TaxonomyConcept
+}
+
+// Status returns HTTPResponse.Status
+func (r GetTaxonomyConceptResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetTaxonomyConceptResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateTaxonomyConceptResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *TaxonomyConcept
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateTaxonomyConceptResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateTaxonomyConceptResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetAllPreviewApiKeysResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -11247,6 +12088,67 @@ func (c *ClientWithResponses) UpdateLocaleWithResponse(ctx context.Context, spac
 		return nil, err
 	}
 	return ParseUpdateLocaleResponse(rsp)
+}
+
+// GetAllTaxonomyConceptsWithResponse request returning *GetAllTaxonomyConceptsResponse
+func (c *ClientWithResponses) GetAllTaxonomyConceptsWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *GetAllTaxonomyConceptsParams, reqEditors ...RequestEditorFn) (*GetAllTaxonomyConceptsResponse, error) {
+	rsp, err := c.GetAllTaxonomyConcepts(ctx, spaceId, environmentId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAllTaxonomyConceptsResponse(rsp)
+}
+
+// CreateTaxonomyConceptWithBodyWithResponse request with arbitrary body returning *CreateTaxonomyConceptResponse
+func (c *ClientWithResponses) CreateTaxonomyConceptWithBodyWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *CreateTaxonomyConceptParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateTaxonomyConceptResponse, error) {
+	rsp, err := c.CreateTaxonomyConceptWithBody(ctx, spaceId, environmentId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateTaxonomyConceptResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateTaxonomyConceptWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, params *CreateTaxonomyConceptParams, body CreateTaxonomyConceptJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateTaxonomyConceptResponse, error) {
+	rsp, err := c.CreateTaxonomyConcept(ctx, spaceId, environmentId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateTaxonomyConceptResponse(rsp)
+}
+
+// DeleteTaxonomyConceptWithResponse request returning *DeleteTaxonomyConceptResponse
+func (c *ClientWithResponses) DeleteTaxonomyConceptWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *DeleteTaxonomyConceptParams, reqEditors ...RequestEditorFn) (*DeleteTaxonomyConceptResponse, error) {
+	rsp, err := c.DeleteTaxonomyConcept(ctx, spaceId, environmentId, conceptId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteTaxonomyConceptResponse(rsp)
+}
+
+// GetTaxonomyConceptWithResponse request returning *GetTaxonomyConceptResponse
+func (c *ClientWithResponses) GetTaxonomyConceptWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, reqEditors ...RequestEditorFn) (*GetTaxonomyConceptResponse, error) {
+	rsp, err := c.GetTaxonomyConcept(ctx, spaceId, environmentId, conceptId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetTaxonomyConceptResponse(rsp)
+}
+
+// UpdateTaxonomyConceptWithBodyWithResponse request with arbitrary body returning *UpdateTaxonomyConceptResponse
+func (c *ClientWithResponses) UpdateTaxonomyConceptWithBodyWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *UpdateTaxonomyConceptParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTaxonomyConceptResponse, error) {
+	rsp, err := c.UpdateTaxonomyConceptWithBody(ctx, spaceId, environmentId, conceptId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateTaxonomyConceptResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateTaxonomyConceptWithResponse(ctx context.Context, spaceId SpaceId, environmentId EnvironmentId, conceptId string, params *UpdateTaxonomyConceptParams, body UpdateTaxonomyConceptJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTaxonomyConceptResponse, error) {
+	rsp, err := c.UpdateTaxonomyConcept(ctx, spaceId, environmentId, conceptId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateTaxonomyConceptResponse(rsp)
 }
 
 // GetAllPreviewApiKeysWithResponse request returning *GetAllPreviewApiKeysResponse
@@ -12972,6 +13874,126 @@ func ParseUpdateLocaleResponse(rsp *http.Response) (*UpdateLocaleResponse, error
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Locale
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetAllTaxonomyConceptsResponse parses an HTTP response from a GetAllTaxonomyConceptsWithResponse call
+func ParseGetAllTaxonomyConceptsResponse(rsp *http.Response) (*GetAllTaxonomyConceptsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAllTaxonomyConceptsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest TaxonomyConceptCollection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateTaxonomyConceptResponse parses an HTTP response from a CreateTaxonomyConceptWithResponse call
+func ParseCreateTaxonomyConceptResponse(rsp *http.Response) (*CreateTaxonomyConceptResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateTaxonomyConceptResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest TaxonomyConcept
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteTaxonomyConceptResponse parses an HTTP response from a DeleteTaxonomyConceptWithResponse call
+func ParseDeleteTaxonomyConceptResponse(rsp *http.Response) (*DeleteTaxonomyConceptResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteTaxonomyConceptResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetTaxonomyConceptResponse parses an HTTP response from a GetTaxonomyConceptWithResponse call
+func ParseGetTaxonomyConceptResponse(rsp *http.Response) (*GetTaxonomyConceptResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetTaxonomyConceptResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest TaxonomyConcept
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateTaxonomyConceptResponse parses an HTTP response from a UpdateTaxonomyConceptWithResponse call
+func ParseUpdateTaxonomyConceptResponse(rsp *http.Response) (*UpdateTaxonomyConceptResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateTaxonomyConceptResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest TaxonomyConcept
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
