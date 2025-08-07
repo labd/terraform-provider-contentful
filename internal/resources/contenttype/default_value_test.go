@@ -9,8 +9,7 @@ import (
 )
 
 func TestDefaultValue_Draft_WithNullMaps(t *testing.T) {
-	// Test case to reproduce the issue where DefaultValue with null maps
-	// returns nil from Draft(), causing plan discrepancies
+	// Test case where DefaultValue with null maps returns nil from Draft()
 	defaultValue := &DefaultValue{
 		Bool:   types.MapNull(types.BoolType),
 		String: types.MapNull(types.StringType),
@@ -18,7 +17,7 @@ func TestDefaultValue_Draft_WithNullMaps(t *testing.T) {
 
 	result := defaultValue.Draft()
 	
-	// This should return nil, which is the current behavior causing the issue
+	// This should return nil
 	assert.Nil(t, result)
 }
 
@@ -35,12 +34,13 @@ func TestDefaultValue_Draft_WithEmptyMaps(t *testing.T) {
 	assert.Nil(t, result)
 }
 
-func TestDefaultValue_Draft_WithValues(t *testing.T) {
-	// Test case with actual values
+func TestDefaultValue_Draft_WithStringValues(t *testing.T) {
+	// Test case with actual string values
 	defaultValue := &DefaultValue{
 		Bool:   types.MapNull(types.BoolType),
 		String: types.MapValueMust(types.StringType, map[string]attr.Value{
-			"en": types.StringValue("test"),
+			"en-US": types.StringValue("green"),
+			"de-DE": types.StringValue("grün"),
 		}),
 	}
 
@@ -48,7 +48,26 @@ func TestDefaultValue_Draft_WithValues(t *testing.T) {
 	
 	// This should return a valid map
 	assert.NotNil(t, result)
-	assert.Equal(t, "test", (*result)["en"])
+	assert.Equal(t, "green", (*result)["en-US"])
+	assert.Equal(t, "grün", (*result)["de-DE"])
+}
+
+func TestDefaultValue_Draft_WithBoolValues(t *testing.T) {
+	// Test case with boolean values
+	defaultValue := &DefaultValue{
+		Bool: types.MapValueMust(types.BoolType, map[string]attr.Value{
+			"en-US": types.BoolValue(true),
+			"de-DE": types.BoolValue(false),
+		}),
+		String: types.MapNull(types.StringType),
+	}
+
+	result := defaultValue.Draft()
+	
+	// This should return a valid map
+	assert.NotNil(t, result)
+	assert.Equal(t, true, (*result)["en-US"])
+	assert.Equal(t, false, (*result)["de-DE"])
 }
 
 func TestDefaultValue_HasContent_WithNullMaps(t *testing.T) {
@@ -71,12 +90,24 @@ func TestDefaultValue_HasContent_WithEmptyMaps(t *testing.T) {
 	assert.False(t, result)
 }
 
-func TestDefaultValue_HasContent_WithValues(t *testing.T) {
+func TestDefaultValue_HasContent_WithStringValues(t *testing.T) {
 	defaultValue := &DefaultValue{
 		Bool:   types.MapNull(types.BoolType),
 		String: types.MapValueMust(types.StringType, map[string]attr.Value{
-			"en": types.StringValue("test"),
+			"en-US": types.StringValue("test"),
 		}),
+	}
+
+	result := defaultValue.HasContent()
+	assert.True(t, result)
+}
+
+func TestDefaultValue_HasContent_WithBoolValues(t *testing.T) {
+	defaultValue := &DefaultValue{
+		Bool: types.MapValueMust(types.BoolType, map[string]attr.Value{
+			"en-US": types.BoolValue(true),
+		}),
+		String: types.MapNull(types.StringType),
 	}
 
 	result := defaultValue.HasContent()
@@ -90,47 +121,16 @@ func TestDefaultValue_HasContent_NilPointer(t *testing.T) {
 	assert.False(t, result)
 }
 
-func TestField_ToNative_ArrayFieldWithDefaultValue(t *testing.T) {
-	// Test case to reproduce the issue with Array fields and default values
-	field := &Field{
-		Id:   types.StringValue("test_array"),
-		Name: types.StringValue("Test Array"),
-		Type: types.StringValue("Array"),
-		Items: &Items{
-			Type: types.StringValue("Symbol"),
-		},
-		DefaultValue: &DefaultValue{
-			Bool:   types.MapNull(types.BoolType),
-			String: types.MapNull(types.StringType),
-		},
-		Required:    types.BoolValue(false),
-		Localized:   types.BoolValue(false),
-		Disabled:    types.BoolValue(false),
-		Omitted:     types.BoolValue(false),
-		Validations: []Validation{},
-	}
-
-	result, err := field.ToNative()
-	
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	
-	// The key issue: DefaultValue should not be set for Array fields when it's empty
-	// Currently this would be nil due to Draft() returning nil, causing plan discrepancy
-	// After fix, it should be nil consistently
-	assert.Nil(t, result.DefaultValue)
-}
-
-func TestField_ToNative_SymbolFieldWithDefaultValue(t *testing.T) {
-	// Test case for @mvantellingen's use case with Symbol field having default value
+func TestField_ToNative_WithStringDefaultValue(t *testing.T) {
+	// Test ToNative with string default value (your original use case)
 	field := &Field{
 		Id:   types.StringValue("themeColor"),
 		Name: types.StringValue("Theme Color"),
 		Type: types.StringValue("Symbol"),
 		DefaultValue: &DefaultValue{
-			Bool: types.MapNull(types.BoolType),
+			Bool:   types.MapNull(types.BoolType),
 			String: types.MapValueMust(types.StringType, map[string]attr.Value{
-				"en": types.StringValue("green"),
+				"en-US": types.StringValue("green"),
 			}),
 		},
 		Required:    types.BoolValue(false),
@@ -144,8 +144,54 @@ func TestField_ToNative_SymbolFieldWithDefaultValue(t *testing.T) {
 	
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	
-	// This should work correctly - DefaultValue should be set because it has content
 	assert.NotNil(t, result.DefaultValue)
-	assert.Equal(t, "green", (*result.DefaultValue)["en"])
+	assert.Equal(t, "green", (*result.DefaultValue)["en-US"])
+}
+
+func TestField_ToNative_WithBoolDefaultValue(t *testing.T) {
+	// Test ToNative with boolean default value
+	field := &Field{
+		Id:   types.StringValue("enableFeature"),
+		Name: types.StringValue("Enable Feature"),
+		Type: types.StringValue("Boolean"),
+		DefaultValue: &DefaultValue{
+			Bool: types.MapValueMust(types.BoolType, map[string]attr.Value{
+				"en-US": types.BoolValue(true),
+			}),
+			String: types.MapNull(types.StringType),
+		},
+		Required:    types.BoolValue(false),
+		Localized:   types.BoolValue(false),
+		Disabled:    types.BoolValue(false),
+		Omitted:     types.BoolValue(false),
+		Validations: []Validation{},
+	}
+
+	result, err := field.ToNative()
+	
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.NotNil(t, result.DefaultValue)
+	assert.Equal(t, true, (*result.DefaultValue)["en-US"])
+}
+
+func TestField_ToNative_WithNullDefaultValue(t *testing.T) {
+	// Test ToNative with no default value
+	field := &Field{
+		Id:           types.StringValue("noDefault"),
+		Name:         types.StringValue("No Default"),
+		Type:         types.StringValue("Symbol"),
+		DefaultValue: nil,
+		Required:     types.BoolValue(false),
+		Localized:    types.BoolValue(false),
+		Disabled:     types.BoolValue(false),
+		Omitted:      types.BoolValue(false),
+		Validations:  []Validation{},
+	}
+
+	result, err := field.ToNative()
+	
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Nil(t, result.DefaultValue)
 }

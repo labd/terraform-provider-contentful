@@ -62,6 +62,20 @@ resource "contentful_contenttype" "example_contenttype" {
       ]
     },
     {
+      id   = "themeColor"
+      name = "Theme Color"
+      type = "Symbol"
+      validations = [{
+        in = ["green", "pink", "turquoise", "yellow", "purple"]
+      }]
+      default_value = {
+        string = {
+          "en-US" = "green"
+        }
+      }
+      required = false
+    },
+    {
       id   = "content"
       name = "Content"
       type = "RichText"

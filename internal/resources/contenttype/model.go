@@ -66,14 +66,12 @@ func (d *DefaultValue) Draft() *map[string]any {
 	var defaultValues = map[string]any{}
 
 	if !d.String.IsNull() && !d.String.IsUnknown() {
-
 		for k, v := range d.String.Elements() {
 			defaultValues[k] = v.(types.String).ValueString()
 		}
 	}
 
 	if !d.Bool.IsNull() && !d.Bool.IsUnknown() {
-
 		for k, v := range d.Bool.Elements() {
 			defaultValues[k] = v.(types.Bool).ValueBool()
 		}

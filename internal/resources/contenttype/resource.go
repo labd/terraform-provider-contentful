@@ -360,16 +360,22 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 							},
 						},
 						"default_value": schema.SingleNestedAttribute{
-							Optional: true,
+							Optional:    true,
+							Description: "Default value for the field. Use 'string' for text values or 'bool' for boolean values, with locale keys.",
 							Attributes: map[string]schema.Attribute{
 								"bool": schema.MapAttribute{
 									ElementType: types.BoolType,
 									Optional:    true,
+									Description: "Boolean default values by locale. Example: {\"en-US\" = true}",
 								},
 								"string": schema.MapAttribute{
 									ElementType: types.StringType,
 									Optional:    true,
+									Description: "String default values by locale. Example: {\"en-US\" = \"green\"}",
 								},
+							},
+							Validators: []validator.Object{
+								customvalidator.DefaultValueStructure(),
 							},
 						},
 					},
