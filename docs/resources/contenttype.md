@@ -77,6 +77,20 @@ resource "contentful_contenttype" "example_contenttype" {
       ]
     },
     {
+      id   = "themeColor"
+      name = "Theme Color"
+      type = "Symbol"
+      validations = [{
+        in = ["green", "pink", "turquoise", "yellow", "purple"]
+      }]
+      default_value = {
+        string = {
+          "en-US" = "green"
+        }
+      }
+      required = false
+    },
+    {
       id   = "content"
       name = "Content"
       type = "RichText"
@@ -138,7 +152,7 @@ Required:
 
 Optional:
 
-- `default_value` (Attributes) (see [below for nested schema](#nestedatt--fields--default_value))
+- `default_value` (Attributes) Default value for the field. Use 'string' for text values or 'bool' for boolean values, with locale keys. (see [below for nested schema](#nestedatt--fields--default_value))
 - `disabled` (Boolean)
 - `items` (Attributes) (see [below for nested schema](#nestedatt--fields--items))
 - `link_type` (String)
@@ -152,8 +166,8 @@ Optional:
 
 Optional:
 
-- `bool` (Map of Boolean)
-- `string` (Map of String)
+- `bool` (Map of Boolean) Boolean default values by locale. Example: `{"en-US" = true}`
+- `string` (Map of String) String default values by locale. Example: `{"en-US" = "green", "de-DE" = "grün"}`
 
 
 <a id="nestedatt--fields--items"></a>

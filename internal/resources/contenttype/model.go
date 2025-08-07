@@ -43,18 +43,35 @@ type DefaultValue struct {
 	String types.Map `tfsdk:"string"`
 }
 
+// HasContent checks if the DefaultValue has any actual content
+func (d *DefaultValue) HasContent() bool {
+	if d == nil {
+		return false
+	}
+	
+	// Check if String map has content
+	if !d.String.IsNull() && !d.String.IsUnknown() && len(d.String.Elements()) > 0 {
+		return true
+	}
+	
+	// Check if Bool map has content
+	if !d.Bool.IsNull() && !d.Bool.IsUnknown() && len(d.Bool.Elements()) > 0 {
+		return true
+	}
+	
+	return false
+}
+
 func (d *DefaultValue) Draft() *map[string]any {
 	var defaultValues = map[string]any{}
 
 	if !d.String.IsNull() && !d.String.IsUnknown() {
-
 		for k, v := range d.String.Elements() {
 			defaultValues[k] = v.(types.String).ValueString()
 		}
 	}
 
 	if !d.Bool.IsNull() && !d.Bool.IsUnknown() {
-
 		for k, v := range d.Bool.Elements() {
 			defaultValues[k] = v.(types.Bool).ValueBool()
 		}
@@ -586,7 +603,7 @@ func (f *Field) ToNative() (*sdk.Field, error) {
 		contentfulField.Items = items
 	}
 
-	if f.DefaultValue != nil {
+	if f.DefaultValue != nil && f.DefaultValue.HasContent() {
 		contentfulField.DefaultValue = f.DefaultValue.Draft()
 	}
 
