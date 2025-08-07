@@ -10,19 +10,19 @@ import (
 
 // TaxonomyConcept is the main resource schema data
 type TaxonomyConcept struct {
-	ID           types.String `tfsdk:"id"`
-	Version      types.Int64  `tfsdk:"version"`
-	SpaceID      types.String `tfsdk:"space_id"`
-	Environment  types.String `tfsdk:"environment"`
+	ID            types.String `tfsdk:"id"`
+	Version       types.Int64  `tfsdk:"version"`
+	SpaceID       types.String `tfsdk:"space_id"`
+	Environment   types.String `tfsdk:"environment"`
 	ConceptScheme types.String `tfsdk:"concept_scheme_id"`
-	PrefLabel    types.Map    `tfsdk:"pref_label"`
-	AltLabel     types.Map    `tfsdk:"alt_label"`
-	Definition   types.Map    `tfsdk:"definition"`
-	Note         types.Map    `tfsdk:"note"`
-	Notations    types.List   `tfsdk:"notations"`
-	Broader      types.List   `tfsdk:"broader"`
-	Narrower     types.List   `tfsdk:"narrower"`
-	Related      types.List   `tfsdk:"related"`
+	PrefLabel     types.Map    `tfsdk:"pref_label"`
+	AltLabel      types.Map    `tfsdk:"alt_label"`
+	Definition    types.Map    `tfsdk:"definition"`
+	Note          types.Map    `tfsdk:"note"`
+	Notations     types.List   `tfsdk:"notations"`
+	Broader       types.List   `tfsdk:"broader"`
+	Narrower      types.List   `tfsdk:"narrower"`
+	Related       types.List   `tfsdk:"related"`
 }
 
 // Import populates the TaxonomyConcept struct from an SDK taxonomy concept object
@@ -171,7 +171,7 @@ func (t *TaxonomyConcept) DraftForCreate() sdk.TaxonomyConceptCreate {
 	if !t.ConceptScheme.IsNull() && !t.ConceptScheme.IsUnknown() {
 		conceptCreate.ConceptScheme = sdk.TaxonomyConceptScheme{
 			Sys: struct {
-				Id       *string                                `json:"id,omitempty"`
+				Id       *string                               `json:"id,omitempty"`
 				LinkType *sdk.TaxonomyConceptSchemeSysLinkType `json:"linkType,omitempty"`
 				Type     *sdk.TaxonomyConceptSchemeSysType     `json:"type,omitempty"`
 			}{
@@ -239,9 +239,9 @@ func (t *TaxonomyConcept) DraftForCreate() sdk.TaxonomyConceptCreate {
 			id := elem.(types.String).ValueString()
 			broaderList[i] = sdk.TaxonomyConceptLink{
 				Sys: struct {
-					Id       *string                               `json:"id,omitempty"`
-					LinkType *sdk.TaxonomyConceptLinkSysLinkType  `json:"linkType,omitempty"`
-					Type     *sdk.TaxonomyConceptLinkSysType      `json:"type,omitempty"`
+					Id       *string                             `json:"id,omitempty"`
+					LinkType *sdk.TaxonomyConceptLinkSysLinkType `json:"linkType,omitempty"`
+					Type     *sdk.TaxonomyConceptLinkSysType     `json:"type,omitempty"`
 				}{
 					Id:       utils.Pointer(id),
 					LinkType: utils.Pointer(sdk.TaxonomyConceptLinkSysLinkTypeTaxonomyConcept),
@@ -259,9 +259,9 @@ func (t *TaxonomyConcept) DraftForCreate() sdk.TaxonomyConceptCreate {
 			id := elem.(types.String).ValueString()
 			narrowerList[i] = sdk.TaxonomyConceptLink{
 				Sys: struct {
-					Id       *string                               `json:"id,omitempty"`
-					LinkType *sdk.TaxonomyConceptLinkSysLinkType  `json:"linkType,omitempty"`
-					Type     *sdk.TaxonomyConceptLinkSysType      `json:"type,omitempty"`
+					Id       *string                             `json:"id,omitempty"`
+					LinkType *sdk.TaxonomyConceptLinkSysLinkType `json:"linkType,omitempty"`
+					Type     *sdk.TaxonomyConceptLinkSysType     `json:"type,omitempty"`
 				}{
 					Id:       utils.Pointer(id),
 					LinkType: utils.Pointer(sdk.TaxonomyConceptLinkSysLinkTypeTaxonomyConcept),
@@ -279,9 +279,9 @@ func (t *TaxonomyConcept) DraftForCreate() sdk.TaxonomyConceptCreate {
 			id := elem.(types.String).ValueString()
 			relatedList[i] = sdk.TaxonomyConceptLink{
 				Sys: struct {
-					Id       *string                               `json:"id,omitempty"`
-					LinkType *sdk.TaxonomyConceptLinkSysLinkType  `json:"linkType,omitempty"`
-					Type     *sdk.TaxonomyConceptLinkSysType      `json:"type,omitempty"`
+					Id       *string                             `json:"id,omitempty"`
+					LinkType *sdk.TaxonomyConceptLinkSysLinkType `json:"linkType,omitempty"`
+					Type     *sdk.TaxonomyConceptLinkSysType     `json:"type,omitempty"`
 				}{
 					Id:       utils.Pointer(id),
 					LinkType: utils.Pointer(sdk.TaxonomyConceptLinkSysLinkTypeTaxonomyConcept),
@@ -303,7 +303,7 @@ func (t *TaxonomyConcept) DraftForUpdate() sdk.TaxonomyConceptUpdate {
 	if !t.ConceptScheme.IsNull() && !t.ConceptScheme.IsUnknown() {
 		conceptUpdate.ConceptScheme = sdk.TaxonomyConceptScheme{
 			Sys: struct {
-				Id       *string                                `json:"id,omitempty"`
+				Id       *string                               `json:"id,omitempty"`
 				LinkType *sdk.TaxonomyConceptSchemeSysLinkType `json:"linkType,omitempty"`
 				Type     *sdk.TaxonomyConceptSchemeSysType     `json:"type,omitempty"`
 			}{
@@ -371,9 +371,9 @@ func (t *TaxonomyConcept) DraftForUpdate() sdk.TaxonomyConceptUpdate {
 			id := elem.(types.String).ValueString()
 			broaderList[i] = sdk.TaxonomyConceptLink{
 				Sys: struct {
-					Id       *string                               `json:"id,omitempty"`
-					LinkType *sdk.TaxonomyConceptLinkSysLinkType  `json:"linkType,omitempty"`
-					Type     *sdk.TaxonomyConceptLinkSysType      `json:"type,omitempty"`
+					Id       *string                             `json:"id,omitempty"`
+					LinkType *sdk.TaxonomyConceptLinkSysLinkType `json:"linkType,omitempty"`
+					Type     *sdk.TaxonomyConceptLinkSysType     `json:"type,omitempty"`
 				}{
 					Id:       utils.Pointer(id),
 					LinkType: utils.Pointer(sdk.TaxonomyConceptLinkSysLinkTypeTaxonomyConcept),
@@ -391,9 +391,9 @@ func (t *TaxonomyConcept) DraftForUpdate() sdk.TaxonomyConceptUpdate {
 			id := elem.(types.String).ValueString()
 			narrowerList[i] = sdk.TaxonomyConceptLink{
 				Sys: struct {
-					Id       *string                               `json:"id,omitempty"`
-					LinkType *sdk.TaxonomyConceptLinkSysLinkType  `json:"linkType,omitempty"`
-					Type     *sdk.TaxonomyConceptLinkSysType      `json:"type,omitempty"`
+					Id       *string                             `json:"id,omitempty"`
+					LinkType *sdk.TaxonomyConceptLinkSysLinkType `json:"linkType,omitempty"`
+					Type     *sdk.TaxonomyConceptLinkSysType     `json:"type,omitempty"`
 				}{
 					Id:       utils.Pointer(id),
 					LinkType: utils.Pointer(sdk.TaxonomyConceptLinkSysLinkTypeTaxonomyConcept),
@@ -411,9 +411,9 @@ func (t *TaxonomyConcept) DraftForUpdate() sdk.TaxonomyConceptUpdate {
 			id := elem.(types.String).ValueString()
 			relatedList[i] = sdk.TaxonomyConceptLink{
 				Sys: struct {
-					Id       *string                               `json:"id,omitempty"`
-					LinkType *sdk.TaxonomyConceptLinkSysLinkType  `json:"linkType,omitempty"`
-					Type     *sdk.TaxonomyConceptLinkSysType      `json:"type,omitempty"`
+					Id       *string                             `json:"id,omitempty"`
+					LinkType *sdk.TaxonomyConceptLinkSysLinkType `json:"linkType,omitempty"`
+					Type     *sdk.TaxonomyConceptLinkSysType     `json:"type,omitempty"`
 				}{
 					Id:       utils.Pointer(id),
 					LinkType: utils.Pointer(sdk.TaxonomyConceptLinkSysLinkTypeTaxonomyConcept),
