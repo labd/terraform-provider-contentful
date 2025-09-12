@@ -3,12 +3,12 @@
 page_title: "contentful_contenttype Resource - terraform-provider-contentful"
 subcategory: ""
 description: |-
-  Todo for explaining contenttype
+  A content type consists of a set of fields and other information, read this guide https://www.contentful.com/developers/docs/concepts/data-model/ to learn more about modeling your content.
 ---
 
 # contentful_contenttype (Resource)
 
-Todo for explaining contenttype
+A content type consists of a set of fields and other information, read [this guide](https://www.contentful.com/developers/docs/concepts/data-model/) to learn more about modeling your content.
 
 ## Example Usage
 
@@ -96,6 +96,12 @@ resource "contentful_contenttype" "example_contenttype" {
       type = "RichText"
       validations = [
         {
+          size = {
+            min = 10
+            max = 1000
+          }
+        },
+        {
           nodes = {
             entry_hyperlink = [
               {
@@ -117,6 +123,54 @@ resource "contentful_contenttype" "example_contenttype" {
       ]
       required = false
     }
+  ]
+}
+```
+
+## Note on adding validations
+
+When adding validations to contenttype fields, please ensure that the validation rules are provided as an object
+**per rule** rather than as a single combined rule. This adheres to Contentful's API requirements and ensures that
+each validation is correctly interpreted:
+
+```terraform
+resource "contentful_contenttype" "block_faq_item" {
+  space_id      = local.space_id
+  environment   = local.environment
+  id            = "blockFaqItem"
+  name          = "Block: FAQ Item"
+  display_field = "question"
+
+  fields = [
+    {
+      id       = "question"
+      name     = "Question"
+      type     = "Symbol"
+      required = true
+    },
+    {
+      id       = "answer"
+      name     = "Answer"
+      type     = "RichText"
+      required = true
+      validations = [
+        {
+          message = "Only bold and italic marks are allowed"
+          enabled_marks = [
+            "bold",
+            "italic"
+          ]
+        },
+        {
+          message = "Only ordered and unordered lists and hyperlinks are allowed"
+          enabled_node_types = [
+            "ordered-list",
+            "unordered-list",
+            "hyperlink"
+          ]
+        }
+      ]
+    },
   ]
 }
 ```
@@ -166,8 +220,8 @@ Optional:
 
 Optional:
 
-- `bool` (Map of Boolean) Boolean default values by locale. Example: `{"en-US" = true}`
-- `string` (Map of String) String default values by locale. Example: `{"en-US" = "green", "de-DE" = "grün"}`
+- `bool` (Map of Boolean) Boolean default values by locale. Example: {"en-US" = true}
+- `string` (Map of String) String default values by locale. Example: {"en-US" = "green"}
 
 
 <a id="nestedatt--fields--items"></a>
