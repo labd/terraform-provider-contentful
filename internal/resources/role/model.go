@@ -2,6 +2,7 @@ package role
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/iancoleman/orderedmap"
@@ -40,7 +41,7 @@ type Action struct {
 }
 
 // Import populates the Role struct from an sdk.Role object
-func (r *Role) Import(role *sdk.Role) {
+func (r *Role) Import(role *sdk.Role) error {
 	r.ID = types.StringValue(role.Sys.Id)
 	r.RoleId = types.StringValue(role.Sys.Id)
 	r.SpaceID = types.StringValue(role.Sys.Space.Sys.Id)
@@ -48,8 +49,13 @@ func (r *Role) Import(role *sdk.Role) {
 	r.Name = types.StringValue(role.Name)
 	r.Description = types.StringValue(role.Description)
 
-	r.BuildPermissionsFromAPIResponse(role)
+	err := r.BuildPermissionsFromAPIResponse(role)
+	if err != nil {
+		return err
+	}
 	r.BuildPoliciesFromAPIResponse(role)
+
+	return nil
 }
 
 func (r *Role) DraftForCreate() sdk.RoleCreate {
@@ -120,12 +126,12 @@ func convertPolicies(policies []Policy) *[]any {
 	return &out
 }
 
-func (r *Role) BuildPermissionsFromAPIResponse(role *sdk.Role) {
+func (r *Role) BuildPermissionsFromAPIResponse(role *sdk.Role) error {
 	var permissions []Permission
 
 	// If no fields are present in the response, return early
 	if len(role.Permissions.Keys()) == 0 {
-		return
+		return nil
 	}
 
 	for _, key := range role.Permissions.Keys() {
@@ -135,16 +141,20 @@ func (r *Role) BuildPermissionsFromAPIResponse(role *sdk.Role) {
 		var actions []string
 
 		switch val := rawActions.(type) {
+		case string:
+			actions = []string{val}
 		case []string:
 			actions = val
 		case []interface{}:
 			for _, item := range val {
 				if str, ok := item.(string); ok {
 					actions = append(actions, str)
+				} else {
+					return fmt.Errorf("unexpected type in permission actions slice: %T", item)
 				}
 			}
 		default:
-			continue
+			return fmt.Errorf("unexpected type for permission actions: %T", val)
 		}
 
 		permission.ID = types.StringValue(key)
@@ -168,6 +178,8 @@ func (r *Role) BuildPermissionsFromAPIResponse(role *sdk.Role) {
 	}
 
 	r.Permission = permissions
+
+	return nil
 }
 
 func (r *Role) BuildPoliciesFromAPIResponse(role *sdk.Role) {
@@ -219,7 +231,7 @@ func (r *Role) BuildPoliciesFromAPIResponse(role *sdk.Role) {
 	r.Policy = policies
 }
 
-// parseContentValue tries to parse a string as JSON, otherwise returns the original value
+// ParseContentValue tries to parse a string as JSON, otherwise returns the original value
 func ParseContentValue(value string) interface{} {
 	var content any
 
