@@ -159,7 +159,14 @@ func (e *roleResource) Create(ctx context.Context, request resource.CreateReques
 	}
 
 	state := &Role{}
-	state.Import(resp.JSON201)
+	err = state.Import(resp.JSON201)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error creating role",
+			"Could not parse response: "+err.Error(),
+		)
+		return
+	}
 
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
@@ -182,7 +189,14 @@ func (e *roleResource) Read(ctx context.Context, request resource.ReadRequest, r
 		response.Diagnostics.AddError("Error reading role", err.Error())
 	}
 
-	state.Import(resp.JSON200)
+	err = state.Import(resp.JSON200)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error reading role",
+			"Could not parse response: "+err.Error(),
+		)
+		return
+	}
 
 	response.Diagnostics.Append(request.State.Set(ctx, &state)...)
 }
@@ -225,7 +239,14 @@ func (e *roleResource) Update(ctx context.Context, request resource.UpdateReques
 		return
 	}
 
-	state.Import(resp.JSON200)
+	err = state.Import(resp.JSON200)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error updating role",
+			"Could not parse response: "+err.Error(),
+		)
+		return
+	}
 
 	// Set state
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
@@ -258,7 +279,14 @@ func (e *roleResource) Delete(ctx context.Context, request resource.DeleteReques
 		return
 	}
 
-	state.Import(resp.JSON200)
+	err = state.Import(resp.JSON200)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error deleting role",
+			"Could not parse response: "+err.Error(),
+		)
+		return
+	}
 
 	// Create delete parameters with latest version
 	params := &sdk.DeleteRoleParams{
@@ -315,7 +343,14 @@ func (e *roleResource) ImportState(ctx context.Context, request resource.ImportS
 	}
 
 	role := Role{}
-	role.Import(resp.JSON200)
+	err = role.Import(resp.JSON200)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error importing role",
+			"Could not parse response: "+err.Error(),
+		)
+		return
+	}
 
 	response.Diagnostics.Append(response.State.Set(ctx, role)...)
 }
