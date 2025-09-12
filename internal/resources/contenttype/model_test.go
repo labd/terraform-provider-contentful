@@ -13,7 +13,7 @@ func TestValidationDraftReturnsErrorForUnsupportedValidation(t *testing.T) {
 	_, err := validation.Draft()
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "unsupported validation used")
+	assert.Contains(t, err.Error(), "at least one validation property must be set")
 }
 
 func TestValidationDraftReturnsCorrectUniqueValidation(t *testing.T) {

@@ -81,6 +81,12 @@ resource "contentful_contenttype" "example_contenttype" {
       type = "RichText"
       validations = [
         {
+          size = {
+            min = 10
+            max = 1000
+          }
+        },
+        {
           nodes = {
             entry_hyperlink = [
               {

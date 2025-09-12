@@ -3,6 +3,7 @@ package contenttype
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"net/http"
 	"strings"
 	"time"
@@ -10,7 +11,6 @@ import (
 	"github.com/cenkalti/backoff/v5"
 	"github.com/elliotchance/pie/v2"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -244,7 +244,7 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 	}
 
 	response.Schema = schema.Schema{
-		Description: "Todo for explaining contenttype",
+		MarkdownDescription: "A content type consists of a set of fields and other information, read [this guide](https://www.contentful.com/developers/docs/concepts/data-model/) to learn more about modeling your content.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Optional:    true,

@@ -48,17 +48,17 @@ func (d *DefaultValue) HasContent() bool {
 	if d == nil {
 		return false
 	}
-	
+
 	// Check if String map has content
 	if !d.String.IsNull() && !d.String.IsUnknown() && len(d.String.Elements()) > 0 {
 		return true
 	}
-	
+
 	// Check if Bool map has content
 	if !d.Bool.IsNull() && !d.Bool.IsUnknown() && len(d.Bool.Elements()) > 0 {
 		return true
 	}
-	
+
 	return false
 }
 
@@ -100,14 +100,15 @@ type Validation struct {
 }
 
 func (v Validation) Draft() (*sdk.FieldValidation, error) {
-
 	base := &sdk.FieldValidation{
 		Message: v.Message.ValueStringPointer(),
 	}
 
+	var counter = 0
+
 	if !v.Unique.IsUnknown() && !v.Unique.IsNull() {
 		base.Unique = v.Unique.ValueBoolPointer()
-		return base, nil
+		counter++
 	}
 
 	if v.Size != nil {
@@ -115,7 +116,7 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 			Min: v.Size.Min.ValueFloat64Pointer(),
 			Max: v.Size.Max.ValueFloat64Pointer(),
 		}
-		return base, nil
+		counter++
 	}
 
 	if v.Range != nil {
@@ -123,7 +124,7 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 			Min: v.Range.Min.ValueFloat64Pointer(),
 			Max: v.Range.Max.ValueFloat64Pointer(),
 		}
-		return base, nil
+		counter++
 	}
 
 	if v.AssetFileSize != nil {
@@ -131,14 +132,14 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 			Min: v.AssetFileSize.Min.ValueFloat64Pointer(),
 			Max: v.AssetFileSize.Max.ValueFloat64Pointer(),
 		}
-		return base, nil
+		counter++
 	}
 
 	if v.Regexp != nil {
 		base.Regexp = &sdk.RegexValidationValue{
 			Pattern: v.Regexp.Pattern.ValueString(),
 		}
-		return base, nil
+		counter++
 	}
 
 	if v.LinkContentType != nil {
@@ -146,7 +147,7 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 			return t.ValueString()
 		})
 		base.LinkContentType = &value
-		return base, nil
+		counter++
 	}
 
 	if v.LinkMimetypeGroup != nil {
@@ -154,7 +155,7 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 			return t.ValueString()
 		})
 		base.LinkMimetypeGroup = &value
-		return base, nil
+		counter++
 	}
 
 	if v.In != nil {
@@ -162,7 +163,7 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 			return t.ValueString()
 		})
 		base.In = &value
-		return base, nil
+		counter++
 	}
 
 	if v.EnabledMarks != nil {
@@ -170,7 +171,7 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 			return t.ValueString()
 		})
 		base.EnabledMarks = &value
-		return base, nil
+		counter++
 	}
 
 	if v.EnabledNodeTypes != nil {
@@ -178,16 +179,24 @@ func (v Validation) Draft() (*sdk.FieldValidation, error) {
 			return t.ValueString()
 		})
 		base.EnabledNodeTypes = &value
-		return base, nil
+		counter++
 	}
 
 	if v.Nodes != nil {
 		value := v.Nodes.Draft()
 		base.Nodes = value
-		return base, nil
+		counter++
 	}
 
-	return nil, fmt.Errorf("unsupported validation used, %s. Please implement", reflect.TypeOf(v).String())
+	if counter == 0 {
+		return nil, fmt.Errorf("at least one validation property must be set")
+	}
+
+	if counter > 1 {
+		return nil, fmt.Errorf("only one validation property per rule can be set, got %d", counter)
+	}
+
+	return base, nil
 }
 
 type Size struct {
@@ -561,10 +570,10 @@ func (f *Field) Equal(n sdk.Field) bool {
 
 func createValidations(validations []Validation) ([]sdk.FieldValidation, error) {
 	var contentfulValidations []sdk.FieldValidation
-	for _, validation := range validations {
+	for i, validation := range validations {
 		value, err := validation.Draft()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create validation at index %d: %w", i, err)
 		}
 		contentfulValidations = append(contentfulValidations, *value)
 	}
@@ -575,7 +584,7 @@ func (f *Field) ToNative() (*sdk.Field, error) {
 
 	validations, err := createValidations(f.Validations)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create validations for field %s: %w", f.Id.ValueString(), err)
 	}
 
 	contentfulField := &sdk.Field{
