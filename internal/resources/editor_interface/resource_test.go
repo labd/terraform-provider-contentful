@@ -70,6 +70,15 @@ func TestAccEditorInterfaceResource_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "editors.0.widget_id", "default-editor"),
 				),
 			},
+			{
+				Config: testAccEditorInterfaceConfigUpdateWithEmptySideBarDefaultEditorEnabled(spaceID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckContentfulEditorInterfaceExists(resourceName, &editorInterface),
+					resource.TestCheckResourceAttr(resourceName, "sidebar.#", "0"),
+					resource.TestCheckResourceAttr(resourceName, "editors.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "editors.0.disabled", "false"),
+				),
+			},
 			// Test import
 			{
 				ResourceName:      resourceName,
@@ -271,6 +280,64 @@ resource "contentful_editor_interface" "test_editor_interface" {
       widget_namespace = "editor-builtin",
       widget_id = "default-editor",
       disabled = true
+    }
+  ]
+}
+`, spaceID)
+}
+
+func testAccEditorInterfaceConfigUpdateWithEmptySideBarDefaultEditorEnabled(spaceID string) string {
+	return fmt.Sprintf(`
+resource "contentful_contenttype" "test_contenttype" {
+  space_id     = "%s"
+  environment  = "master"
+  name         = "test-content-type"
+  description  = "Test Content Type for Editor Interface"
+  display_field = "title"
+
+	fields = [
+		{
+			id        = "title"
+			name      = "Title"
+			type      = "Symbol"
+			required  = true
+		},
+		{
+			id        = "description"
+			name      = "Description"
+			type      = "Text"
+			required  = false
+		}
+	]
+}
+
+resource "contentful_editor_interface" "test_editor_interface" {
+  space_id     = contentful_contenttype.test_contenttype.space_id
+  environment  = contentful_contenttype.test_contenttype.environment
+  content_type = contentful_contenttype.test_contenttype.id
+
+  controls = [
+    {
+      field_id = "title"
+      widget_id = "singleLine"
+      widget_namespace = "builtin"
+    },
+    {
+      field_id = "description"
+      widget_id = "richTextEditor"
+      widget_namespace = "builtin"
+      settings = {
+        help_text = "Rich text content"
+      }
+    }
+  ]
+	
+	sidebar = []
+	
+	  editors = [
+    {
+      widget_namespace = "editor-builtin",
+      widget_id = "default-editor"
     }
   ]
 }

@@ -104,7 +104,7 @@ func (e *EditorInterface) ToUpdateBody() sdk.EditorInterfaceUpdate {
 		return sidebar
 	})
 
-	if len(sidebar) > 0 {
+	if sidebar != nil {
 		result.Sidebar = &sidebar
 	} else {
 		result.Sidebar = nil
@@ -132,7 +132,7 @@ func (e *EditorInterface) ToUpdateBody() sdk.EditorInterfaceUpdate {
 		return editor
 	})
 
-	if len(editors) > 0 {
+	if editors != nil {
 		result.Editors = &editors
 	} else {
 		result.Editors = nil

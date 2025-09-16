@@ -7,10 +7,12 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -163,9 +165,7 @@ func (e *editorInterfaceResource) Schema(_ context.Context, _ resource.SchemaReq
 						"disabled": schema.BoolAttribute{
 							Optional: true,
 							Computed: true,
-							PlanModifiers: []planmodifier.Bool{
-								custommodifier.BoolDefault(false),
-							},
+							Default:  booldefault.StaticBool(false),
 						},
 						"widget_id": schema.StringAttribute{
 							Required: true,
@@ -194,9 +194,7 @@ func (e *editorInterfaceResource) Schema(_ context.Context, _ resource.SchemaReq
 						"disabled": schema.BoolAttribute{
 							Optional: true,
 							Computed: true,
-							PlanModifiers: []planmodifier.Bool{
-								custommodifier.BoolDefault(false),
-							},
+							Default:  booldefault.StaticBool(false),
 						},
 						"widget_id": schema.StringAttribute{
 							Required: true,
@@ -213,6 +211,9 @@ func (e *editorInterfaceResource) Schema(_ context.Context, _ resource.SchemaReq
 							},
 						},
 					},
+				},
+				Validators: []validator.List{
+					listvalidator.SizeBetween(1, 10),
 				},
 			},
 		},
