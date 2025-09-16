@@ -1,3 +1,0 @@
-kind: Fixed
-body: Improved error handling when multiple validation rules are provided in the same object
-time: 2025-09-12T13:53:41.20061948+02:00
