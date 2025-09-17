@@ -1156,6 +1156,95 @@ paths:
         "204":
           description: No Content
 
+  /spaces/{spaceId}/environments/{environmentId}/taxonomy/concepts:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+    get:
+      summary: Get all taxonomy concepts
+      description: Retrieves all taxonomy concepts from the specified environment
+      operationId: getAllTaxonomyConcepts
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxonomyConceptCollection"
+    post:
+      summary: Create a taxonomy concept
+      description: Creates a new taxonomy concept
+      operationId: createTaxonomyConcept
+      parameters:
+        - $ref: "#/components/parameters/contentTypeHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaxonomyConceptCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxonomyConcept"
+
+  /spaces/{spaceId}/environments/{environmentId}/taxonomy/concepts/{conceptId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - name: conceptId
+        in: path
+        required: true
+        description: Taxonomy concept ID
+        schema:
+          type: string
+    get:
+      summary: Get a taxonomy concept
+      description: Retrieves a specific taxonomy concept by ID
+      operationId: getTaxonomyConcept
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxonomyConcept"
+    put:
+      summary: Update a taxonomy concept
+      description: Updates an existing taxonomy concept
+      operationId: updateTaxonomyConcept
+      parameters:
+        - $ref: "#/components/parameters/contentTypeHeader"
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaxonomyConceptUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxonomyConcept"
+    delete:
+      summary: Delete a taxonomy concept
+      description: Deletes a taxonomy concept
+      operationId: deleteTaxonomyConcept
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
   /organizations/{organizationId}/app_uploads:
     servers:
       - url: https://upload.contentful.com
@@ -3181,6 +3270,268 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AppInstallation"
+
+    TaxonomyConcept:
+      type: object
+      properties:
+        sys:
+          $ref: "#/components/schemas/SystemPropertiesTaxonomyConcept"
+        conceptScheme:
+          $ref: "#/components/schemas/TaxonomyConceptScheme"
+        prefLabel:
+          type: object
+          description: Preferred label in different locales
+          additionalProperties:
+            type: string
+        altLabel:
+          type: object
+          description: Alternative labels in different locales
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        hiddenLabel:
+          type: object
+          description: Hidden labels in different locales
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        definition:
+          type: object
+          description: Definition in different locales
+          additionalProperties:
+            type: string
+        example:
+          type: object
+          description: Examples in different locales
+          additionalProperties:
+            type: string
+        note:
+          type: object
+          description: Notes in different locales
+          additionalProperties:
+            type: string
+        notations:
+          type: array
+          items:
+            type: string
+          description: Notation codes for the concept
+        broader:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyConceptLink"
+          description: References to broader concepts
+        narrower:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyConceptLink"
+          description: References to narrower concepts
+        related:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyConceptLink"
+          description: References to related concepts
+      required:
+        - sys
+        - conceptScheme
+        - prefLabel
+
+    TaxonomyConceptCreate:
+      type: object
+      properties:
+        conceptScheme:
+          $ref: "#/components/schemas/TaxonomyConceptScheme"
+        prefLabel:
+          type: object
+          description: Preferred label in different locales
+          additionalProperties:
+            type: string
+        altLabel:
+          type: object
+          description: Alternative labels in different locales
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        hiddenLabel:
+          type: object
+          description: Hidden labels in different locales
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        definition:
+          type: object
+          description: Definition in different locales
+          additionalProperties:
+            type: string
+        example:
+          type: object
+          description: Examples in different locales
+          additionalProperties:
+            type: string
+        note:
+          type: object
+          description: Notes in different locales
+          additionalProperties:
+            type: string
+        notations:
+          type: array
+          items:
+            type: string
+          description: Notation codes for the concept
+        broader:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyConceptLink"
+          description: References to broader concepts
+        narrower:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyConceptLink"
+          description: References to narrower concepts
+        related:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyConceptLink"
+          description: References to related concepts
+      required:
+        - conceptScheme
+        - prefLabel
+
+    TaxonomyConceptUpdate:
+      type: object
+      properties:
+        conceptScheme:
+          $ref: "#/components/schemas/TaxonomyConceptScheme"
+        prefLabel:
+          type: object
+          description: Preferred label in different locales
+          additionalProperties:
+            type: string
+        altLabel:
+          type: object
+          description: Alternative labels in different locales
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        hiddenLabel:
+          type: object
+          description: Hidden labels in different locales
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        definition:
+          type: object
+          description: Definition in different locales
+          additionalProperties:
+            type: string
+        example:
+          type: object
+          description: Examples in different locales
+          additionalProperties:
+            type: string
+        note:
+          type: object
+          description: Notes in different locales
+          additionalProperties:
+            type: string
+        notations:
+          type: array
+          items:
+            type: string
+          description: Notation codes for the concept
+        broader:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyConceptLink"
+          description: References to broader concepts
+        narrower:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyConceptLink"
+          description: References to narrower concepts
+        related:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyConceptLink"
+          description: References to related concepts
+      required:
+        - conceptScheme
+        - prefLabel
+
+    TaxonomyConceptCollection:
+      type: object
+      properties:
+        sys:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [ Array ]
+        total:
+          type: integer
+          description: Total number of taxonomy concepts
+        skip:
+          type: integer
+          description: Number of taxonomy concepts skipped
+        limit:
+          type: integer
+          description: Maximum number of taxonomy concepts returned
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyConcept"
+
+    TaxonomyConceptScheme:
+      type: object
+      properties:
+        sys:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [ Link ]
+            linkType:
+              type: string
+              enum: [ TaxonomyConceptScheme ]
+            id:
+              type: string
+              description: Concept scheme ID
+      required:
+        - sys
+
+    TaxonomyConceptLink:
+      type: object
+      properties:
+        sys:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [ Link ]
+            linkType:
+              type: string
+              enum: [ TaxonomyConcept ]
+            id:
+              type: string
+              description: Concept ID
+      required:
+        - sys
+
+    SystemPropertiesTaxonomyConcept:
+      allOf:
+        - $ref: "#/components/schemas/SystemProperties"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [ TaxonomyConcept ]
+          required:
+            - type
 
     AppDefinition:
       properties:
