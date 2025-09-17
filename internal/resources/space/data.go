@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
@@ -49,6 +50,10 @@ func (e *spaceDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 				Optional:    true,
 				Computed:    true,
 				Description: "Default locale for the space",
+			},
+			"admin_role_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "ID of the automatically created admin role for this space",
 			},
 		},
 	}
@@ -98,6 +103,78 @@ func (e *spaceDataSource) Read(ctx context.Context, request datasource.ReadReque
 	// Map response to state
 	data.Import(resp.JSON200)
 
+	// Fetch the admin role ID
+	adminRoleID, err := e.getAdminRoleID(ctx, data.ID.ValueString())
+	if err != nil {
+		response.Diagnostics.AddWarning(
+			"Could not fetch admin role ID",
+			"Space was read successfully, but could not fetch admin role ID: "+err.Error(),
+		)
+		data.AdminRoleID = types.StringUnknown()
+	} else {
+		data.AdminRoleID = types.StringValue(adminRoleID)
+	}
+
 	// Set state
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
+}
+
+// getAdminRoleID fetches all roles for the space and returns the ID of the admin role
+func (e *spaceDataSource) getAdminRoleID(ctx context.Context, spaceID string) (string, error) {
+	resp, err := e.client.GetAllRolesWithResponse(ctx, spaceID, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch roles: %w", err)
+	}
+
+	if resp.StatusCode() != 200 {
+		return "", fmt.Errorf("received unexpected status code: %d", resp.StatusCode())
+	}
+
+	if resp.JSON200 == nil || resp.JSON200.Items == nil {
+		return "", fmt.Errorf("no roles found in response")
+	}
+
+	// Look for the admin role
+	for _, role := range *resp.JSON200.Items {
+		if e.isAdminRole(&role) {
+			return role.Sys.Id, nil
+		}
+	}
+
+	return "", fmt.Errorf("admin role not found")
+}
+
+// isAdminRole determines if a role is the admin role by examining its permissions
+func (e *spaceDataSource) isAdminRole(role *sdk.Role) bool {
+	// Admin roles typically have permissions for all operations
+	if role.Permissions == nil {
+		return false
+	}
+
+	// Check for common admin permissions patterns
+	hasAllPermissions := false
+	permissionCount := 0
+
+	for _, key := range role.Permissions.Keys() {
+		if value, exists := role.Permissions.Get(key); exists {
+			permissionCount++
+			switch v := value.(type) {
+			case string:
+				if v == "all" {
+					hasAllPermissions = true
+				}
+			case []interface{}:
+				// Check if it contains "all" or has comprehensive permissions
+				for _, item := range v {
+					if str, ok := item.(string); ok && str == "all" {
+						hasAllPermissions = true
+						break
+					}
+				}
+			}
+		}
+	}
+
+	// Admin roles typically have many permissions, including "all" permissions
+	return hasAllPermissions && permissionCount > 3
 }
