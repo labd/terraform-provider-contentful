@@ -21,6 +21,7 @@ import (
 func TestAccEditorInterfaceResource_Basic(t *testing.T) {
 	spaceID := os.Getenv("CONTENTFUL_SPACE_ID")
 	resourceName := "contentful_editor_interface.test_editor_interface"
+	resourceNameDatePicker := "contentful_editor_interface.test_editor_interface_datepicker"
 
 	var editorInterface sdk.EditorInterface
 
@@ -96,6 +97,23 @@ func TestAccEditorInterfaceResource_Basic(t *testing.T) {
 						rs.Primary.Attributes["content_type"],
 					), nil
 				},
+			},
+
+			// Test DatePicker widget
+			{
+				Config: testAccEditorInterfaceConfig_DatePicker(spaceID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckContentfulEditorInterfaceExists(resourceNameDatePicker, &editorInterface),
+					resource.TestCheckResourceAttr(resourceNameDatePicker, "space_id", spaceID),
+					resource.TestCheckResourceAttr(resourceNameDatePicker, "environment", "master"),
+					resource.TestCheckResourceAttrSet(resourceNameDatePicker, "content_type"),
+					resource.TestCheckResourceAttr(resourceNameDatePicker, "controls.#", "1"),
+					resource.TestCheckResourceAttr(resourceNameDatePicker, "controls.0.field_id", "date"),
+					resource.TestCheckResourceAttr(resourceNameDatePicker, "controls.0.widget_id", "datePicker"),
+					resource.TestCheckResourceAttr(resourceNameDatePicker, "controls.0.widget_namespace", "builtin"),
+					resource.TestCheckResourceAttr(resourceNameDatePicker, "controls.0.settings.ampm", "24"),
+					resource.TestCheckResourceAttr(resourceNameDatePicker, "controls.0.settings.format", "dateonly"),
+				),
 			},
 		},
 	})
@@ -338,6 +356,42 @@ resource "contentful_editor_interface" "test_editor_interface" {
     {
       widget_namespace = "editor-builtin",
       widget_id = "default-editor"
+    }
+  ]
+}
+`, spaceID)
+}
+
+func testAccEditorInterfaceConfig_DatePicker(spaceID string) string {
+	return fmt.Sprintf(`
+resource "contentful_contenttype" "test_contenttype_datepicker" {
+  space_id     = "%s"
+  environment  = "master"
+  id         	 = "test-content-type-datepicker"
+  name         = "test content type date picker"
+  description  = "Test Content Type for Editor Interface with Date Picker"
+  display_field = "date"
+
+	fields  = [
+		{
+			id        = "date"
+			name      = "Date"
+			type      = "Date"
+		}
+	]
+}
+
+resource "contentful_editor_interface" "test_editor_interface_datepicker" {
+  space_id     = contentful_contenttype.test_contenttype_datepicker.space_id
+  environment  = contentful_contenttype.test_contenttype_datepicker.environment
+  content_type = contentful_contenttype.test_contenttype_datepicker.id
+
+  controls = [
+    {
+      field_id         = "date"
+      widget_id        = "datePicker"
+      widget_namespace = "builtin",
+      settings         = { ampm : "24", format : "dateonly" }
     }
   ]
 }
