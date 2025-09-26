@@ -129,14 +129,14 @@ func (e *editorInterfaceResource) Schema(_ context.Context, _ resource.SchemaReq
 									Optional: true,
 									Validators: []validator.String{
 										stringvalidator.OneOf("dateonly", "time", "timeZ"),
-										customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "datepicker"),
+										customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "datePicker"),
 									},
 								},
 								"ampm": schema.StringAttribute{
 									Optional: true,
 									Validators: []validator.String{
 										stringvalidator.OneOf("12", "24"),
-										customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "datepicker"),
+										customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "datePicker"),
 									},
 								},
 								/** (only for References, many) Select whether to enable Bulk Editing mode */
