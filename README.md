@@ -21,6 +21,7 @@ Create, update and delete Contentful resources such as:
 - [x] Entries
 - [x] Assets
 - [x] Roles
+- [x] Taxonomies
 
 # Getting started
 
