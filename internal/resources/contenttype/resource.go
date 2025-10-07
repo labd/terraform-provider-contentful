@@ -3,10 +3,11 @@ package contenttype
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 
 	"github.com/cenkalti/backoff/v5"
 	"github.com/elliotchance/pie/v2"
@@ -372,6 +373,13 @@ func (e *contentTypeResource) Schema(ctx context.Context, request resource.Schem
 									ElementType: types.StringType,
 									Optional:    true,
 									Description: "String default values by locale. Example: {\"en-US\" = \"green\"}",
+								},
+								"array": schema.MapAttribute{
+									ElementType: types.ListType{
+										ElemType: types.StringType,
+									},
+									Optional:    true,
+									Description: "Array default values by locale. Example: {\"en-US\" = [\"green\", \"blue\"]",
 								},
 							},
 							Validators: []validator.Object{

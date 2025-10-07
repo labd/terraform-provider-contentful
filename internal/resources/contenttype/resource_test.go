@@ -44,7 +44,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 						assert.EqualValues(t, "tf_test1", contentType.Sys.Id)
 						assert.EqualValues(t, "none", *contentType.Description)
 						assert.EqualValues(t, "field1", *contentType.DisplayField)
-						assert.Len(t, contentType.Fields, 3)
+						assert.Len(t, contentType.Fields, 4)
 						assert.Equal(t, sdk.Field{
 							Id:           "field1",
 							Name:         "Field 1 name change",
@@ -92,6 +92,24 @@ func TestContentTypeResource_Create(t *testing.T) {
 							}),
 							DefaultValue: nil,
 						}, contentType.Fields[2])
+
+						var fieldItems = &sdk.FieldItem{}
+						_ = fieldItems.UnmarshalJSON([]byte(`{"type":"Symbol","validations":[]}`))
+						assert.Equal(t, sdk.Field{
+							Id:          "field5",
+							Name:        "Field 5 new field",
+							Type:        "Array",
+							LinkType:    nil,
+							Items:       fieldItems,
+							Required:    false,
+							Localized:   true,
+							Disabled:    utils.Pointer(false),
+							Omitted:     utils.Pointer(false),
+							Validations: utils.Pointer(make([]sdk.FieldValidation, 0)),
+							DefaultValue: &map[string]any{
+								"en-US": []any{"test"},
+							},
+						}, contentType.Fields[3])
 					}),
 				),
 			},
@@ -230,7 +248,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 						assert.EqualValues(t, "tf_test2", contentType.Sys.Id)
 						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
 						assert.EqualValues(t, "field1", *contentType.DisplayField)
-						assert.Len(t, contentType.Fields, 3)
+						assert.Len(t, contentType.Fields, 4)
 						assert.Equal(t, sdk.Field{
 							Id:           "field1",
 							Name:         "Field 1 name change",
