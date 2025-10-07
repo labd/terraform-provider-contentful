@@ -1,6 +1,7 @@
 package space
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
@@ -32,7 +32,8 @@ func NewSpaceResource() resource.Resource {
 
 // spaceResource is the resource implementation.
 type spaceResource struct {
-	client *sdk.ClientWithResponses
+	client         *sdk.ClientWithResponses
+	organizationId string
 }
 
 func (e *spaceResource) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -61,7 +62,7 @@ func (e *spaceResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 			"default_locale": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Default locale for the space",
+				Description: "Default locale for the space. Note that this value cannot be updated after creation.",
 				Default:     stringdefault.StaticString("en"),
 			},
 			"deletion_protection": schema.BoolAttribute{
@@ -81,6 +82,7 @@ func (e *spaceResource) Configure(_ context.Context, request resource.ConfigureR
 
 	data := request.ProviderData.(utils.ProviderData)
 	e.client = data.Client
+	e.organizationId = data.OrganizationId
 }
 
 func (e *spaceResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
@@ -93,8 +95,9 @@ func (e *spaceResource) Create(ctx context.Context, request resource.CreateReque
 
 	// Create the space
 	draft := plan.DraftForCreate()
+	defaultLocale := plan.DefaultLocale
 
-	resp, err := e.client.CreateSpaceWithResponse(ctx, nil, draft)
+	resp, err := e.client.CreateSpaceWithResponse(ctx, nil, draft, utils.AddOrganizationHeader(e.organizationId))
 	if err != nil {
 		response.Diagnostics.AddError(
 			"Error creating space",
@@ -104,6 +107,15 @@ func (e *spaceResource) Create(ctx context.Context, request resource.CreateReque
 	}
 
 	if resp.StatusCode() != 201 {
+		if resp.StatusCode() == 404 && bytes.Contains(resp.Body, []byte("MissingOrganizationParameter")) {
+			response.Diagnostics.AddError(
+				"This user has multiple organizations with permissions to create a space",
+				"This user has multiple organizations with permissions to create a space. Please set the "+
+					"organization_id in the provider configuration to specify which organization to use.",
+			)
+			return
+		}
+
 		response.Diagnostics.AddError(
 			"Error creating space",
 			fmt.Sprintf("Received unexpected status code: %d", resp.StatusCode()),
@@ -113,6 +125,7 @@ func (e *spaceResource) Create(ctx context.Context, request resource.CreateReque
 
 	// Map response to state
 	plan.Import(resp.JSON201)
+	plan.DefaultLocale = defaultLocale
 
 	// Set state
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
@@ -143,6 +156,13 @@ func (e *spaceResource) Update(ctx context.Context, request resource.UpdateReque
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
+	}
+
+	defaultLocale := plan.DefaultLocale
+	if state.DefaultLocale != plan.DefaultLocale {
+		response.Diagnostics.AddWarning("Default locale cannot be updated", "The default locale of a space "+
+			"cannot be updated through this resource after creation. The value will be updated in state, but "+
+			"will not be updated in Contentful. You will have to do this manually")
 	}
 
 	// Create update parameters with version
@@ -179,7 +199,7 @@ func (e *spaceResource) Update(ctx context.Context, request resource.UpdateReque
 	plan.Import(resp.JSON200)
 
 	// Keep the default locale value since it's not returned in the response
-	plan.DefaultLocale = state.DefaultLocale
+	plan.DefaultLocale = defaultLocale
 
 	// Set state
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)

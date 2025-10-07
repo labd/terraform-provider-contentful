@@ -1,0 +1,3 @@
+kind: Fixed
+body: Added setting of X-Contentful-Organization header on space resource
+time: 2025-10-07T15:03:31.596336457+02:00
