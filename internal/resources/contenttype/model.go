@@ -21,7 +21,7 @@ type ContentType struct {
 	DisplayField types.String `tfsdk:"display_field"`
 	Description  types.String `tfsdk:"description"`
 	Version      types.Int64  `tfsdk:"version"`
-	Fields       []Field      `tfsdk:"fields"`
+	Fields       Fields       `tfsdk:"fields"`
 }
 
 type Field struct {
@@ -33,9 +33,20 @@ type Field struct {
 	Localized    types.Bool    `tfsdk:"localized"`
 	Disabled     types.Bool    `tfsdk:"disabled"`
 	Omitted      types.Bool    `tfsdk:"omitted"`
-	Validations  []Validation  `tfsdk:"validations"`
+	Validations  *[]Validation `tfsdk:"validations"`
 	Items        *Items        `tfsdk:"items"`
 	DefaultValue *DefaultValue `tfsdk:"default_value"`
+}
+
+type Fields []Field
+
+func (f *Fields) FindByName(name string) *Field {
+	for _, field := range *f {
+		if field.Name.ValueString() == name {
+			return &field
+		}
+	}
+	return nil
 }
 
 type DefaultValue struct {
@@ -511,73 +522,85 @@ func MapSdkAllowedResource(allowedResource sdk.AllowedResource) AllowedResource 
 	}
 }
 
-func (f *Field) Equal(n sdk.Field) bool {
+func (f *Field) Equal(n sdk.Field) (bool, error) {
 
 	if string(n.Type) != f.Type.ValueString() {
-		return false
+		return false, nil
 	}
 
 	if n.Id != f.Id.ValueString() {
-		return false
+		return false, nil
 	}
 
 	if n.Name != f.Name.ValueString() {
-		return false
+		return false, nil
 	}
 
 	if n.LinkType != nil && string(*n.LinkType) != f.LinkType.ValueString() {
-		return false
+		return false, nil
 	}
 
 	if n.LinkType == nil && !f.LinkType.IsNull() {
-		return false
+		return false, nil
 	}
 
 	if n.Required != f.Required.ValueBool() {
-		return false
+		return false, nil
 	}
 
 	if n.Omitted != f.Omitted.ValueBoolPointer() {
-		return false
+		return false, nil
 	}
 
 	if n.Disabled != f.Disabled.ValueBoolPointer() {
-		return false
+		return false, nil
 	}
 
 	if n.Localized != f.Localized.ValueBool() {
-		return false
+		return false, nil
 	}
 
 	if f.Items == nil && n.Items != nil {
-		return false
+		return false, nil
 	}
 
-	if f.Items != nil && !f.Items.Equal(n.Items) {
-		return false
+	iEq, err := f.Items.Equal(n.Items)
+	if err != nil {
+		return false, err
+	}
+	if !iEq {
+		return false, nil
 	}
 
-	if !compareValidations(f.Validations, n.Validations) {
-		return false
+	vEq, err := compareValidations(f.Validations, n.Validations)
+	if err != nil {
+		return false, err
+	}
+	if !vEq {
+		return false, nil
 	}
 
 	if f.DefaultValue != nil && !reflect.DeepEqual(f.DefaultValue.Draft(), n.DefaultValue) {
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
 }
 
-func createValidations(validations []Validation) ([]sdk.FieldValidation, error) {
-	var contentfulValidations []sdk.FieldValidation
-	for i, validation := range validations {
+func createValidations(validations *[]Validation) (*[]sdk.FieldValidation, error) {
+	if validations == nil {
+		return nil, nil
+	}
+
+	var contentfulValidations = make([]sdk.FieldValidation, 0, len(*validations))
+	for i, validation := range *validations {
 		value, err := validation.Draft()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create validation at index %d: %w", i, err)
 		}
 		contentfulValidations = append(contentfulValidations, *value)
 	}
-	return contentfulValidations, nil
+	return &contentfulValidations, nil
 }
 
 func (f *Field) ToNative() (*sdk.Field, error) {
@@ -595,7 +618,7 @@ func (f *Field) ToNative() (*sdk.Field, error) {
 		Required:    f.Required.ValueBool(),
 		Disabled:    f.Disabled.ValueBoolPointer(),
 		Omitted:     f.Omitted.ValueBoolPointer(),
-		Validations: &validations,
+		Validations: validations,
 	}
 
 	if !f.LinkType.IsNull() && !f.LinkType.IsUnknown() {
@@ -664,7 +687,6 @@ func (f *Field) Import(n sdk.Field) error {
 	}
 
 	if defaultValueType != nil {
-
 		f.DefaultValue = &DefaultValue{
 			Bool:   types.MapNull(types.BoolType),
 			String: types.MapNull(types.StringType),
@@ -753,9 +775,9 @@ func (f *Field) Import(n sdk.Field) error {
 }
 
 type Items struct {
-	Type        types.String `tfsdk:"type"`
-	LinkType    types.String `tfsdk:"link_type"`
-	Validations []Validation `tfsdk:"validations"`
+	Type        types.String  `tfsdk:"type"`
+	LinkType    types.String  `tfsdk:"link_type"`
+	Validations *[]Validation `tfsdk:"validations"`
 }
 
 func (i *Items) ToNative() (*sdk.FieldItem, error) {
@@ -771,7 +793,7 @@ func (i *Items) ToNative() (*sdk.FieldItem, error) {
 
 	if fieldType == "Symbol" {
 		err := item.FromFieldItemSymbol(sdk.FieldItemSymbol{
-			Validations: &validations,
+			Validations: validations,
 		})
 		if err != nil {
 			return nil, err
@@ -781,7 +803,7 @@ func (i *Items) ToNative() (*sdk.FieldItem, error) {
 
 	if fieldType == "Link" || fieldType == "ResourceLink" {
 		err := item.FromFieldItemLink(sdk.FieldItemLink{
-			Validations: &validations,
+			Validations: validations,
 			LinkType:    sdk.FieldItemLinkLinkType(i.LinkType.ValueString()),
 		})
 
@@ -795,33 +817,37 @@ func (i *Items) ToNative() (*sdk.FieldItem, error) {
 	return nil, fmt.Errorf("unsupported item type used, %s. Please implement", fieldType)
 }
 
-func (i *Items) Equal(n *sdk.FieldItem) bool {
+func (i *Items) Equal(n *sdk.FieldItem) (bool, error) {
 
 	if n == nil {
-		return false
+		return false, nil
 	}
 
 	itemType, err := n.Discriminator()
 	if err != nil {
-		panic(err)
+		return false, err
 	}
 
 	if i.Type.ValueString() != itemType {
-		return false
+		return false, nil
 	}
 
 	if itemType != "Symbol" {
 		linkItem, err := n.AsFieldItemLink()
 		if err != nil {
-			panic(err)
+			return false, err
 		}
 
 		if !utils.CompareStringPointer(i.LinkType, utils.Pointer(string(linkItem.LinkType))) {
-			return false
+			return false, nil
 		}
 
-		if !compareValidations(i.Validations, linkItem.Validations) {
-			return false
+		vEq, err := compareValidations(i.Validations, linkItem.Validations)
+		if err != nil {
+			return false, err
+		}
+		if !vEq {
+			return false, nil
 		}
 
 	} else {
@@ -830,12 +856,16 @@ func (i *Items) Equal(n *sdk.FieldItem) bool {
 			panic(err)
 		}
 
-		if !compareValidations(i.Validations, symbolItem.Validations) {
-			return false
+		vEq, err := compareValidations(i.Validations, symbolItem.Validations)
+		if err != nil {
+			return false, err
+		}
+		if !vEq {
+			return false, nil
 		}
 	}
 
-	return true
+	return true, nil
 }
 
 func (c *ContentType) Create() (*sdk.ContentTypeCreate, error) {
@@ -899,8 +929,7 @@ func (c *ContentType) Import(n *sdk.ContentType) error {
 	c.Name = types.StringValue(n.Name)
 	c.DisplayField = types.StringPointerValue(n.DisplayField)
 
-	var fields []Field
-
+	var fields = make([]Field, 0, len(n.Fields))
 	for _, nf := range n.Fields {
 		field := &Field{}
 		err := field.Import(nf)
@@ -916,22 +945,21 @@ func (c *ContentType) Import(n *sdk.ContentType) error {
 
 }
 
-func (c *ContentType) Equal(n *sdk.ContentType) bool {
-
+func (c *ContentType) Equal(n *sdk.ContentType) (bool, error) {
 	if !utils.CompareStringPointer(c.Description, n.Description) {
-		return false
+		return false, nil
 	}
 
 	if c.Name.ValueString() != n.Name {
-		return false
+		return false, nil
 	}
 
 	if c.DisplayField.ValueStringPointer() != n.DisplayField {
-		return false
+		return false, nil
 	}
 
 	if len(c.Fields) != len(n.Fields) {
-		return false
+		return false, nil
 	}
 
 	for idxOrg, field := range c.Fields {
@@ -940,28 +968,33 @@ func (c *ContentType) Equal(n *sdk.ContentType) bool {
 		})
 
 		if idx == -1 {
-			return false
+			return false, nil
 		}
 
-		if !field.Equal(n.Fields[idx]) {
-			return false
+		fEq, err := field.Equal(n.Fields[idx])
+		if err != nil {
+			return false, nil
+		}
+		if !fEq {
+			return false, nil
 		}
 
 		// field was moved, it is the same as before but different position
 		if idxOrg != idx {
-			return false
+			return false, nil
 		}
 	}
 
-	return true
+	return true, nil
 }
 
-func getValidations(contentfulValidations *[]sdk.FieldValidation) ([]Validation, error) {
-	var validations []Validation
+func getValidations(contentfulValidations *[]sdk.FieldValidation) (*[]Validation, error) {
 
 	if contentfulValidations == nil {
-		return validations, nil
+		return nil, nil
 	}
+
+	var validations = make([]Validation, 0, len(*contentfulValidations))
 
 	for _, validation := range *contentfulValidations {
 
@@ -974,7 +1007,7 @@ func getValidations(contentfulValidations *[]sdk.FieldValidation) ([]Validation,
 		validations = append(validations, *val)
 	}
 
-	return validations, nil
+	return &validations, nil
 }
 
 func getValidation(cfVal sdk.FieldValidation) (*Validation, error) {
@@ -1277,29 +1310,35 @@ func getNodesValidation(cfVal sdk.NodesValidation) Nodes {
 	return nodes
 }
 
-func compareValidations(a []Validation, b *[]sdk.FieldValidation) bool {
-	if b == nil {
-		return len(a) == 0
+func compareValidations(a *[]Validation, b *[]sdk.FieldValidation) (bool, error) {
+	if a == nil && b == nil {
+		return true, nil
 	}
 
-	other := *b
+	if b != nil && a == nil {
+		return false, nil
+	}
 
-	if len(a) != len(other) {
-		return false
+	if a != nil && b == nil {
+		return false, nil
+	}
+
+	if len(*a) != len(*b) {
+		return false, nil
 	}
 
 	validations, err := createValidations(a)
 	if err != nil {
-		panic(err)
+		return false, err
 	}
 
-	for idx, validation := range validations {
-		cfVal := other[idx]
+	for idx, validation := range *validations {
+		cfVal := (*b)[idx]
 
 		if !reflect.DeepEqual(validation, cfVal) {
-			return false
+			return false, nil
 		}
 	}
 
-	return true
+	return true, nil
 }
