@@ -7,7 +7,6 @@ import (
 	"github.com/elliotchance/pie/v2"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
@@ -39,8 +38,9 @@ type Field struct {
 }
 
 type DefaultValue struct {
-	Bool   types.Map `tfsdk:"bool"`
-	String types.Map `tfsdk:"string"`
+	Bool   types.Map             `tfsdk:"bool"`
+	String types.Map             `tfsdk:"string"`
+	Array  map[string]types.List `tfsdk:"array"`
 }
 
 // HasContent checks if the DefaultValue has any actual content
@@ -59,6 +59,11 @@ func (d *DefaultValue) HasContent() bool {
 		return true
 	}
 
+	// Check if Array map has content
+	if d.Array != nil {
+		return true
+	}
+
 	return false
 }
 
@@ -74,6 +79,16 @@ func (d *DefaultValue) Draft() *map[string]any {
 	if !d.Bool.IsNull() && !d.Bool.IsUnknown() {
 		for k, v := range d.Bool.Elements() {
 			defaultValues[k] = v.(types.Bool).ValueBool()
+		}
+	}
+
+	if d.Array != nil {
+		for k, v := range d.Array {
+			values := make([]string, 0, len(v.Elements()))
+			for _, item := range v.Elements() {
+				values = append(values, item.(types.String).ValueString())
+			}
+			defaultValues[k] = values
 		}
 	}
 
@@ -635,8 +650,11 @@ func getTypeOfMap(mapValues *map[string]any) (*string, error) {
 		case float64:
 			t := "float64"
 			return &t, nil
+		case []interface{}:
+			t := "[]interface{}"
+			return &t, nil
 		default:
-			return nil, fmt.Errorf("The default type %T is not supported by the provider", c)
+			return nil, fmt.Errorf("the default type %T is not supported by the provider", c)
 		}
 	}
 
@@ -691,6 +709,20 @@ func (f *Field) Import(n sdk.Field) error {
 			}
 
 			f.DefaultValue.Bool = types.MapValueMust(types.BoolType, boolMap)
+		case "[]interface{}":
+			arrayMap := map[string]types.List{}
+
+			for k, v := range *n.DefaultValue {
+				var values []attr.Value
+
+				for _, item := range v.([]interface{}) {
+					values = append(values, types.StringValue(item.(string)))
+				}
+
+				arrayMap[k] = types.ListValueMust(types.StringType, values)
+			}
+
+			f.DefaultValue.Array = arrayMap
 		}
 
 	}
