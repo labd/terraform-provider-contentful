@@ -47,6 +47,16 @@ func CreateClient(url string, token string) (*sdk.ClientWithResponses, error) {
 	return client, nil
 }
 
+// Adds X-Contentful-Organization header if organizationId is not empty
+func AddOrganizationHeader(organizationId string) sdk.RequestEditorFn {
+	return func(ctx context.Context, req *http.Request) error {
+		if organizationId != "" {
+			req.Header.Add("X-Contentful-Organization", organizationId)
+		}
+		return nil
+	}
+}
+
 type Response interface {
 	StatusCode() int
 }

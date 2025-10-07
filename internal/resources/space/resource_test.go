@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-	hashicor_acctest "github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	hashicoracctest "github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/assert"
@@ -23,8 +23,8 @@ func TestSpaceResource_Create(t *testing.T) {
 	// Space resource requires organization admin permissions
 	t.Skip("Space resource can only be tested when user has organization admin rights")
 
-	name := fmt.Sprintf("space-test-%s", hashicor_acctest.RandString(5))
-	updatedName := fmt.Sprintf("space-test-updated-%s", hashicor_acctest.RandString(5))
+	name := fmt.Sprintf("space-test-%s", hashicoracctest.RandString(5))
+	updatedName := fmt.Sprintf("space-test-updated-%s", hashicoracctest.RandString(5))
 	resourceName := "contentful_space.myspace"
 
 	resource.Test(t, resource.TestCase{
