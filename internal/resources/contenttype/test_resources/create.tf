@@ -29,5 +29,20 @@ resource "contentful_contenttype" "{{ .identifier }}" {
         enabled_node_types = ["embedded-asset-block"]
       }
     ]
-  }]
+  },
+{
+id       = "field5"
+name     = "Field 5 new field"
+type     = "Array"
+items = {
+type = "Symbol"
+}
+localized     = true
+default_value = {
+array : {
+"en-US" : ["test"],
+},
+}
+},
+]
 }
