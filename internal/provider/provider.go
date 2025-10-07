@@ -2,8 +2,9 @@ package provider
 
 import (
 	"context"
-	"github.com/labd/terraform-provider-contentful/internal/resources/app_event_subscription"
 	"os"
+
+	"github.com/labd/terraform-provider-contentful/internal/resources/app_event_subscription"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -11,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	datasourcespace "github.com/labd/terraform-provider-contentful/internal/datasource/space"
 	"github.com/labd/terraform-provider-contentful/internal/resources/api_key"
 	"github.com/labd/terraform-provider-contentful/internal/resources/app_definition"
 	"github.com/labd/terraform-provider-contentful/internal/resources/app_installation"
@@ -142,7 +144,7 @@ func (c contentfulProvider) Configure(ctx context.Context, request provider.Conf
 
 func (c contentfulProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		space.NewSpaceDataSource,
+		datasourcespace.NewSpaceDataSource,
 	}
 }
 
