@@ -70,6 +70,13 @@ func (e *spaceResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Description: "Allow deletion of the space",
 				Default:     booldefault.StaticBool(false),
 			},
+			"admin_role_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "ID of the automatically created admin role for this space",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 		},
 	}
 }
@@ -113,6 +120,19 @@ func (e *spaceResource) Create(ctx context.Context, request resource.CreateReque
 
 	// Map response to state
 	plan.Import(resp.JSON201)
+
+	// Fetch the admin role ID
+	adminRoleID, err := e.getAdminRoleID(ctx, plan.ID.ValueString())
+	if err != nil {
+		response.Diagnostics.AddWarning(
+			"Could not fetch admin role ID",
+			"Space was created successfully, but could not fetch admin role ID: "+err.Error(),
+		)
+		// Set admin_role_id to unknown since we couldn't fetch it
+		plan.AdminRoleID = types.StringUnknown()
+	} else {
+		plan.AdminRoleID = types.StringValue(adminRoleID)
+	}
 
 	// Set state
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
@@ -280,6 +300,84 @@ func (e *spaceResource) doRead(ctx context.Context, space *Space, state *tfsdk.S
 	// Restore default locale
 	space.DefaultLocale = defaultLocale
 
+	// Fetch the admin role ID
+	adminRoleID, err := e.getAdminRoleID(ctx, space.ID.ValueString())
+	if err != nil {
+		d.AddWarning(
+			"Could not fetch admin role ID",
+			"Space was read successfully, but could not fetch admin role ID: "+err.Error(),
+		)
+		// Keep existing admin_role_id if we can't fetch it
+		if space.AdminRoleID.IsNull() || space.AdminRoleID.IsUnknown() {
+			space.AdminRoleID = types.StringUnknown()
+		}
+	} else {
+		space.AdminRoleID = types.StringValue(adminRoleID)
+	}
+
 	// Set state
 	d.Append(state.Set(ctx, space)...)
+}
+
+// getAdminRoleID fetches all roles for the space and returns the ID of the admin role
+func (e *spaceResource) getAdminRoleID(ctx context.Context, spaceID string) (string, error) {
+	resp, err := e.client.GetAllRolesWithResponse(ctx, spaceID, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch roles: %w", err)
+	}
+
+	if resp.StatusCode() != 200 {
+		return "", fmt.Errorf("received unexpected status code: %d", resp.StatusCode())
+	}
+
+	if resp.JSON200 == nil || resp.JSON200.Items == nil {
+		return "", fmt.Errorf("no roles found in response")
+	}
+
+	// Look for the admin role
+	// The admin role typically has permissions for all operations and resources
+	for _, role := range *resp.JSON200.Items {
+		if e.isAdminRole(&role) {
+			return role.Sys.Id, nil
+		}
+	}
+
+	return "", fmt.Errorf("admin role not found")
+}
+
+// isAdminRole determines if a role is the admin role by examining its permissions
+func (e *spaceResource) isAdminRole(role *sdk.Role) bool {
+	// Admin roles typically have permissions for all operations
+	// Check if this role has "all" permissions for key resources
+	if role.Permissions == nil {
+		return false
+	}
+
+	// Check for common admin permissions patterns
+	hasAllPermissions := false
+	permissionCount := 0
+
+	for _, key := range role.Permissions.Keys() {
+		if value, exists := role.Permissions.Get(key); exists {
+			permissionCount++
+			switch v := value.(type) {
+			case string:
+				if v == "all" {
+					hasAllPermissions = true
+				}
+			case []interface{}:
+				// Check if it contains "all" or has comprehensive permissions
+				for _, item := range v {
+					if str, ok := item.(string); ok && str == "all" {
+						hasAllPermissions = true
+						break
+					}
+				}
+			}
+		}
+	}
+
+	// Admin roles typically have many permissions, including "all" permissions
+	// This is a heuristic - the exact logic may need adjustment based on actual admin role structure
+	return hasAllPermissions && permissionCount > 3
 }
