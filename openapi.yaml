@@ -1343,6 +1343,85 @@ paths:
         "204":
           description: No Content
 
+  /organizations/{organizationId}/teams:
+    parameters:
+      - $ref: "#/components/parameters/organizationId"
+    get:
+      summary: Get all teams
+      description: Retrieves all teams in an organization
+      operationId: getAllTeams
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamCollection"
+    post:
+      summary: Create a team
+      description: Creates a new team in an organization
+      operationId: createTeam
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+
+  /organizations/{organizationId}/teams/{resourceId}:
+    parameters:
+      - $ref: "#/components/parameters/organizationId"
+      - $ref: "#/components/parameters/resourceId"
+    get:
+      summary: Get a team
+      description: Retrieves a specific team by ID
+      operationId: getTeam
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+    put:
+      summary: Update a team
+      description: Updates a team
+      operationId: updateTeam
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+    delete:
+      summary: Delete a team
+      description: Deletes a team
+      operationId: deleteTeam
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
 components:
   parameters:
     spaceId:
@@ -2503,6 +2582,18 @@ components:
           required:
             - version
 
+    SystemPropertiesTeam:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/SystemPropertiesBase'
+        - properties:
+            version:
+              description: Resource version
+              type: integer
+              format: int64
+          required:
+            - version
+
     SystemPropertiesResource:
       type: object
       properties:
@@ -3465,6 +3556,70 @@ components:
       required:
         - name
         - configurations
+
+    Team:
+      type: object
+      properties:
+        sys:
+          $ref: "#/components/schemas/SystemPropertiesTeam"
+        name:
+          type: string
+          description: Name of the team
+        description:
+          type: string
+          description: Description of the team
+      required:
+        - sys
+        - name
+
+    TeamCollection:
+      type: object
+      properties:
+        sys:
+          $ref: "#/components/schemas/SystemPropertiesBase"
+        total:
+          type: integer
+          description: Total number of teams
+        skip:
+          type: integer
+          description: Number of teams skipped
+        limit:
+          type: integer
+          description: Maximum number of teams returned
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Team"
+      required:
+        - sys
+        - total
+        - skip
+        - limit
+        - items
+
+    TeamCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the team
+        description:
+          type: string
+          description: Description of the team
+      required:
+        - name
+
+    TeamUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the team
+        description:
+          type: string
+          description: Description of the team
+      required:
+        - name
 
     Error:
       type: object
