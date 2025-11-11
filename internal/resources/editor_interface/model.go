@@ -48,14 +48,15 @@ type Control struct {
 }
 
 type Settings struct {
-	HelpText        types.String `tfsdk:"help_text"`
-	TrueLabel       types.String `tfsdk:"true_label"`
-	FalseLabel      types.String `tfsdk:"false_label"`
-	Stars           types.Int64  `tfsdk:"stars"`
-	Format          types.String `tfsdk:"format"`
-	TimeFormat      types.String `tfsdk:"ampm"`
-	BulkEditing     types.Bool   `tfsdk:"bulk_editing"`
-	TrackingFieldId types.String `tfsdk:"tracking_field_id"`
+	HelpText             types.String         `tfsdk:"help_text"`
+	TrueLabel            types.String         `tfsdk:"true_label"`
+	FalseLabel           types.String         `tfsdk:"false_label"`
+	Stars                types.Int64          `tfsdk:"stars"`
+	Format               types.String         `tfsdk:"format"`
+	TimeFormat           types.String         `tfsdk:"ampm"`
+	BulkEditing          types.Bool           `tfsdk:"bulk_editing"`
+	TrackingFieldId      types.String         `tfsdk:"tracking_field_id"`
+	AdditionalProperties jsontypes.Normalized `tfsdk:"additional_properties"`
 }
 
 // ToUpdateBody converts the EditorInterface to an SDK update request body
@@ -234,6 +235,17 @@ func (s *Settings) Import(settings *sdk.EditorInterfaceSettings) {
 	s.TimeFormat = types.StringPointerValue(settings.Ampm)
 	s.BulkEditing = types.BoolPointerValue(settings.BulkEditing)
 	s.TrackingFieldId = types.StringPointerValue(settings.TrackingFieldId)
+
+	if len(settings.AdditionalProperties) > 0 {
+		jsonData, err := json.Marshal(settings.AdditionalProperties)
+		if err == nil {
+			s.AdditionalProperties = jsontypes.NewNormalizedValue(string(jsonData))
+		} else {
+			s.AdditionalProperties = jsontypes.NewNormalizedValue("{}")
+		}
+	} else {
+		s.AdditionalProperties = jsontypes.NewNormalizedValue("{}")
+	}
 }
 
 func (s *Settings) Draft() *sdk.EditorInterfaceSettings {
@@ -250,5 +262,14 @@ func (s *Settings) Draft() *sdk.EditorInterfaceSettings {
 	settings.Ampm = s.TimeFormat.ValueStringPointer()
 	settings.BulkEditing = s.BulkEditing.ValueBoolPointer()
 	settings.TrackingFieldId = s.TrackingFieldId.ValueStringPointer()
+
+	if !s.AdditionalProperties.IsNull() && !s.AdditionalProperties.IsUnknown() {
+		var additionalProps map[string]interface{}
+		err := s.AdditionalProperties.Unmarshal(&additionalProps)
+		if err == nil {
+			settings.AdditionalProperties = additionalProps
+		}
+	}
+
 	return settings
 }

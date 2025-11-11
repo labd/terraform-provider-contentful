@@ -149,6 +149,15 @@ func (e *editorInterfaceResource) Schema(_ context.Context, _ resource.SchemaReq
 										customvalidator.StringAllowedWhenSetValidator(widgetIdPath, "slugEditor"),
 									},
 								},
+								"additional_properties": schema.StringAttribute{
+									CustomType:  jsontypes.NormalizedType{},
+									Optional:    true,
+									Computed:    true,
+									Description: "Additional widget-specific settings as JSON. Supports complex types like arrays and objects.",
+									PlanModifiers: []planmodifier.String{
+										custommodifier.StringDefault("{}"),
+									},
+								},
 							},
 							Optional: true,
 							PlanModifiers: []planmodifier.Object{
