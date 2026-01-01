@@ -174,6 +174,79 @@ paths:
         "204":
           description: No Content
 
+  /spaces/{spaceId}/environment_aliases:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+    get:
+      summary: Get all environment aliases
+      description: Retrieves all environment aliases in a space
+      operationId: getAllEnvironmentAliases
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentAliasCollection"
+
+  /spaces/{spaceId}/environment_aliases/{aliasId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - name: aliasId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: ID of the environment alias
+    get:
+      summary: Get an environment alias
+      description: Retrieves a specific environment alias by ID
+      operationId: getEnvironmentAlias
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentAlias"
+    put:
+      summary: Create or update an environment alias
+      description: Creates a new environment alias or updates an existing one
+      operationId: upsertEnvironmentAlias
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnvironmentAliasUpdate"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentAlias"
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentAlias"
+    delete:
+      summary: Delete an environment alias
+      description: Deletes an environment alias
+      operationId: deleteEnvironmentAlias
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
   /spaces/{spaceId}/preview_environments:
     parameters:
       - $ref: "#/components/parameters/spaceId"
@@ -1807,6 +1880,48 @@ components:
           type: string
       required:
         - name
+
+    EnvironmentAlias:
+      type: object
+      properties:
+        environment:
+          $ref: '#/components/schemas/EnvironmentSystemProperties'
+        sys:
+          $ref: '#/components/schemas/SystemPropertiesResource'
+      required:
+        - environment
+        - sys
+
+    EnvironmentAliasCollection:
+      type: object
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/EnvironmentAlias'
+          type: array
+        limit:
+          description: Maximum number of environment aliases returned
+          type: integer
+        skip:
+          description: Number of environment aliases skipped
+          type: integer
+        sys:
+          properties:
+            type:
+              enum: [ Array ]
+              type: string
+          type: object
+        total:
+          description: Total number of environment aliases
+          type: integer
+
+    EnvironmentAliasUpdate:
+      type: object
+      properties:
+        environment:
+          $ref: '#/components/schemas/EnvironmentSystemProperties'
+      required:
+        - environment
 
 
     FieldItem:
