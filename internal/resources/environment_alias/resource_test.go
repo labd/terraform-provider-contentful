@@ -39,7 +39,7 @@ func TestEnvironmentAliasResource_Basic(t *testing.T) {
 			{
 				Config: testEnvironmentAliasConfig(spaceID, aliasID, env1Name, env2Name, "contentful_environment.env1.id"),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "alias_id", aliasID),
+					resource.TestCheckResourceAttr(resourceName, "id", aliasID),
 					resource.TestCheckResourceAttrPair(resourceName, "environment_id", "contentful_environment.env1", "id"),
 					testAccCheckContentfulEnvironmentAliasExists(t, resourceName, func(t *testing.T, alias *sdk.EnvironmentAlias) {
 						assert.EqualValues(t, aliasID, alias.Sys.Id)
@@ -49,7 +49,7 @@ func TestEnvironmentAliasResource_Basic(t *testing.T) {
 			{
 				Config: testEnvironmentAliasConfig(spaceID, aliasID, env1Name, env2Name, "contentful_environment.env2.id"),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "alias_id", aliasID),
+					resource.TestCheckResourceAttr(resourceName, "id", aliasID),
 					resource.TestCheckResourceAttrPair(resourceName, "environment_id", "contentful_environment.env2", "id"),
 					testAccCheckContentfulEnvironmentAliasExists(t, resourceName, func(t *testing.T, alias *sdk.EnvironmentAlias) {
 						assert.EqualValues(t, aliasID, alias.Sys.Id)
@@ -92,7 +92,7 @@ func getEnvironmentAliasFromState(s *terraform.State, resourceName string) (*sdk
 		return nil, fmt.Errorf("no space_id is set")
 	}
 
-	aliasID := rs.Primary.Attributes["alias_id"]
+	aliasID := rs.Primary.Attributes["id"]
 	if aliasID == "" {
 		return nil, fmt.Errorf("no alias_id is set")
 	}
@@ -122,7 +122,7 @@ func testAccCheckContentfulEnvironmentAliasDestroy(s *terraform.State) error {
 			return fmt.Errorf("no space_id is set")
 		}
 
-		aliasID := rs.Primary.Attributes["alias_id"]
+		aliasID := rs.Primary.Attributes["id"]
 		if aliasID == "" {
 			return fmt.Errorf("no alias_id is set")
 		}

@@ -195,12 +195,7 @@ paths:
   /spaces/{spaceId}/environment_aliases/{aliasId}:
     parameters:
       - $ref: "#/components/parameters/spaceId"
-      - name: aliasId
-        in: path
-        required: true
-        schema:
-          type: string
-        description: ID of the environment alias
+      - $ref: '#/components/parameters/aliasId'
     get:
       summary: Get an environment alias
       description: Retrieves a specific environment alias by ID
@@ -1432,6 +1427,13 @@ components:
       schema:
         type: string
       description: ID of the environment
+    aliasId:
+      name: aliasId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID of the environment alias
     organizationId:
       name: organizationId
       in: path
