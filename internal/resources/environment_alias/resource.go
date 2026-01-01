@@ -155,9 +155,8 @@ func (e *environmentAliasResource) Update(ctx context.Context, request resource.
 	}
 
 	// Create update parameters with version
-	version := state.Version.ValueInt64()
 	params := &sdk.UpsertEnvironmentAliasParams{
-		XContentfulVersion: &version,
+		XContentfulVersion: state.Version.ValueInt64(),
 	}
 
 	// Update the environment alias

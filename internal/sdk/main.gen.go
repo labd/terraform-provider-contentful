@@ -124,6 +124,11 @@ const (
 	EntryCollectionSysTypeArray EntryCollectionSysType = "Array"
 )
 
+// Defines values for EnvironmentAliasCollectionSysType.
+const (
+	EnvironmentAliasCollectionSysTypeArray EnvironmentAliasCollectionSysType = "Array"
+)
+
 // Defines values for EnvironmentCollectionSysType.
 const (
 	EnvironmentCollectionSysTypeArray EnvironmentCollectionSysType = "Array"
@@ -197,7 +202,7 @@ const (
 
 // Defines values for SystemPropertiesContentTypeSysType.
 const (
-	Link SystemPropertiesContentTypeSysType = "Link"
+	SystemPropertiesContentTypeSysTypeLink SystemPropertiesContentTypeSysType = "Link"
 )
 
 // Defines values for SystemPropertiesPreviewEnvironmentType.
@@ -811,6 +816,37 @@ type Environment struct {
 	// Name Name of the environment
 	Name string                   `json:"name"`
 	Sys  SystemPropertiesResource `json:"sys"`
+}
+
+// EnvironmentAlias defines model for EnvironmentAlias.
+type EnvironmentAlias struct {
+	Environment EnvironmentSystemProperties `json:"environment"`
+	Sys         SystemPropertiesResource    `json:"sys"`
+}
+
+// EnvironmentAliasCollection defines model for EnvironmentAliasCollection.
+type EnvironmentAliasCollection struct {
+	Items *[]EnvironmentAlias `json:"items,omitempty"`
+
+	// Limit Maximum number of environment aliases returned
+	Limit *int `json:"limit,omitempty"`
+
+	// Skip Number of environment aliases skipped
+	Skip *int `json:"skip,omitempty"`
+	Sys  *struct {
+		Type *EnvironmentAliasCollectionSysType `json:"type,omitempty"`
+	} `json:"sys,omitempty"`
+
+	// Total Total number of environment aliases
+	Total *int `json:"total,omitempty"`
+}
+
+// EnvironmentAliasCollectionSysType defines model for EnvironmentAliasCollection.Sys.Type.
+type EnvironmentAliasCollectionSysType string
+
+// EnvironmentAliasUpdate defines model for EnvironmentAliasUpdate.
+type EnvironmentAliasUpdate struct {
+	Environment EnvironmentSystemProperties `json:"environment"`
 }
 
 // EnvironmentCollection defines model for EnvironmentCollection.
@@ -1730,6 +1766,27 @@ type UpdateApiKeyParams struct {
 	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
 }
 
+// GetAllEnvironmentAliasesParams defines parameters for GetAllEnvironmentAliases.
+type GetAllEnvironmentAliasesParams struct {
+	// Limit Maximum number of items to return
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Skip Number of items to skip
+	Skip *Skip `form:"skip,omitempty" json:"skip,omitempty"`
+}
+
+// DeleteEnvironmentAliasParams defines parameters for DeleteEnvironmentAlias.
+type DeleteEnvironmentAliasParams struct {
+	// XContentfulVersion The version of the locale to update.
+	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
+}
+
+// UpsertEnvironmentAliasParams defines parameters for UpsertEnvironmentAlias.
+type UpsertEnvironmentAliasParams struct {
+	// XContentfulVersion The version of the locale to update.
+	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
+}
+
 // GetAllEnvironmentsParams defines parameters for GetAllEnvironments.
 type GetAllEnvironmentsParams struct {
 	// Limit Maximum number of items to return
@@ -2013,6 +2070,9 @@ type CreateApiKeyJSONRequestBody = ApiKeyDraft
 
 // UpdateApiKeyJSONRequestBody defines body for UpdateApiKey for application/json ContentType.
 type UpdateApiKeyJSONRequestBody = ApiKeyDraft
+
+// UpsertEnvironmentAliasJSONRequestBody defines body for UpsertEnvironmentAlias for application/json ContentType.
+type UpsertEnvironmentAliasJSONRequestBody = EnvironmentAliasUpdate
 
 // CreateEnvironmentJSONRequestBody defines body for CreateEnvironment for application/json ContentType.
 type CreateEnvironmentJSONRequestBody = EnvironmentCreate
@@ -2478,6 +2538,20 @@ type ClientInterface interface {
 	UpdateApiKeyWithBody(ctx context.Context, spaceId SpaceId, apiKeyId ApiKeyId, params *UpdateApiKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateApiKey(ctx context.Context, spaceId SpaceId, apiKeyId ApiKeyId, params *UpdateApiKeyParams, body UpdateApiKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAllEnvironmentAliases request
+	GetAllEnvironmentAliases(ctx context.Context, spaceId SpaceId, params *GetAllEnvironmentAliasesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteEnvironmentAlias request
+	DeleteEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId string, params *DeleteEnvironmentAliasParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetEnvironmentAlias request
+	GetEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpsertEnvironmentAliasWithBody request with any body
+	UpsertEnvironmentAliasWithBody(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpsertEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAllEnvironments request
 	GetAllEnvironments(ctx context.Context, spaceId SpaceId, params *GetAllEnvironmentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3016,6 +3090,66 @@ func (c *Client) UpdateApiKeyWithBody(ctx context.Context, spaceId SpaceId, apiK
 
 func (c *Client) UpdateApiKey(ctx context.Context, spaceId SpaceId, apiKeyId ApiKeyId, params *UpdateApiKeyParams, body UpdateApiKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateApiKeyRequest(c.Server, spaceId, apiKeyId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAllEnvironmentAliases(ctx context.Context, spaceId SpaceId, params *GetAllEnvironmentAliasesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAllEnvironmentAliasesRequest(c.Server, spaceId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId string, params *DeleteEnvironmentAliasParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteEnvironmentAliasRequest(c.Server, spaceId, aliasId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetEnvironmentAliasRequest(c.Server, spaceId, aliasId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpsertEnvironmentAliasWithBody(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertEnvironmentAliasRequestWithBody(c.Server, spaceId, aliasId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpsertEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertEnvironmentAliasRequest(c.Server, spaceId, aliasId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4953,6 +5087,240 @@ func NewUpdateApiKeyRequestWithBody(server string, spaceId SpaceId, apiKeyId Api
 	}
 
 	operationPath := fmt.Sprintf("/spaces/%s/api_keys/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Contentful-Version", runtime.ParamLocationHeader, params.XContentfulVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Contentful-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetAllEnvironmentAliasesRequest generates requests for GetAllEnvironmentAliases
+func NewGetAllEnvironmentAliasesRequest(server string, spaceId SpaceId, params *GetAllEnvironmentAliasesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/environment_aliases", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Skip != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "skip", runtime.ParamLocationQuery, *params.Skip); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteEnvironmentAliasRequest generates requests for DeleteEnvironmentAlias
+func NewDeleteEnvironmentAliasRequest(server string, spaceId SpaceId, aliasId string, params *DeleteEnvironmentAliasParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "aliasId", runtime.ParamLocationPath, aliasId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/environment_aliases/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Contentful-Version", runtime.ParamLocationHeader, params.XContentfulVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Contentful-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetEnvironmentAliasRequest generates requests for GetEnvironmentAlias
+func NewGetEnvironmentAliasRequest(server string, spaceId SpaceId, aliasId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "aliasId", runtime.ParamLocationPath, aliasId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/environment_aliases/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpsertEnvironmentAliasRequest calls the generic UpsertEnvironmentAlias builder with application/json body
+func NewUpsertEnvironmentAliasRequest(server string, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpsertEnvironmentAliasRequestWithBody(server, spaceId, aliasId, params, "application/json", bodyReader)
+}
+
+// NewUpsertEnvironmentAliasRequestWithBody generates requests for UpsertEnvironmentAlias with any type of body
+func NewUpsertEnvironmentAliasRequestWithBody(server string, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "spaceId", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "aliasId", runtime.ParamLocationPath, aliasId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/spaces/%s/environment_aliases/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -8609,6 +8977,20 @@ type ClientWithResponsesInterface interface {
 
 	UpdateApiKeyWithResponse(ctx context.Context, spaceId SpaceId, apiKeyId ApiKeyId, params *UpdateApiKeyParams, body UpdateApiKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateApiKeyResponse, error)
 
+	// GetAllEnvironmentAliasesWithResponse request
+	GetAllEnvironmentAliasesWithResponse(ctx context.Context, spaceId SpaceId, params *GetAllEnvironmentAliasesParams, reqEditors ...RequestEditorFn) (*GetAllEnvironmentAliasesResponse, error)
+
+	// DeleteEnvironmentAliasWithResponse request
+	DeleteEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, params *DeleteEnvironmentAliasParams, reqEditors ...RequestEditorFn) (*DeleteEnvironmentAliasResponse, error)
+
+	// GetEnvironmentAliasWithResponse request
+	GetEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, reqEditors ...RequestEditorFn) (*GetEnvironmentAliasResponse, error)
+
+	// UpsertEnvironmentAliasWithBodyWithResponse request with any body
+	UpsertEnvironmentAliasWithBodyWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertEnvironmentAliasResponse, error)
+
+	UpsertEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertEnvironmentAliasResponse, error)
+
 	// GetAllEnvironmentsWithResponse request
 	GetAllEnvironmentsWithResponse(ctx context.Context, spaceId SpaceId, params *GetAllEnvironmentsParams, reqEditors ...RequestEditorFn) (*GetAllEnvironmentsResponse, error)
 
@@ -9255,6 +9637,94 @@ func (r UpdateApiKeyResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateApiKeyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetAllEnvironmentAliasesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EnvironmentAliasCollection
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAllEnvironmentAliasesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAllEnvironmentAliasesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteEnvironmentAliasResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteEnvironmentAliasResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteEnvironmentAliasResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetEnvironmentAliasResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EnvironmentAlias
+}
+
+// Status returns HTTPResponse.Status
+func (r GetEnvironmentAliasResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetEnvironmentAliasResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpsertEnvironmentAliasResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EnvironmentAlias
+	JSON201      *EnvironmentAlias
+}
+
+// Status returns HTTPResponse.Status
+func (r UpsertEnvironmentAliasResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpsertEnvironmentAliasResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -10775,6 +11245,50 @@ func (c *ClientWithResponses) UpdateApiKeyWithResponse(ctx context.Context, spac
 	return ParseUpdateApiKeyResponse(rsp)
 }
 
+// GetAllEnvironmentAliasesWithResponse request returning *GetAllEnvironmentAliasesResponse
+func (c *ClientWithResponses) GetAllEnvironmentAliasesWithResponse(ctx context.Context, spaceId SpaceId, params *GetAllEnvironmentAliasesParams, reqEditors ...RequestEditorFn) (*GetAllEnvironmentAliasesResponse, error) {
+	rsp, err := c.GetAllEnvironmentAliases(ctx, spaceId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAllEnvironmentAliasesResponse(rsp)
+}
+
+// DeleteEnvironmentAliasWithResponse request returning *DeleteEnvironmentAliasResponse
+func (c *ClientWithResponses) DeleteEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, params *DeleteEnvironmentAliasParams, reqEditors ...RequestEditorFn) (*DeleteEnvironmentAliasResponse, error) {
+	rsp, err := c.DeleteEnvironmentAlias(ctx, spaceId, aliasId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteEnvironmentAliasResponse(rsp)
+}
+
+// GetEnvironmentAliasWithResponse request returning *GetEnvironmentAliasResponse
+func (c *ClientWithResponses) GetEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, reqEditors ...RequestEditorFn) (*GetEnvironmentAliasResponse, error) {
+	rsp, err := c.GetEnvironmentAlias(ctx, spaceId, aliasId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetEnvironmentAliasResponse(rsp)
+}
+
+// UpsertEnvironmentAliasWithBodyWithResponse request with arbitrary body returning *UpsertEnvironmentAliasResponse
+func (c *ClientWithResponses) UpsertEnvironmentAliasWithBodyWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertEnvironmentAliasResponse, error) {
+	rsp, err := c.UpsertEnvironmentAliasWithBody(ctx, spaceId, aliasId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpsertEnvironmentAliasResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpsertEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertEnvironmentAliasResponse, error) {
+	rsp, err := c.UpsertEnvironmentAlias(ctx, spaceId, aliasId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpsertEnvironmentAliasResponse(rsp)
+}
+
 // GetAllEnvironmentsWithResponse request returning *GetAllEnvironmentsResponse
 func (c *ClientWithResponses) GetAllEnvironmentsWithResponse(ctx context.Context, spaceId SpaceId, params *GetAllEnvironmentsParams, reqEditors ...RequestEditorFn) (*GetAllEnvironmentsResponse, error) {
 	rsp, err := c.GetAllEnvironments(ctx, spaceId, params, reqEditors...)
@@ -11926,6 +12440,107 @@ func ParseUpdateApiKeyResponse(rsp *http.Response) (*UpdateApiKeyResponse, error
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetAllEnvironmentAliasesResponse parses an HTTP response from a GetAllEnvironmentAliasesWithResponse call
+func ParseGetAllEnvironmentAliasesResponse(rsp *http.Response) (*GetAllEnvironmentAliasesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAllEnvironmentAliasesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EnvironmentAliasCollection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteEnvironmentAliasResponse parses an HTTP response from a DeleteEnvironmentAliasWithResponse call
+func ParseDeleteEnvironmentAliasResponse(rsp *http.Response) (*DeleteEnvironmentAliasResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteEnvironmentAliasResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetEnvironmentAliasResponse parses an HTTP response from a GetEnvironmentAliasWithResponse call
+func ParseGetEnvironmentAliasResponse(rsp *http.Response) (*GetEnvironmentAliasResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetEnvironmentAliasResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EnvironmentAlias
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpsertEnvironmentAliasResponse parses an HTTP response from a UpsertEnvironmentAliasWithResponse call
+func ParseUpsertEnvironmentAliasResponse(rsp *http.Response) (*UpsertEnvironmentAliasResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpsertEnvironmentAliasResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EnvironmentAlias
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest EnvironmentAlias
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
 
 	}
 
