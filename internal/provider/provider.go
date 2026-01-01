@@ -21,6 +21,7 @@ import (
 	"github.com/labd/terraform-provider-contentful/internal/resources/editor_interface"
 	"github.com/labd/terraform-provider-contentful/internal/resources/entry"
 	"github.com/labd/terraform-provider-contentful/internal/resources/environment"
+	"github.com/labd/terraform-provider-contentful/internal/resources/environment_alias"
 	"github.com/labd/terraform-provider-contentful/internal/resources/locale"
 	"github.com/labd/terraform-provider-contentful/internal/resources/preview_environment"
 	"github.com/labd/terraform-provider-contentful/internal/resources/role"
@@ -159,6 +160,7 @@ func (c contentfulProvider) Resources(_ context.Context) []func() resource.Resou
 		editor_interface.NewEditorInterfaceResource,
 		entry.NewEntryResource,
 		environment.NewEnvironmentResource,
+		environment_alias.NewEnvironmentAliasResource,
 		locale.NewLocaleResource,
 		preview_environment.NewPreviewEnvironmentResource,
 		role.NewRoleResource,
