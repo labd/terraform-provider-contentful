@@ -220,6 +220,7 @@ Optional:
 
 Optional:
 
+- `array` (Map of List of String) Array default values by locale. Example: {"en-US" = ["green", "blue"]
 - `bool` (Map of Boolean) Boolean default values by locale. Example: {"en-US" = true}
 - `string` (Map of String) String default values by locale. Example: {"en-US" = "green"}
 
