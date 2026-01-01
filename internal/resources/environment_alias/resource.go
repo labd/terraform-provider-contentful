@@ -41,13 +41,6 @@ func (e *environmentAliasResource) Schema(_ context.Context, _ resource.SchemaRe
 		Description: "An Environment Alias allows you to reference an environment with a static identifier.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The unique identifier of the environment alias",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"alias_id": schema.StringAttribute{
 				Required:    true,
 				Description: "The ID of the environment alias (e.g., 'master', 'production')",
 				PlanModifiers: []planmodifier.String{
@@ -96,7 +89,7 @@ func (e *environmentAliasResource) Create(ctx context.Context, request resource.
 	resp, err := e.client.UpsertEnvironmentAliasWithResponse(
 		ctx,
 		plan.SpaceID.ValueString(),
-		plan.AliasID.ValueString(),
+		plan.ID.ValueString(),
 		nil, // No version header for create
 		draft,
 	)
@@ -164,7 +157,7 @@ func (e *environmentAliasResource) Update(ctx context.Context, request resource.
 	resp, err := e.client.UpsertEnvironmentAliasWithResponse(
 		ctx,
 		plan.SpaceID.ValueString(),
-		plan.AliasID.ValueString(),
+		plan.ID.ValueString(),
 		params,
 		draft,
 	)
@@ -209,7 +202,7 @@ func (e *environmentAliasResource) Delete(ctx context.Context, request resource.
 	resp, err := e.client.DeleteEnvironmentAliasWithResponse(
 		ctx,
 		state.SpaceID.ValueString(),
-		state.AliasID.ValueString(),
+		state.ID.ValueString(),
 		params,
 	)
 
@@ -240,7 +233,7 @@ func (e *environmentAliasResource) doRead(ctx context.Context, alias *Environmen
 	resp, err := e.client.GetEnvironmentAliasWithResponse(
 		ctx,
 		alias.SpaceID.ValueString(),
-		alias.AliasID.ValueString(),
+		alias.ID.ValueString(),
 	)
 	if err != nil {
 		d.AddError(
@@ -255,7 +248,7 @@ func (e *environmentAliasResource) doRead(ctx context.Context, alias *Environmen
 		d.AddWarning(
 			"Environment alias not found",
 			fmt.Sprintf("Environment alias %s in space %s was not found, removing from state",
-				alias.AliasID.ValueString(), alias.SpaceID.ValueString()),
+				alias.ID.ValueString(), alias.SpaceID.ValueString()),
 		)
 		return
 	}
