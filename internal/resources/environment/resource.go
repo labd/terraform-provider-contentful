@@ -3,14 +3,15 @@ package environment
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
@@ -214,22 +215,24 @@ func (e *environmentResource) Delete(ctx context.Context, request resource.Delet
 }
 
 func (e *environmentResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	// Extract the environment ID and space ID from the import ID
-	idParts := path.Root("id")
-	spaceIdParts := path.Root("space_id")
+	// Import format: space_id:environment_id
+	// For example: abc123:staging
+	idParts := strings.SplitN(request.ID, ":", 2)
 
-	// Set the ID directly
-	response.Diagnostics.Append(response.State.SetAttribute(ctx, idParts, request.ID)...)
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		response.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: space_id:environment_id. Got: %q", request.ID),
+		)
+		return
+	}
 
-	// Space ID needs to be set by user after import as we can't determine it from the ID alone
-	// We'll default to asking for it in the state
-	response.State.SetAttribute(ctx, spaceIdParts, "")
+	futureState := &Environment{
+		SpaceId: types.StringValue(idParts[0]),
+		ID:      types.StringValue(idParts[1]),
+	}
 
-	// Note to user
-	response.Diagnostics.AddWarning(
-		"Space ID Required",
-		"Please set the space_id attribute after import as it cannot be determined automatically.",
-	)
+	e.doRead(ctx, futureState, &response.State, &response.Diagnostics)
 }
 
 func (e *environmentResource) doRead(ctx context.Context, environment *Environment, state *tfsdk.State, d *diag.Diagnostics) {

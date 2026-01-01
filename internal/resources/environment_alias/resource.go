@@ -3,14 +3,15 @@ package environment_alias
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
 	"github.com/labd/terraform-provider-contentful/internal/utils"
@@ -224,9 +225,24 @@ func (e *environmentAliasResource) Delete(ctx context.Context, request resource.
 }
 
 func (e *environmentAliasResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	// Import format: space_id/alias_id
-	// For example: abc123/master
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), request, response)
+	// Import format: space_id:alias_id
+	// For example: abc123:master
+	idParts := strings.SplitN(request.ID, ":", 2)
+
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		response.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: space_id:alias_id. Got: %q", request.ID),
+		)
+		return
+	}
+
+	futureState := &EnvironmentAlias{
+		SpaceID: types.StringValue(idParts[0]),
+		ID:      types.StringValue(idParts[1]),
+	}
+
+	e.doRead(ctx, futureState, &response.State, &response.Diagnostics)
 }
 
 func (e *environmentAliasResource) doRead(ctx context.Context, alias *EnvironmentAlias, state *tfsdk.State, d *diag.Diagnostics) {
