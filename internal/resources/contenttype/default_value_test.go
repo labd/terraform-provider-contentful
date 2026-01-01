@@ -16,7 +16,7 @@ func TestDefaultValue_Draft_WithNullMaps(t *testing.T) {
 	}
 
 	result := defaultValue.Draft()
-	
+
 	// This should return nil
 	assert.Nil(t, result)
 }
@@ -29,7 +29,7 @@ func TestDefaultValue_Draft_WithEmptyMaps(t *testing.T) {
 	}
 
 	result := defaultValue.Draft()
-	
+
 	// This should also return nil since both maps are empty
 	assert.Nil(t, result)
 }
@@ -37,7 +37,7 @@ func TestDefaultValue_Draft_WithEmptyMaps(t *testing.T) {
 func TestDefaultValue_Draft_WithStringValues(t *testing.T) {
 	// Test case with actual string values
 	defaultValue := &DefaultValue{
-		Bool:   types.MapNull(types.BoolType),
+		Bool: types.MapNull(types.BoolType),
 		String: types.MapValueMust(types.StringType, map[string]attr.Value{
 			"en-US": types.StringValue("green"),
 			"de-DE": types.StringValue("grün"),
@@ -45,7 +45,7 @@ func TestDefaultValue_Draft_WithStringValues(t *testing.T) {
 	}
 
 	result := defaultValue.Draft()
-	
+
 	// This should return a valid map
 	assert.NotNil(t, result)
 	assert.Equal(t, "green", (*result)["en-US"])
@@ -63,7 +63,7 @@ func TestDefaultValue_Draft_WithBoolValues(t *testing.T) {
 	}
 
 	result := defaultValue.Draft()
-	
+
 	// This should return a valid map
 	assert.NotNil(t, result)
 	assert.Equal(t, true, (*result)["en-US"])
@@ -92,7 +92,7 @@ func TestDefaultValue_HasContent_WithEmptyMaps(t *testing.T) {
 
 func TestDefaultValue_HasContent_WithStringValues(t *testing.T) {
 	defaultValue := &DefaultValue{
-		Bool:   types.MapNull(types.BoolType),
+		Bool: types.MapNull(types.BoolType),
 		String: types.MapValueMust(types.StringType, map[string]attr.Value{
 			"en-US": types.StringValue("test"),
 		}),
@@ -128,7 +128,7 @@ func TestField_ToNative_WithStringDefaultValue(t *testing.T) {
 		Name: types.StringValue("Theme Color"),
 		Type: types.StringValue("Symbol"),
 		DefaultValue: &DefaultValue{
-			Bool:   types.MapNull(types.BoolType),
+			Bool: types.MapNull(types.BoolType),
 			String: types.MapValueMust(types.StringType, map[string]attr.Value{
 				"en-US": types.StringValue("green"),
 			}),
@@ -141,7 +141,7 @@ func TestField_ToNative_WithStringDefaultValue(t *testing.T) {
 	}
 
 	result, err := field.ToNative()
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.NotNil(t, result.DefaultValue)
@@ -168,7 +168,7 @@ func TestField_ToNative_WithBoolDefaultValue(t *testing.T) {
 	}
 
 	result, err := field.ToNative()
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.NotNil(t, result.DefaultValue)
@@ -190,7 +190,7 @@ func TestField_ToNative_WithNullDefaultValue(t *testing.T) {
 	}
 
 	result, err := field.ToNative()
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Nil(t, result.DefaultValue)
