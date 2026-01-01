@@ -10,6 +10,16 @@ description: |-
 
 {{ .Description | trimspace }}
 
+## Important
+
+Before using environment aliases, you must enable this feature in the Contentful web app. 
+
+1. Navigate to **Settings > Environments** in your space and opt-in to environment aliases.
+2. During this process, a default `master` alias will be created automatically.
+3. Use the import command below to import the `master` alias into your Terraform state.
+
+Only space administrators can enable and manage environment aliases. See the [Contentful Environment Aliases documentation](https://www.contentful.com/developers/docs/references/content-management-api/#/reference/environment-aliases) for more details.
+
 {{ if .HasExample -}}
 ## Example Usage
 

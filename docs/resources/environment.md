@@ -31,3 +31,13 @@ resource "contentful_environment" "example_environment" {
 
 - `id` (String) Environment ID
 - `version` (Number) The current version of the environment
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+# Import an environment using the format: space_id:environment_id
+terraform import contentful_environment.example_environment your-space-id:your-environment-id
+```
+
