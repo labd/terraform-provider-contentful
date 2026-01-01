@@ -52,10 +52,17 @@ func TestEnvironmentResource_Basic(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       false, // Can't verify because space_id is needed manually after import
-				ImportStateVerifyIgnore: []string{"space_id"},
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("%s:ENVIRONMENT_ID_PLACEHOLDER", spaceID),
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s:%s", rs.Primary.Attributes["space_id"], rs.Primary.ID), nil
+				},
 			},
 		},
 	})

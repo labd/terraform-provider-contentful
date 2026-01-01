@@ -60,6 +60,14 @@ func TestEnvironmentAliasResource_Basic(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("%s:ALIAS_ID_PLACEHOLDER", spaceID),
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s:%s", rs.Primary.Attributes["space_id"], rs.Primary.ID), nil
+				},
 			},
 		},
 	})
