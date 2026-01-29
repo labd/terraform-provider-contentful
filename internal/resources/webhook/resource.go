@@ -69,13 +69,15 @@ func (e *webhookResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "URL to notify",
 			},
 			"http_basic_auth_username": schema.StringAttribute{
-				Optional:    true,
-				Description: "HTTP basic auth username",
+				Optional:           true,
+				Description:        "HTTP basic auth username",
+				DeprecationMessage: "Setting Basic Auth credentials is not supported anymore. Please use the headers object instead.",
 			},
 			"http_basic_auth_password": schema.StringAttribute{
-				Optional:    true,
-				Description: "HTTP basic auth password",
-				Sensitive:   true,
+				Optional:           true,
+				Description:        "HTTP basic auth password",
+				Sensitive:          true,
+				DeprecationMessage: "Setting Basic Auth credentials is not supported anymore. Please use the headers object instead.",
 			},
 			"headers": schema.MapAttribute{
 				Optional:    true,
@@ -131,8 +133,16 @@ func (e *webhookResource) Create(ctx context.Context, request resource.CreateReq
 		return
 	}
 
+	if draft.HttpBasicPassword != nil || draft.HttpBasicUsername != nil {
+		response.Diagnostics.AddError(
+			"Error creating webhook",
+			"Setting Basic Auth credentials is not supported anymore. Please use the headers object instead.",
+		)
+		return
+	}
+
 	resp, err := e.client.CreateWebhookWithResponse(ctx, plan.SpaceId.ValueString(), draft)
-	if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 		response.Diagnostics.AddError(
 			"Error creating webhook",
 			"Could not create webhook: "+err.Error(),
@@ -142,7 +152,7 @@ func (e *webhookResource) Create(ctx context.Context, request resource.CreateReq
 
 	// Map response to state
 	state := &Webhook{}
-	err = state.MapFromSDK(resp.JSON201)
+	err = state.MapFromSDK(resp.JSON200)
 	if err != nil {
 		response.Diagnostics.AddError(
 			"Error mapping webhook",
@@ -151,7 +161,16 @@ func (e *webhookResource) Create(ctx context.Context, request resource.CreateReq
 		return
 	}
 
-	state.HttpBasicAuthPassword = plan.HttpBasicAuthPassword
+	if !plan.HttpBasicAuthPassword.IsNull() {
+		state.HttpBasicAuthPassword = plan.HttpBasicAuthPassword
+	} else {
+		state.HttpBasicAuthPassword = types.StringNull()
+	}
+	if !plan.HttpBasicAuthUsername.IsNull() {
+		state.HttpBasicAuthUsername = plan.HttpBasicAuthUsername
+	} else {
+		state.HttpBasicAuthUsername = types.StringNull()
+	}
 
 	// Set state
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
@@ -217,6 +236,14 @@ func (e *webhookResource) Update(ctx context.Context, request resource.UpdateReq
 		return
 	}
 
+	if draft.HttpBasicPassword != nil || draft.HttpBasicUsername != nil {
+		response.Diagnostics.AddError(
+			"Error creating webhook",
+			"Setting Basic Auth credentials is not supported anymore. Please use the headers object instead.",
+		)
+		return
+	}
+
 	resp, err := e.client.UpdateWebhookWithResponse(
 		ctx,
 		plan.SpaceId.ValueString(),
@@ -240,7 +267,17 @@ func (e *webhookResource) Update(ctx context.Context, request resource.UpdateReq
 		)
 		return
 	}
-	state.HttpBasicAuthPassword = plan.HttpBasicAuthPassword
+
+	if !plan.HttpBasicAuthPassword.IsNull() {
+		state.HttpBasicAuthPassword = plan.HttpBasicAuthPassword
+	} else {
+		state.HttpBasicAuthPassword = types.StringNull()
+	}
+	if !plan.HttpBasicAuthUsername.IsNull() {
+		state.HttpBasicAuthUsername = plan.HttpBasicAuthUsername
+	} else {
+		state.HttpBasicAuthUsername = types.StringNull()
+	}
 
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }

@@ -722,7 +722,7 @@ paths:
             schema:
               $ref: "#/components/schemas/WebhookCreate"
       responses:
-        "201":
+        "200":
           description: Created
           content:
             application/json:

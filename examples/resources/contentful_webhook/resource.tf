@@ -13,8 +13,6 @@ resource "contentful_webhook" "example_webhook" {
     header1 = "header1-value"
     header2 = "header2-value"
   }
-  http_basic_auth_username = "username"
-  http_basic_auth_password = "password"
 
   filters = jsonencode([
     { in : [{ "doc" : "sys.environment.sys.id" }, ["testing", "staging"]] },

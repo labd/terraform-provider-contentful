@@ -28,8 +28,6 @@ resource "contentful_webhook" "example_webhook" {
     header1 = "header1-value"
     header2 = "header2-value"
   }
-  http_basic_auth_username = "username"
-  http_basic_auth_password = "password"
 
   filters = jsonencode([
     { in : [{ "doc" : "sys.environment.sys.id" }, ["testing", "staging"]] },
@@ -53,8 +51,8 @@ resource "contentful_webhook" "example_webhook" {
 - `active` (Boolean) Whether the webhook is active or not
 - `filters` (String) List of filters this webhook should match for before triggering. The filters should be provided as a JSON string. For example: {"sys":{"type":"Entry"}}
 - `headers` (Map of String) HTTP headers to send with the webhook request
-- `http_basic_auth_password` (String, Sensitive) HTTP basic auth password
-- `http_basic_auth_username` (String) HTTP basic auth username
+- `http_basic_auth_password` (String, Sensitive, Deprecated) HTTP basic auth password
+- `http_basic_auth_username` (String, Deprecated) HTTP basic auth username
 
 ### Read-Only
 
