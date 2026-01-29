@@ -10447,7 +10447,7 @@ func (r GetAllWebhooksResponse) StatusCode() int {
 type CreateWebhookResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *Webhook
+	JSON200      *Webhook
 }
 
 // Status returns HTTPResponse.Status
@@ -13288,12 +13288,12 @@ func ParseCreateWebhookResponse(rsp *http.Response) (*CreateWebhookResponse, err
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Webhook
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON201 = &dest
+		response.JSON200 = &dest
 
 	}
 

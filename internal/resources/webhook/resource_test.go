@@ -37,13 +37,11 @@ func TestWebhookResource_Basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "url", url),
-					resource.TestCheckResourceAttr(resourceName, "http_basic_auth_username", "username"),
 					resource.TestCheckResourceAttr(resourceName, "topics.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "headers.header1", "header1-value"),
 					testAccCheckContentfulWebhookExists(t, resourceName, func(t *testing.T, webhook *sdk.Webhook) {
 						assert.EqualValues(t, name, webhook.Name)
 						assert.EqualValues(t, url, webhook.Url)
-						assert.EqualValues(t, "username", *webhook.HttpBasicUsername)
 						assert.Len(t, webhook.Topics, 2)
 						assert.Contains(t, webhook.Topics, "Entry.create")
 						assert.Contains(t, webhook.Topics, "ContentType.create")
@@ -58,13 +56,11 @@ func TestWebhookResource_Basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%s-updated", name)),
 					resource.TestCheckResourceAttr(resourceName, "url", fmt.Sprintf("%s-updated", url)),
-					resource.TestCheckResourceAttr(resourceName, "http_basic_auth_username", "username-updated"),
 					resource.TestCheckResourceAttr(resourceName, "topics.#", "3"),
 					resource.TestCheckResourceAttr(resourceName, "headers.header1", "header1-value-updated"),
 					testAccCheckContentfulWebhookExists(t, resourceName, func(t *testing.T, webhook *sdk.Webhook) {
 						assert.EqualValues(t, fmt.Sprintf("%s-updated", name), webhook.Name)
 						assert.EqualValues(t, fmt.Sprintf("%s-updated", url), webhook.Url)
-						assert.EqualValues(t, "username-updated", *webhook.HttpBasicUsername)
 						assert.Len(t, webhook.Topics, 3)
 						assert.Contains(t, webhook.Topics, "Entry.create")
 						assert.Contains(t, webhook.Topics, "ContentType.create")
@@ -180,8 +176,6 @@ resource "contentful_webhook" "mywebhook" {
     header1 = "header1-value"
     header2 = "header2-value"
   }
-  http_basic_auth_username = "username"
-  http_basic_auth_password = "password"
 }
 `, spaceId, name, url)
 }
@@ -202,8 +196,6 @@ resource "contentful_webhook" "mywebhook" {
     header1 = "header1-value-updated"
     header2 = "header2-value-updated"
   }
-  http_basic_auth_username = "username-updated"
-  http_basic_auth_password = "password-updated"
   filters = jsonencode([
     {in: [{ "doc" : "sys.environment.sys.id" }, ["testing", "staging" ]]},
     { not : {equals: [{ "doc" : "sys.environment.sys.id" }, "master"]} },

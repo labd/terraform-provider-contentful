@@ -35,7 +35,7 @@ func (w *Webhook) MapFromSDK(webhook *sdk.Webhook) error {
 	w.URL = types.StringValue(webhook.Url)
 
 	// Handle nullable fields with appropriate defaults
-	w.HttpBasicAuthUsername = types.StringValue("")
+	w.HttpBasicAuthUsername = types.StringNull()
 	if webhook.HttpBasicUsername != nil {
 		w.HttpBasicAuthUsername = types.StringValue(*webhook.HttpBasicUsername)
 	}
@@ -76,16 +76,23 @@ func (w *Webhook) DraftForCreate() (sdk.WebhookCreate, error) {
 		return sdk.WebhookCreate{}, err
 	}
 
-	return sdk.WebhookCreate{
-		Name:              w.Name.ValueString(),
-		Url:               w.URL.ValueString(),
-		Topics:            w.topicsToSDK(),
-		Headers:           w.headersToSDK(),
-		HttpBasicUsername: utils.Pointer(w.HttpBasicAuthUsername.ValueString()),
-		HttpBasicPassword: utils.Pointer(w.HttpBasicAuthPassword.ValueString()),
-		Active:            w.Active.ValueBoolPointer(),
-		Filters:           filters,
-	}, nil
+	var draft = sdk.WebhookCreate{
+		Name:    w.Name.ValueString(),
+		Url:     w.URL.ValueString(),
+		Topics:  w.topicsToSDK(),
+		Headers: w.headersToSDK(),
+		Active:  w.Active.ValueBoolPointer(),
+		Filters: filters,
+	}
+
+	if !w.HttpBasicAuthPassword.IsNull() {
+		draft.HttpBasicPassword = utils.Pointer(w.HttpBasicAuthPassword.ValueString())
+	}
+	if !w.HttpBasicAuthUsername.IsNull() {
+		draft.HttpBasicUsername = utils.Pointer(w.HttpBasicAuthUsername.ValueString())
+	}
+
+	return draft, nil
 }
 
 // DraftForUpdate creates a WebhookUpdate object for updating an existing webhook
@@ -95,16 +102,23 @@ func (w *Webhook) DraftForUpdate() (sdk.WebhookUpdate, error) {
 		return sdk.WebhookUpdate{}, err
 	}
 
-	return sdk.WebhookUpdate{
-		Name:              w.Name.ValueString(),
-		Url:               w.URL.ValueString(),
-		Topics:            w.topicsToSDK(),
-		Headers:           w.headersToSDK(),
-		HttpBasicUsername: utils.Pointer(w.HttpBasicAuthUsername.ValueString()),
-		HttpBasicPassword: utils.Pointer(w.HttpBasicAuthPassword.ValueString()),
-		Active:            w.Active.ValueBoolPointer(),
-		Filters:           filters,
-	}, err
+	var update = sdk.WebhookUpdate{
+		Name:    w.Name.ValueString(),
+		Url:     w.URL.ValueString(),
+		Topics:  w.topicsToSDK(),
+		Headers: w.headersToSDK(),
+		Active:  w.Active.ValueBoolPointer(),
+		Filters: filters,
+	}
+
+	if !w.HttpBasicAuthPassword.IsNull() {
+		update.HttpBasicPassword = utils.Pointer(w.HttpBasicAuthPassword.ValueString())
+	}
+	if !w.HttpBasicAuthUsername.IsNull() {
+		update.HttpBasicUsername = utils.Pointer(w.HttpBasicAuthUsername.ValueString())
+	}
+
+	return update, nil
 }
 
 // Convert topics from Terraform types to SDK string slice
