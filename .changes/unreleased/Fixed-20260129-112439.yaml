@@ -1,3 +1,0 @@
-kind: Fixed
-body: Fixed handling of basic auth headers when not set in state
-time: 2026-01-29T11:24:39.935527658+01:00
