@@ -69,15 +69,13 @@ func (e *webhookResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "URL to notify",
 			},
 			"http_basic_auth_username": schema.StringAttribute{
-				Optional:           true,
-				Description:        "HTTP basic auth username",
-				DeprecationMessage: "Setting Basic Auth credentials is not supported anymore. Please use the headers object instead.",
+				Optional:    true,
+				Description: "HTTP basic auth username",
 			},
 			"http_basic_auth_password": schema.StringAttribute{
-				Optional:           true,
-				Description:        "HTTP basic auth password",
-				Sensitive:          true,
-				DeprecationMessage: "Setting Basic Auth credentials is not supported anymore. Please use the headers object instead.",
+				Optional:    true,
+				Description: "HTTP basic auth password",
+				Sensitive:   true,
 			},
 			"headers": schema.MapAttribute{
 				Optional:    true,
