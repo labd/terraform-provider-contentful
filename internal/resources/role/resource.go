@@ -198,7 +198,7 @@ func (e *roleResource) Read(ctx context.Context, request resource.ReadRequest, r
 		return
 	}
 
-	response.Diagnostics.Append(request.State.Set(ctx, &state)...)
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
 func (e *roleResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {

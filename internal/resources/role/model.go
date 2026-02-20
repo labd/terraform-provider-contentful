@@ -45,7 +45,7 @@ func (r *Role) Import(role *sdk.Role) error {
 	r.ID = types.StringValue(role.Sys.Id)
 	r.RoleId = types.StringValue(role.Sys.Id)
 	r.SpaceID = types.StringValue(role.Sys.Space.Sys.Id)
-	r.Version = types.Int64Value(int64(role.Sys.Version))
+	r.Version = types.Int64Value(role.Sys.Version)
 	r.Name = types.StringValue(role.Name)
 	r.Description = types.StringValue(role.Description)
 
