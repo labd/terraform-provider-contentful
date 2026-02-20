@@ -1,3 +1,0 @@
-kind: Fixed
-body: Only retry 400 Bad Request errors that contain 'not in ready state' in the response body
-time: 2026-02-20T14:10:51.485081324+01:00
