@@ -20,7 +20,7 @@ tasks:
       TF_ACC: 1
     cmds:
       # Run sequentially to avoid conflicts with shared resources in Contentful.
-      - go test p 1 -v ./...
+      - go test -p 1 -v ./...
 
   generate:
     cmds:
