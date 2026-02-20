@@ -1,6 +1,6 @@
 resource "contentful_contenttype" "{{ .identifier }}" {
   space_id      = "{{ .spaceId }}"
-  environment   = "master"
+  environment   = "master-2026-02-20"
   name          = "tf_test1"
   description   = "Terraform Acc Test Content Type description change"
   display_field = "field1"

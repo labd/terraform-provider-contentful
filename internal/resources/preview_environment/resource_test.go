@@ -137,7 +137,7 @@ func testAccPreviewEnvironmentConfig(spaceID string) string {
 	return fmt.Sprintf(`
 resource "contentful_contenttype" "example_contenttype" {
   space_id      = "%s"
-  environment   = "master"
+  environment   = "master-2026-02-20"
   id            = "example_contenttype"
   name          = "name"
   description   = "content type description"
@@ -171,7 +171,7 @@ func testAccEditorInterfaceConfigUpdate(spaceID string) string {
 	return fmt.Sprintf(`
 resource "contentful_contenttype" "example_contenttype" {
   space_id      = "%s"
-  environment   = "master"
+  environment   = "master-2026-02-20"
   id            = "example_contenttype"
   name          = "name"
   description   = "content type description"

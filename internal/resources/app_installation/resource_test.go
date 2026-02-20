@@ -34,7 +34,7 @@ func TestAppInstallation_Create(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: testAppInstallation("acctest_app_installation", os.Getenv("CONTENTFUL_SPACE_ID"), "master", appInstallationId),
+				Config: testAppInstallation("acctest_app_installation", os.Getenv("CONTENTFUL_SPACE_ID"), "master-2026-02-20", appInstallationId),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "app_definition_id", appInstallationId),
 					testAccCheckContentfulAppInstallationExists(t, resourceName, func(t *testing.T, appInstallation *sdk.AppInstallation) {
@@ -45,7 +45,7 @@ func TestAppInstallation_Create(t *testing.T) {
 				),
 			},
 			{
-				Config: testAppInstallationWithParameter("acctest_app_installation_2", os.Getenv("CONTENTFUL_SPACE_ID"), "master", otherId),
+				Config: testAppInstallationWithParameter("acctest_app_installation_2", os.Getenv("CONTENTFUL_SPACE_ID"), "master-2026-02-20", otherId),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("contentful_app_installation.acctest_app_installation_2", "app_definition_id", otherId),
 					testAccCheckContentfulAppInstallationExists(t, "contentful_app_installation.acctest_app_installation_2", func(t *testing.T, appInstallation *sdk.AppInstallation) {
@@ -71,7 +71,7 @@ func getAppInstallationFromState(s *terraform.State, resourceName string) (*sdk.
 	}
 
 	client := acctest.GetClient()
-	resp, err := client.GetAppInstallationWithResponse(context.Background(), os.Getenv("CONTENTFUL_SPACE_ID"), "master", rs.Primary.ID)
+	resp, err := client.GetAppInstallationWithResponse(context.Background(), os.Getenv("CONTENTFUL_SPACE_ID"), "master-2026-02-20", rs.Primary.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func testAccCheckContentfulAppInstallationDestroy(s *terraform.State) error {
 			continue
 		}
 
-		resp, err := client.GetAppInstallationWithResponse(context.Background(), os.Getenv("CONTENTFUL_SPACE_ID"), "master", rs.Primary.ID)
+		resp, err := client.GetAppInstallationWithResponse(context.Background(), os.Getenv("CONTENTFUL_SPACE_ID"), "master-2026-02-20", rs.Primary.ID)
 		if err != nil {
 			return err
 		}

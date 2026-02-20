@@ -89,7 +89,7 @@ func (e *apiKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Description: "List of needed environments if not added then master is used",
 				ElementType: types.StringType,
 				PlanModifiers: []planmodifier.List{
-					custommodifier.ListDefault([]attr.Value{types.StringValue("master")}),
+					custommodifier.ListDefault([]attr.Value{types.StringValue("master-2026-02-20")}),
 				},
 			},
 		},

@@ -308,7 +308,7 @@ func getContentTypeFromState(s *terraform.State, resourceName string) (*sdk.Cont
 	}
 
 	client := acctest.GetClient()
-	resp, err := client.GetContentTypeWithResponse(context.Background(), os.Getenv("CONTENTFUL_SPACE_ID"), "master", rs.Primary.ID)
+	resp, err := client.GetContentTypeWithResponse(context.Background(), os.Getenv("CONTENTFUL_SPACE_ID"), "master-2026-02-20", rs.Primary.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +323,7 @@ func getContentTypeFromState(s *terraform.State, resourceName string) (*sdk.Cont
 func getEditorInterfaceFromState(id string) (*sdk.EditorInterface, error) {
 	client := acctest.GetClient()
 
-	resp, err := client.GetEditorInterfaceWithResponse(context.Background(), os.Getenv("CONTENTFUL_SPACE_ID"), "master", id)
+	resp, err := client.GetEditorInterfaceWithResponse(context.Background(), os.Getenv("CONTENTFUL_SPACE_ID"), "master-2026-02-20", id)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +372,7 @@ func testAccCheckContentfulContentTypeDestroy(s *terraform.State) (err error) {
 			return fmt.Errorf("no space_id is set")
 		}
 
-		resp, err := client.GetContentTypeWithResponse(context.Background(), os.Getenv("CONTENTFUL_SPACE_ID"), "master", rs.Primary.ID)
+		resp, err := client.GetContentTypeWithResponse(context.Background(), os.Getenv("CONTENTFUL_SPACE_ID"), "master-2026-02-20", rs.Primary.ID)
 		if err != nil {
 			return err
 		}

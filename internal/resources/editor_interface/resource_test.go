@@ -41,7 +41,7 @@ func TestAccEditorInterfaceResource_Basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckContentfulEditorInterfaceExists(resourceName, &editorInterface),
 					resource.TestCheckResourceAttr(resourceName, "space_id", spaceID),
-					resource.TestCheckResourceAttr(resourceName, "environment", "master"),
+					resource.TestCheckResourceAttr(resourceName, "environment", "master-2026-02-20"),
 					resource.TestCheckResourceAttrSet(resourceName, "content_type"),
 					resource.TestCheckResourceAttr(resourceName, "controls.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "controls.0.field_id", "title"),
@@ -105,7 +105,7 @@ func TestAccEditorInterfaceResource_Basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckContentfulEditorInterfaceExists(resourceNameDatePicker, &editorInterface),
 					resource.TestCheckResourceAttr(resourceNameDatePicker, "space_id", spaceID),
-					resource.TestCheckResourceAttr(resourceNameDatePicker, "environment", "master"),
+					resource.TestCheckResourceAttr(resourceNameDatePicker, "environment", "master-2026-02-20"),
 					resource.TestCheckResourceAttrSet(resourceNameDatePicker, "content_type"),
 					resource.TestCheckResourceAttr(resourceNameDatePicker, "controls.#", "1"),
 					resource.TestCheckResourceAttr(resourceNameDatePicker, "controls.0.field_id", "date"),
@@ -190,7 +190,7 @@ func testAccEditorInterfaceConfig(spaceID string) string {
 	return fmt.Sprintf(`
 resource "contentful_contenttype" "test_contenttype" {
   space_id     = "%s"
-  environment  = "master"
+  environment  = "master-2026-02-20"
   id         	 = "test-content-type"
   name         = "test content type"
   description  = "Test Content Type for Editor Interface"
@@ -240,7 +240,7 @@ func testAccEditorInterfaceConfigUpdate(spaceID string) string {
 	return fmt.Sprintf(`
 resource "contentful_contenttype" "test_contenttype" {
   space_id     = "%s"
-  environment  = "master"
+  environment  = "master-2026-02-20"
   name         = "test-content-type"
   description  = "Test Content Type for Editor Interface"
   display_field = "title"
@@ -308,7 +308,7 @@ func testAccEditorInterfaceConfigUpdateWithEmptySideBarDefaultEditorEnabled(spac
 	return fmt.Sprintf(`
 resource "contentful_contenttype" "test_contenttype" {
   space_id     = "%s"
-  environment  = "master"
+  environment  = "master-2026-02-20"
   name         = "test-content-type"
   description  = "Test Content Type for Editor Interface"
   display_field = "title"
@@ -366,7 +366,7 @@ func testAccEditorInterfaceConfig_DatePicker(spaceID string) string {
 	return fmt.Sprintf(`
 resource "contentful_contenttype" "test_contenttype_datepicker" {
   space_id     = "%s"
-  environment  = "master"
+  environment  = "master-2026-02-20"
   id         	 = "test-content-type-datepicker"
   name         = "test content type date picker"
   description  = "Test Content Type for Editor Interface with Date Picker"

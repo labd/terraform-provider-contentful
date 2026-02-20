@@ -25,7 +25,7 @@ func TestLocaleResource_Basic(t *testing.T) {
 	code := fmt.Sprintf("l%s", hashicor_acctest.RandString(2))
 	resourceName := "contentful_locale.mylocale"
 	spaceID := os.Getenv("CONTENTFUL_SPACE_ID")
-	environment := "master"
+	environment := "master-2026-02-20"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { acctest.TestAccPreCheck(t) },

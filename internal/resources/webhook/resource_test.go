@@ -68,7 +68,7 @@ func TestWebhookResource_Basic(t *testing.T) {
 						assert.Len(t, webhook.Headers, 2)
 					}),
 					resource.TestCheckResourceAttr(resourceName, "active", "false"),
-					resource.TestCheckResourceAttr(resourceName, "filters", "[{\"in\":[{\"doc\":\"sys.environment.sys.id\"},[\"testing\",\"staging\"]]},{\"not\":{\"equals\":[{\"doc\":\"sys.environment.sys.id\"},\"master\"]}}]"),
+					resource.TestCheckResourceAttr(resourceName, "filters", "[{\"in\":[{\"doc\":\"sys.environment.sys.id\"},[\"testing\",\"staging\"]]},{\"not\":{\"equals\":[{\"doc\":\"sys.environment.sys.id\"},\"master-2026-02-20\"]}}]"),
 				),
 			},
 			{
@@ -198,7 +198,7 @@ resource "contentful_webhook" "mywebhook" {
   }
   filters = jsonencode([
     {in: [{ "doc" : "sys.environment.sys.id" }, ["testing", "staging" ]]},
-    { not : {equals: [{ "doc" : "sys.environment.sys.id" }, "master"]} },
+    { not : {equals: [{ "doc" : "sys.environment.sys.id" }, "master-2026-02-20"]} },
   ])	
 }
 `, spaceId, name, url)

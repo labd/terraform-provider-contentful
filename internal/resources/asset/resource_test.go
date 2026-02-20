@@ -24,7 +24,7 @@ func TestAssetResource_Basic(t *testing.T) {
 	assetName := fmt.Sprintf("asset-%s", hashicor_acctest.RandString(3))
 	resourceName := "contentful_asset.myasset"
 	spaceID := os.Getenv("CONTENTFUL_SPACE_ID")
-	environment := "master"
+	environment := "master-2026-02-20"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { acctest.TestAccPreCheck(t) },

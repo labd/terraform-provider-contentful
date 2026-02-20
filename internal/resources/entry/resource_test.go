@@ -166,7 +166,7 @@ func testEntryConfig(spaceID string) string {
 resource "contentful_contenttype" "mycontenttype" {
   space_id = "%s"
   name = "tf_test_1"
-  environment = "master"
+  environment = "master-2026-02-20"
   description = "Terraform Acc Test Content Type"
   display_field = "field1"
 
@@ -200,7 +200,7 @@ resource "contentful_contenttype" "mycontenttype" {
 resource "contentful_entry" "myentry" {
   entry_id = "mytestentry"
   space_id = "%s"
-  environment = "master"
+  environment = "master-2026-02-20"
   contenttype_id = "tf_test_1"
   field {
     id = "field1"
@@ -246,7 +246,7 @@ func testEntryUpdateConfig(spaceID string) string {
 	return fmt.Sprintf(`
 resource "contentful_contenttype" "mycontenttype" {
   space_id = "%s"
-  environment = "master"
+  environment = "master-2026-02-20"
   name = "tf_test_1"
   description = "Terraform Acc Test Content Type"
   display_field = "field1"
@@ -281,7 +281,7 @@ resource "contentful_contenttype" "mycontenttype" {
 resource "contentful_entry" "myentry" {
   entry_id = "mytestentry"
   space_id = "%s"
-  environment = "master"
+  environment = "master-2026-02-20"
   contenttype_id = "tf_test_1"
   field {
     id = "field1"

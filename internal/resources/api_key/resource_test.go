@@ -45,7 +45,7 @@ func TestApiKeyResource_Create(t *testing.T) {
 						assert.EqualValues(t, name, apiKey.Name)
 						assert.EqualValues(t, description, apiKey.Description)
 						assert.Regexp(t, regexp.MustCompile(`^[a-zA-Z0-9-_.]{1,64}$`), apiKey.Sys.Id)
-						assert.EqualValues(t, "master", apiKey.Environments[0].Sys.Id)
+						assert.EqualValues(t, "master-2026-02-20", apiKey.Environments[0].Sys.Id)
 					}),
 				),
 			},
