@@ -17,7 +17,7 @@ type EnvironmentAlias struct {
 // Import populates the EnvironmentAlias struct from an SDK environment alias object
 func (e *EnvironmentAlias) Import(environmentAlias *sdk.EnvironmentAlias) {
 	e.ID = types.StringValue(environmentAlias.Sys.Id)
-	e.Version = types.Int64Value(int64(environmentAlias.Sys.Version))
+	e.Version = types.Int64Value(environmentAlias.Sys.Version)
 	e.SpaceID = types.StringValue(environmentAlias.Sys.Space.Sys.Id)
 	e.EnvironmentID = types.StringValue(environmentAlias.Environment.Sys.Id)
 }

@@ -1,11 +1,15 @@
 package utils
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"reflect"
+	"strings"
+	"time"
 
 	"github.com/deepmap/oapi-codegen/pkg/securityprovider"
 	"github.com/hashicorp/go-retryablehttp"
@@ -15,16 +19,37 @@ import (
 )
 
 func CreateClient(url string, token string) (*sdk.ClientWithResponses, error) {
-
 	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = 3
+	retryClient.RetryWaitMin = time.Second * 2
+	retryClient.RetryMax = 5
+	// We want to retry 400 Bad Request errors that contain `not in ready state`, as the Contentful API can return
+	//these in cases where a retry would succeed (e.g., due to eventual consistency issues)
+	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
+		if resp != nil && resp.StatusCode == http.StatusBadRequest {
+			// Read the response body to check if it contains "not in ready state"
+			if resp.Body != nil {
+				bodyBytes, readErr := io.ReadAll(resp.Body)
+				if readErr == nil {
+					// Restore the body for future reads
+					resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+					// Check if the body contains "not in ready state"
+					if strings.Contains(string(bodyBytes), "not in ready state") {
+						return true, nil
+					}
+				}
+			}
+		}
+
+		return retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+	}
 
 	httpClient := retryClient.StandardClient()
 	httpClient.Transport = NewDebugTransport(httpClient.Transport)
 
 	authProvider, err := securityprovider.NewSecurityProviderBearerToken(token)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to Create Storyblok API Client %s", err.Error())
+		return nil, fmt.Errorf("Unable to create Contentful API Client %s", err.Error())
 	}
 
 	setVersionHeader := func(ctx context.Context, req *http.Request) error {

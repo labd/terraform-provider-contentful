@@ -164,7 +164,7 @@ resource "contentful_environment" "env2" {
 
 resource "contentful_environment_alias" "test" {
   space_id       = "%s"
-  alias_id       = "%s"
+  id       		 = "%s"
   environment_id = %s
 }
 `, spaceID, env1Name, spaceID, env2Name, spaceID, aliasID, environmentIDRef)
