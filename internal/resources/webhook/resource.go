@@ -79,10 +79,28 @@ func (e *webhookResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Sensitive:          true,
 				DeprecationMessage: "Setting Basic Auth credentials is not supported anymore. Please use the headers object instead.",
 			},
-			"headers": schema.MapAttribute{
+			"headers": schema.SetNestedAttribute{
 				Optional:    true,
 				Description: "HTTP headers to send with the webhook request",
-				ElementType: types.StringType,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"key": schema.StringAttribute{
+							Required:    true,
+							Description: "Header name",
+						},
+						"value": schema.StringAttribute{
+							Required:    true,
+							Description: "Header value",
+							Sensitive:   true,
+						},
+						"secret": schema.BoolAttribute{
+							Optional:    true,
+							Computed:    true,
+							Description: "Whether the header value is secret. Secret header values are not returned by the API.",
+							Default:     booldefault.StaticBool(false),
+						},
+					},
+				},
 			},
 			"topics": schema.ListAttribute{
 				Required:    true,
@@ -161,6 +179,9 @@ func (e *webhookResource) Create(ctx context.Context, request resource.CreateReq
 		return
 	}
 
+	// Preserve values of secret headers since the API does not return them
+	state.PreserveSecretHeaderValues(plan.Headers)
+
 	if !plan.HttpBasicAuthPassword.IsNull() {
 		state.HttpBasicAuthPassword = plan.HttpBasicAuthPassword
 	} else {
@@ -194,6 +215,10 @@ func (e *webhookResource) Read(ctx context.Context, request resource.ReadRequest
 		response.Diagnostics.AddError("Error reading webhook", err.Error())
 	}
 
+	// Copy the prior headers before MapFromSDK overwrites state.Headers with a new slice.
+	priorHeaders := make([]WebhookHeader, len(state.Headers))
+	copy(priorHeaders, state.Headers)
+
 	err = state.MapFromSDK(resp.JSON200)
 	if err != nil {
 		response.Diagnostics.AddError(
@@ -202,6 +227,9 @@ func (e *webhookResource) Read(ctx context.Context, request resource.ReadRequest
 		)
 		return
 	}
+
+	// Preserve values of secret headers since the API does not return them
+	state.PreserveSecretHeaderValues(priorHeaders)
 
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
@@ -267,6 +295,9 @@ func (e *webhookResource) Update(ctx context.Context, request resource.UpdateReq
 		)
 		return
 	}
+
+	// Preserve values of secret headers since the API does not return them
+	state.PreserveSecretHeaderValues(plan.Headers)
 
 	if !plan.HttpBasicAuthPassword.IsNull() {
 		state.HttpBasicAuthPassword = plan.HttpBasicAuthPassword

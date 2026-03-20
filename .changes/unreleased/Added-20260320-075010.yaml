@@ -1,0 +1,3 @@
+kind: Added
+body: Allow setting webhook headers as secret via the `secret` attribute on the `headers` block
+time: 2026-03-20T07:50:10.852917875Z

@@ -11,19 +11,26 @@ import (
 	"github.com/labd/terraform-provider-contentful/internal/utils"
 )
 
+// WebhookHeader represents a single webhook HTTP header with an optional secret flag.
+type WebhookHeader struct {
+	Key    types.String `tfsdk:"key"`
+	Value  types.String `tfsdk:"value"`
+	Secret types.Bool   `tfsdk:"secret"`
+}
+
 // Webhook is the main resource schema data
 type Webhook struct {
-	ID                    types.String            `tfsdk:"id"`
-	SpaceId               types.String            `tfsdk:"space_id"`
-	Version               types.Int64             `tfsdk:"version"`
-	Name                  types.String            `tfsdk:"name"`
-	URL                   types.String            `tfsdk:"url"`
-	HttpBasicAuthUsername types.String            `tfsdk:"http_basic_auth_username"`
-	HttpBasicAuthPassword types.String            `tfsdk:"http_basic_auth_password"`
-	Headers               map[string]types.String `tfsdk:"headers"`
-	Topics                []types.String          `tfsdk:"topics"`
-	Filters               types.String            `tfsdk:"filters"`
-	Active                types.Bool              `tfsdk:"active"`
+	ID                    types.String    `tfsdk:"id"`
+	SpaceId               types.String    `tfsdk:"space_id"`
+	Version               types.Int64     `tfsdk:"version"`
+	Name                  types.String    `tfsdk:"name"`
+	URL                   types.String    `tfsdk:"url"`
+	HttpBasicAuthUsername types.String    `tfsdk:"http_basic_auth_username"`
+	HttpBasicAuthPassword types.String    `tfsdk:"http_basic_auth_password"`
+	Headers               []WebhookHeader `tfsdk:"headers"`
+	Topics                []types.String  `tfsdk:"topics"`
+	Filters               types.String    `tfsdk:"filters"`
+	Active                types.Bool      `tfsdk:"active"`
 }
 
 // MapFromSDK populates the Webhook struct from an SDK webhook object
@@ -41,10 +48,15 @@ func (w *Webhook) MapFromSDK(webhook *sdk.Webhook) error {
 	}
 
 	// Convert headers
-	w.Headers = make(map[string]types.String)
+	w.Headers = make([]WebhookHeader, 0)
 	if webhook.Headers != nil {
 		for _, header := range webhook.Headers {
-			w.Headers[header.Key] = types.StringValue(header.Value)
+			secret := header.Secret != nil && *header.Secret
+			w.Headers = append(w.Headers, WebhookHeader{
+				Key:    types.StringValue(header.Key),
+				Value:  types.StringValue(header.Value),
+				Secret: types.BoolValue(secret),
+			})
 		}
 	}
 
@@ -69,7 +81,34 @@ func (w *Webhook) MapFromSDK(webhook *sdk.Webhook) error {
 	return nil
 }
 
-// DraftForCreate creates a WebhookCreate object for creating a new webhook
+// PreserveSecretHeaderValues preserves the values (and secret flags) of secret headers from the prior state,
+// since the Contentful API does not return secret header values in GET responses.
+// If the prior state marked a header as secret but the API response does not include the secret flag,
+// the prior secret flag and value are preserved to avoid spurious diffs.
+// Note: duplicate header keys are not supported; if multiple prior headers share the same key,
+// only the last one is used for value preservation.
+func (w *Webhook) PreserveSecretHeaderValues(priorHeaders []WebhookHeader) {
+	// Build a lookup map from the prior state headers by key
+	priorByKey := make(map[string]WebhookHeader, len(priorHeaders))
+	for _, h := range priorHeaders {
+		priorByKey[h.Key.ValueString()] = h
+	}
+
+	for i, h := range w.Headers {
+		prior, ok := priorByKey[h.Key.ValueString()]
+		if !ok {
+			continue
+		}
+		// Preserve secret flag and value when either the current API response or the
+		// prior state marks the header as secret. This handles cases where the API
+		// does not return the secret flag explicitly (nil → false) even though it was set.
+		if h.Secret.ValueBool() || prior.Secret.ValueBool() {
+			w.Headers[i].Secret = prior.Secret
+			w.Headers[i].Value = prior.Value
+		}
+	}
+}
+
 func (w *Webhook) DraftForCreate() (sdk.WebhookCreate, error) {
 	filters, err := w.filtersToSdk()
 	if err != nil {
@@ -145,15 +184,19 @@ func (w *Webhook) filtersToSdk() (*[]map[string]interface{}, error) {
 	return &filterContent, nil
 }
 
-// Convert headers from Terraform map to SDK WebhookHeader slice
+// Convert headers from Terraform list to SDK WebhookHeader slice
 func (w *Webhook) headersToSDK() *[]sdk.WebhookHeader {
 	var headers []sdk.WebhookHeader
 
-	for key, value := range w.Headers {
-		headers = append(headers, sdk.WebhookHeader{
-			Key:   key,
-			Value: value.ValueString(),
-		})
+	for _, header := range w.Headers {
+		h := sdk.WebhookHeader{
+			Key:   header.Key.ValueString(),
+			Value: header.Value.ValueString(),
+		}
+		if !header.Secret.IsNull() && !header.Secret.IsUnknown() {
+			h.Secret = utils.Pointer(header.Secret.ValueBool())
+		}
+		headers = append(headers, h)
 	}
 
 	if len(headers) == 0 {
