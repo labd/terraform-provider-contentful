@@ -38,7 +38,7 @@ func TestWebhookResource_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "url", url),
 					resource.TestCheckResourceAttr(resourceName, "topics.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "headers.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "headers.header1", "header1-value"),
 					testAccCheckContentfulWebhookExists(t, resourceName, func(t *testing.T, webhook *sdk.Webhook) {
 						assert.EqualValues(t, name, webhook.Name)
 						assert.EqualValues(t, url, webhook.Url)
@@ -57,7 +57,7 @@ func TestWebhookResource_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%s-updated", name)),
 					resource.TestCheckResourceAttr(resourceName, "url", fmt.Sprintf("%s-updated", url)),
 					resource.TestCheckResourceAttr(resourceName, "topics.#", "3"),
-					resource.TestCheckResourceAttr(resourceName, "headers.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "headers.header1", "header1-value-updated"),
 					testAccCheckContentfulWebhookExists(t, resourceName, func(t *testing.T, webhook *sdk.Webhook) {
 						assert.EqualValues(t, fmt.Sprintf("%s-updated", name), webhook.Name)
 						assert.EqualValues(t, fmt.Sprintf("%s-updated", url), webhook.Url)
@@ -75,8 +75,61 @@ func TestWebhookResource_Basic(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
-				// http_basic_auth_password and secret header values are not returned by the API
-				ImportStateVerifyIgnore: []string{"http_basic_auth_password", "headers"},
+				// http_basic_auth_password is not returned by the API so it cannot be verified after import.
+				ImportStateVerifyIgnore: []string{"http_basic_auth_password"},
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s:%s", rs.Primary.ID, rs.Primary.Attributes["space_id"]), nil
+				},
+			},
+		},
+	})
+}
+
+func TestWebhookResource_HeadersV2(t *testing.T) {
+	name := fmt.Sprintf("webhook-name-%s", hashicoracctest.RandString(3))
+	url := "https://www.example.com/test"
+	resourceName := "contentful_webhook.mywebhook"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { acctest.TestAccPreCheck(t) },
+		CheckDestroy: testAccCheckContentfulWebhookDestroy,
+		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
+			"contentful": providerserver.NewProtocol6WithError(provider.New("test", true)()),
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: testWebhookWithHeadersV2(os.Getenv("CONTENTFUL_SPACE_ID"), name, url),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", name),
+					resource.TestCheckResourceAttr(resourceName, "url", url),
+					resource.TestCheckResourceAttr(resourceName, "topics.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "headers_v2.#", "2"),
+					testAccCheckContentfulWebhookExists(t, resourceName, func(t *testing.T, webhook *sdk.Webhook) {
+						assert.EqualValues(t, name, webhook.Name)
+						assert.EqualValues(t, url, webhook.Url)
+						assert.Len(t, webhook.Topics, 2)
+						assert.Len(t, webhook.Headers, 2)
+						// Verify the secret header is marked as secret on the API side
+						for _, h := range webhook.Headers {
+							if h.Key == "Authorization" {
+								assert.NotNil(t, h.Secret)
+								assert.True(t, *h.Secret)
+							}
+						}
+					}),
+					resource.TestCheckResourceAttr(resourceName, "active", "true"),
+				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				// headers_v2 cannot be fully verified after import since secret values are not returned by the API
+				ImportStateVerifyIgnore: []string{"http_basic_auth_password", "headers_v2"},
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					rs, ok := s.RootModule().Resources[resourceName]
 					if !ok {
@@ -160,9 +213,6 @@ func testAccCheckContentfulWebhookDestroy(s *terraform.State) error {
 	return nil
 }
 
-// Create test HCL template functions - using inline templates for simplicity
-// In a real implementation, you'd probably use the template file pattern from the API key tests
-
 func testWebhook(spaceId string, name string, url string) string {
 	return fmt.Sprintf(`
 resource "contentful_webhook" "mywebhook" {
@@ -173,17 +223,10 @@ resource "contentful_webhook" "mywebhook" {
     "Entry.create",
     "ContentType.create"
   ]
-  headers = [
-    {
-      key   = "header1"
-      value = "header1-value"
-    },
-    {
-      key    = "header2"
-      value  = "header2-value"
-      secret = true
-    }
-  ]
+  headers = {
+    header1 = "header1-value"
+    header2 = "header2-value"
+  }
 }
 `, spaceId, name, url)
 }
@@ -192,7 +235,7 @@ func testWebhookUpdate(spaceId string, name string, url string) string {
 	return fmt.Sprintf(`
 resource "contentful_webhook" "mywebhook" {
   space_id = "%s"
-  active = false	
+  active = false
   name = "%s-updated"
   url = "%s-updated"
   topics = [
@@ -200,21 +243,39 @@ resource "contentful_webhook" "mywebhook" {
     "ContentType.create",
     "Asset.*"
   ]
-  headers = [
-    {
-      key   = "header1"
-      value = "header1-value-updated"
-    },
-    {
-      key    = "header2"
-      value  = "header2-value-updated"
-      secret = true
-    }
-  ]
+  headers = {
+    header1 = "header1-value-updated"
+    header2 = "header2-value-updated"
+  }
   filters = jsonencode([
     {in: [{ "doc" : "sys.environment.sys.id" }, ["testing", "staging" ]]},
     { not : {equals: [{ "doc" : "sys.environment.sys.id" }, "master-2026-02-20"]} },
-  ])	
+  ])
+}
+`, spaceId, name, url)
+}
+
+func testWebhookWithHeadersV2(spaceId string, name string, url string) string {
+	return fmt.Sprintf(`
+resource "contentful_webhook" "mywebhook" {
+  space_id = "%s"
+  name = "%s"
+  url = "%s"
+  topics = [
+    "Entry.create",
+    "ContentType.create"
+  ]
+  headers_v2 = [
+    {
+      key   = "X-Custom-Header"
+      value = "custom-value"
+    },
+    {
+      key    = "Authorization"
+      value  = "secret-token"
+      secret = true
+    }
+  ]
 }
 `, spaceId, name, url)
 }
