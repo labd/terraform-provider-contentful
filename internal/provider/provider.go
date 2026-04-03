@@ -78,8 +78,9 @@ func (c contentfulProvider) Schema(_ context.Context, _ provider.SchemaRequest, 
 				Description: "The base url to use for the Contentful API. Defaults to https://api.contentful.com",
 			},
 			"environment": schema.StringAttribute{
-				Optional:    true,
-				Description: "The environment to use for the Contentful API. Defaults to master",
+				Optional:           true,
+				Description:        "The environment to use for the Contentful API. Defaults to master",
+				DeprecationMessage: "The environment field is deprecated and has no effect. Use the environment field on individual resources instead.",
 			},
 		},
 	}

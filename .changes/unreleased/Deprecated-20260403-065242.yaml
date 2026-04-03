@@ -1,0 +1,3 @@
+kind: Deprecated
+body: The provider-level environment field is now deprecated. Use the environment field on individual resources instead.
+time: 2026-04-03T06:52:42.728395093Z

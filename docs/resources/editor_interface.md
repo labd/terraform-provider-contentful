@@ -125,6 +125,7 @@ Optional:
 
 Optional:
 
+- `additional_properties` (String) Additional widget-specific settings as JSON. Supports complex types like arrays and objects.
 - `ampm` (String)
 - `bulk_editing` (Boolean)
 - `false_label` (String)

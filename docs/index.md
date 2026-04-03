@@ -26,5 +26,5 @@ provider "contentful" {
 
 - `base_url` (String) The base url to use for the Contentful API. Defaults to https://api.contentful.com
 - `cma_token` (String, Sensitive) The Contentful Management API token
-- `environment` (String) The environment to use for the Contentful API. Defaults to master
+- `environment` (String, Deprecated) The environment to use for the Contentful API. Defaults to master
 - `organization_id` (String, Sensitive) The organization ID
