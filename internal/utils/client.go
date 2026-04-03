@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deepmap/oapi-codegen/pkg/securityprovider"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/securityprovider"
 
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
 )
