@@ -123,13 +123,16 @@ func (e *previewEnvironmentResource) Create(ctx context.Context, request resourc
 	draft := plan.Draft()
 
 	// Create the preview environment
-	resp, err := e.client.CreatePreviewEnvironmentWithResponse(
-		ctx,
-		plan.SpaceID.ValueString(),
-		*draft,
-	)
+	resp, err := utils.WithRetry(ctx, func() (*sdk.CreatePreviewEnvironmentResponse, error) {
+		r, e := e.client.CreatePreviewEnvironmentWithResponse(
+			ctx,
+			plan.SpaceID.ValueString(),
+			*draft,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+	})
 
-	if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error creating preview environment",
 			"Could not create preview environment, unexpected error: "+err.Error(),
@@ -180,15 +183,18 @@ func (e *previewEnvironmentResource) Update(ctx context.Context, request resourc
 	draft := plan.Draft()
 
 	// Update the preview environment
-	resp, err := e.client.UpdatePreviewEnvironmentWithResponse(
-		ctx,
-		plan.SpaceID.ValueString(),
-		plan.ID.ValueString(),
-		params,
-		*draft,
-	)
+	resp, err := utils.WithRetry(ctx, func() (*sdk.UpdatePreviewEnvironmentResponse, error) {
+		r, e := e.client.UpdatePreviewEnvironmentWithResponse(
+			ctx,
+			plan.SpaceID.ValueString(),
+			plan.ID.ValueString(),
+			params,
+			*draft,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
 
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error updating preview environment",
 			"Could not update preview environment, unexpected error: "+err.Error(),
@@ -217,14 +223,17 @@ func (e *previewEnvironmentResource) Delete(ctx context.Context, request resourc
 	}
 
 	// Delete the preview environment
-	resp, err := e.client.DeletePreviewEnvironmentWithResponse(
-		ctx,
-		state.SpaceID.ValueString(),
-		state.ID.ValueString(),
-		params,
-	)
+	_, err := utils.WithRetry(ctx, func() (*sdk.DeletePreviewEnvironmentResponse, error) {
+		r, e := e.client.DeletePreviewEnvironmentWithResponse(
+			ctx,
+			state.SpaceID.ValueString(),
+			state.ID.ValueString(),
+			params,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusNoContent)
+	})
 
-	if err := utils.CheckClientResponse(resp, err, http.StatusNoContent); err != nil {
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting preview environment",
 			"Could not delete preview environment, unexpected error: "+err.Error(),
@@ -263,31 +272,24 @@ func (e *previewEnvironmentResource) ImportState(ctx context.Context, request re
 }
 
 func (e *previewEnvironmentResource) doRead(ctx context.Context, previewEnv *PreviewEnvironment, state *tfsdk.State, d *diag.Diagnostics) {
-	resp, err := e.client.GetPreviewEnvironmentWithResponse(
-		ctx,
-		previewEnv.SpaceID.ValueString(),
-		previewEnv.ID.ValueString(),
-	)
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetPreviewEnvironmentResponse, error) {
+		r, e := e.client.GetPreviewEnvironmentWithResponse(
+			ctx,
+			previewEnv.SpaceID.ValueString(),
+			previewEnv.ID.ValueString(),
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
 
 	if err != nil {
-		d.AddError(
-			"Error reading preview environment",
-			"Could not read preview environment: "+err.Error(),
-		)
-		return
-	}
-
-	// Handle 404 Not Found
-	if resp.StatusCode() == 404 {
-		d.AddWarning(
-			"Preview environment not found",
-			fmt.Sprintf("Preview environment %s was not found, removing from state",
-				previewEnv.ID.ValueString()),
-		)
-		return
-	}
-
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		if resp != nil && resp.StatusCode() == 404 {
+			d.AddWarning(
+				"Preview environment not found",
+				fmt.Sprintf("Preview environment %s was not found, removing from state",
+					previewEnv.ID.ValueString()),
+			)
+			return
+		}
 		d.AddError(
 			"Error reading preview environment",
 			"Could not read preview environment, unexpected error: "+err.Error(),

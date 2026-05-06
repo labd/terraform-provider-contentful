@@ -140,8 +140,11 @@ func (e *entryResource) Create(ctx context.Context, request resource.CreateReque
 		params := &sdk.CreateEntryParams{
 			XContentfulContentType: plan.ContentTypeID.ValueString(),
 		}
-		resp, err := e.client.CreateEntryWithResponse(ctx, plan.SpaceID.ValueString(), plan.Environment.ValueString(), params, draft)
-		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.CreateEntryResponse, error) {
+			r, e := e.client.CreateEntryWithResponse(ctx, plan.SpaceID.ValueString(), plan.Environment.ValueString(), params, draft)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+		})
+		if err != nil {
 			response.Diagnostics.AddError(
 				"Error creating entry",
 				"Could not create entry: "+err.Error(),
@@ -154,8 +157,11 @@ func (e *entryResource) Create(ctx context.Context, request resource.CreateReque
 		params := &sdk.UpdateEntryParams{
 			XContentfulContentType: plan.ContentTypeID.ValueString(),
 		}
-		resp, err := e.client.UpdateEntryWithResponse(ctx, plan.SpaceID.ValueString(), plan.Environment.ValueString(), plan.EntryID.ValueString(), params, draft)
-		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateEntryResponse, error) {
+			r, e := e.client.UpdateEntryWithResponse(ctx, plan.SpaceID.ValueString(), plan.Environment.ValueString(), plan.EntryID.ValueString(), params, draft)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+		})
+		if err != nil {
 			response.Diagnostics.AddError(
 				"Error creating entry",
 				"Could not create entry: "+err.Error(),
@@ -217,16 +223,19 @@ func (e *entryResource) Update(ctx context.Context, request resource.UpdateReque
 
 	// Update the entry
 	draft := plan.Draft()
-	resp, err := e.client.UpdateEntryWithResponse(
-		ctx,
-		plan.SpaceID.ValueString(),
-		plan.Environment.ValueString(),
-		plan.ID.ValueString(),
-		params,
-		draft,
-	)
+	resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateEntryResponse, error) {
+		r, e := e.client.UpdateEntryWithResponse(
+			ctx,
+			plan.SpaceID.ValueString(),
+			plan.Environment.ValueString(),
+			plan.ID.ValueString(),
+			params,
+			draft,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
 
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error updating entry",
 			"Could not update entry: "+err.Error(),
@@ -258,14 +267,17 @@ func (e *entryResource) Delete(ctx context.Context, request resource.DeleteReque
 	}
 
 	// Get latest version first to avoid conflicts
-	resp, err := e.client.GetEntryWithResponse(
-		ctx,
-		state.SpaceID.ValueString(),
-		state.Environment.ValueString(),
-		state.ID.ValueString(),
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-		if resp.StatusCode() == 404 {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetEntryResponse, error) {
+		r, e := e.client.GetEntryWithResponse(
+			ctx,
+			state.SpaceID.ValueString(),
+			state.Environment.ValueString(),
+			state.ID.ValueString(),
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
+		if resp != nil && resp.StatusCode() == 404 {
 			// Entry already deleted, nothing to do
 			return
 		}
@@ -280,16 +292,19 @@ func (e *entryResource) Delete(ctx context.Context, request resource.DeleteReque
 	state.Import(resp.JSON200)
 
 	if state.Published.ValueBool() {
-		resp, err := e.client.UnpublishEntryWithResponse(
-			ctx,
-			state.SpaceID.ValueString(),
-			state.Environment.ValueString(),
-			state.ID.ValueString(),
-			&sdk.UnpublishEntryParams{
-				XContentfulVersion: state.Version.ValueInt64(),
-			},
-		)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.UnpublishEntryResponse, error) {
+			r, e := e.client.UnpublishEntryWithResponse(
+				ctx,
+				state.SpaceID.ValueString(),
+				state.Environment.ValueString(),
+				state.ID.ValueString(),
+				&sdk.UnpublishEntryParams{
+					XContentfulVersion: state.Version.ValueInt64(),
+				},
+			)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+		})
+		if err != nil {
 			response.Diagnostics.AddError(
 				"Error deleting entry",
 				"Could not unpublish entry before deletion: "+err.Error(),
@@ -413,60 +428,72 @@ func (e *entryResource) setEntryState(ctx context.Context, state *Entry, plan *E
 	shouldBeArchived := plan.Archived.ValueBool()
 
 	if shouldBePublished && !isCurrentlyPublished {
-		resp, err := e.client.PublishEntryWithResponse(
-			ctx,
-			state.SpaceID.ValueString(),
-			state.Environment.ValueString(),
-			state.ID.ValueString(),
-			&sdk.PublishEntryParams{
-				XContentfulVersion: state.Version.ValueInt64(),
-			},
-		)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.PublishEntryResponse, error) {
+			r, e := e.client.PublishEntryWithResponse(
+				ctx,
+				state.SpaceID.ValueString(),
+				state.Environment.ValueString(),
+				state.ID.ValueString(),
+				&sdk.PublishEntryParams{
+					XContentfulVersion: state.Version.ValueInt64(),
+				},
+			)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+		})
+		if err != nil {
 			return err
 		}
 		state.Import(resp.JSON200)
 	} else if !shouldBePublished && isCurrentlyPublished {
-		resp, err := e.client.UnpublishEntryWithResponse(
-			ctx,
-			state.SpaceID.ValueString(),
-			state.Environment.ValueString(),
-			state.ID.ValueString(),
-			&sdk.UnpublishEntryParams{
-				XContentfulVersion: state.Version.ValueInt64(),
-			},
-		)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.UnpublishEntryResponse, error) {
+			r, e := e.client.UnpublishEntryWithResponse(
+				ctx,
+				state.SpaceID.ValueString(),
+				state.Environment.ValueString(),
+				state.ID.ValueString(),
+				&sdk.UnpublishEntryParams{
+					XContentfulVersion: state.Version.ValueInt64(),
+				},
+			)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+		})
+		if err != nil {
 			return err
 		}
 		state.Import(resp.JSON200)
 	}
 
 	if shouldBeArchived && !isCurrentlyArchived {
-		resp, err := e.client.ArchiveEntryWithResponse(
-			ctx,
-			state.SpaceID.ValueString(),
-			state.Environment.ValueString(),
-			state.ID.ValueString(),
-			&sdk.ArchiveEntryParams{
-				XContentfulVersion: state.Version.ValueInt64(),
-			},
-		)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.ArchiveEntryResponse, error) {
+			r, e := e.client.ArchiveEntryWithResponse(
+				ctx,
+				state.SpaceID.ValueString(),
+				state.Environment.ValueString(),
+				state.ID.ValueString(),
+				&sdk.ArchiveEntryParams{
+					XContentfulVersion: state.Version.ValueInt64(),
+				},
+			)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+		})
+		if err != nil {
 			return err
 		}
 		state.Import(resp.JSON200)
 	} else if !shouldBeArchived && isCurrentlyArchived {
-		resp, err := e.client.UnarchiveEntryWithResponse(
-			ctx,
-			state.SpaceID.ValueString(),
-			state.Environment.ValueString(),
-			state.ID.ValueString(),
-			&sdk.UnarchiveEntryParams{
-				XContentfulVersion: state.Version.ValueInt64(),
-			},
-		)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.UnarchiveEntryResponse, error) {
+			r, e := e.client.UnarchiveEntryWithResponse(
+				ctx,
+				state.SpaceID.ValueString(),
+				state.Environment.ValueString(),
+				state.ID.ValueString(),
+				&sdk.UnarchiveEntryParams{
+					XContentfulVersion: state.Version.ValueInt64(),
+				},
+			)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+		})
+		if err != nil {
 			return err
 		}
 		state.Import(resp.JSON200)

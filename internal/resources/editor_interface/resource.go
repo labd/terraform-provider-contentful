@@ -247,13 +247,16 @@ func (e *editorInterfaceResource) Create(ctx context.Context, request resource.C
 	}
 
 	// Check if the editor interface exists by fetching it
-	resp, err := e.client.GetEditorInterfaceWithResponse(
-		ctx,
-		plan.SpaceID.ValueString(),
-		plan.Environment.ValueString(),
-		plan.ContentType.ValueString(),
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetEditorInterfaceResponse, error) {
+		r, e := e.client.GetEditorInterfaceWithResponse(
+			ctx,
+			plan.SpaceID.ValueString(),
+			plan.Environment.ValueString(),
+			plan.ContentType.ValueString(),
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error fetching editor interface",
 			"Could not fetch editor interface: "+err.Error(),
@@ -269,15 +272,18 @@ func (e *editorInterfaceResource) Create(ctx context.Context, request resource.C
 		XContentfulVersion: int64(resp.JSON200.Sys.Version),
 	}
 
-	updateResp, err := e.client.UpdateEditorInterfaceWithResponse(
-		ctx,
-		plan.SpaceID.ValueString(),
-		plan.Environment.ValueString(),
-		plan.ContentType.ValueString(),
-		updateParams,
-		updateBody,
-	)
-	if err := utils.CheckClientResponse(updateResp, err, http.StatusOK); err != nil {
+	updateResp, err := utils.WithRetry(ctx, func() (*sdk.UpdateEditorInterfaceResponse, error) {
+		r, e := e.client.UpdateEditorInterfaceWithResponse(
+			ctx,
+			plan.SpaceID.ValueString(),
+			plan.Environment.ValueString(),
+			plan.ContentType.ValueString(),
+			updateParams,
+			updateBody,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error updating editor interface",
 			"Could not update editor interface: "+err.Error(),
@@ -300,14 +306,17 @@ func (e *editorInterfaceResource) Read(ctx context.Context, request resource.Rea
 		return
 	}
 
-	resp, err := e.client.GetEditorInterfaceWithResponse(
-		ctx,
-		state.SpaceID.ValueString(),
-		state.Environment.ValueString(),
-		state.ContentType.ValueString(),
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-		if resp.StatusCode() == 404 {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetEditorInterfaceResponse, error) {
+		r, e := e.client.GetEditorInterfaceWithResponse(
+			ctx,
+			state.SpaceID.ValueString(),
+			state.Environment.ValueString(),
+			state.ContentType.ValueString(),
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
+		if resp != nil && resp.StatusCode() == 404 {
 			request.State.RemoveResource(ctx)
 			return
 		}
@@ -358,15 +367,18 @@ func (e *editorInterfaceResource) Update(ctx context.Context, request resource.U
 		XContentfulVersion: state.Version.ValueInt64(),
 	}
 
-	updateResp, err := e.client.UpdateEditorInterfaceWithResponse(
-		ctx,
-		plan.SpaceID.ValueString(),
-		plan.Environment.ValueString(),
-		plan.ContentType.ValueString(),
-		updateParams,
-		updateBody,
-	)
-	if err := utils.CheckClientResponse(updateResp, err, http.StatusOK); err != nil {
+	updateResp, err := utils.WithRetry(ctx, func() (*sdk.UpdateEditorInterfaceResponse, error) {
+		r, e := e.client.UpdateEditorInterfaceWithResponse(
+			ctx,
+			plan.SpaceID.ValueString(),
+			plan.Environment.ValueString(),
+			plan.ContentType.ValueString(),
+			updateParams,
+			updateBody,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error updating editor interface",
 			"Could not update editor interface: "+err.Error(),
@@ -399,10 +411,12 @@ func (e *editorInterfaceResource) ImportState(ctx context.Context, request resou
 	environment := idParts[1]
 	contentTypeID := idParts[2]
 
-	resp, err := e.client.GetEditorInterfaceWithResponse(
-		ctx, spaceID, environment, contentTypeID)
-
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetEditorInterfaceResponse, error) {
+		r, e := e.client.GetEditorInterfaceWithResponse(
+			ctx, spaceID, environment, contentTypeID)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error importing editor interface",
 			fmt.Sprintf("Could not import editor interface: %s", err.Error()),
@@ -416,13 +430,16 @@ func (e *editorInterfaceResource) ImportState(ctx context.Context, request resou
 }
 
 func (e *editorInterfaceResource) GetCurrentVersion(ctx context.Context, plan EditorInterface, response *resource.UpdateResponse) (int64, error) {
-	getResp, err := e.client.GetEditorInterfaceWithResponse(
-		ctx,
-		plan.SpaceID.ValueString(),
-		plan.Environment.ValueString(),
-		plan.ContentType.ValueString(),
-	)
-	if err := utils.CheckClientResponse(getResp, err, http.StatusOK); err != nil {
+	getResp, err := utils.WithRetry(ctx, func() (*sdk.GetEditorInterfaceResponse, error) {
+		r, e := e.client.GetEditorInterfaceWithResponse(
+			ctx,
+			plan.SpaceID.ValueString(),
+			plan.Environment.ValueString(),
+			plan.ContentType.ValueString(),
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		return 0, fmt.Errorf("Error fetching editor interface: %s", err.Error())
 	}
 	return getResp.JSON200.Sys.Version, nil
