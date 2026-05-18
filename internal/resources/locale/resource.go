@@ -3,6 +3,7 @@ package locale
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -117,8 +118,11 @@ func (e *localeResource) Create(ctx context.Context, request resource.CreateRequ
 	// Create the locale
 	draft := plan.DraftForCreate()
 
-	resp, err := e.client.CreateLocaleWithResponse(ctx, plan.SpaceID.ValueString(), plan.Environment.ValueString(), draft)
-	if err := utils.CheckClientResponse(resp, err, 201); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.CreateLocaleResponse, error) {
+		r, e := e.client.CreateLocaleWithResponse(ctx, plan.SpaceID.ValueString(), plan.Environment.ValueString(), draft)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error creating locale",
 			"Could not create locale: "+err.Error(),
@@ -139,15 +143,18 @@ func (e *localeResource) Read(ctx context.Context, request resource.ReadRequest,
 		return
 	}
 
-	resp, err := e.client.GetLocaleWithResponse(
-		ctx,
-		state.SpaceID.ValueString(),
-		state.Environment.ValueString(),
-		state.ID.ValueString(),
-	)
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetLocaleResponse, error) {
+		r, e := e.client.GetLocaleWithResponse(
+			ctx,
+			state.SpaceID.ValueString(),
+			state.Environment.ValueString(),
+			state.ID.ValueString(),
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
 
-	if err := utils.CheckClientResponse(resp, err, 200); err != nil {
-		if resp.StatusCode() == 404 {
+	if err != nil {
+		if resp != nil && resp.StatusCode() == 404 {
 			response.State.RemoveResource(ctx)
 			return
 		}
@@ -184,15 +191,18 @@ func (e *localeResource) Update(ctx context.Context, request resource.UpdateRequ
 
 	// Update the locale
 	draft := plan.DraftForUpdate()
-	resp, err := e.client.UpdateLocaleWithResponse(
-		ctx,
-		plan.SpaceID.ValueString(),
-		plan.Environment.ValueString(),
-		state.ID.ValueString(),
-		params,
-		draft,
-	)
-	if err := utils.CheckClientResponse(resp, err, 200); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateLocaleResponse, error) {
+		r, e := e.client.UpdateLocaleWithResponse(
+			ctx,
+			plan.SpaceID.ValueString(),
+			plan.Environment.ValueString(),
+			state.ID.ValueString(),
+			params,
+			draft,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error updating locale",
 			"Could not update locale: "+err.Error(),
@@ -211,13 +221,16 @@ func (e *localeResource) Delete(ctx context.Context, request resource.DeleteRequ
 		return
 	}
 
-	resp, err := e.client.DeleteLocaleWithResponse(
-		ctx,
-		state.SpaceID.ValueString(),
-		state.Environment.ValueString(),
-		state.ID.ValueString(),
-	)
-	if err := utils.CheckClientResponse(resp, err, 204); err != nil {
+	_, err := utils.WithRetry(ctx, func() (*sdk.DeleteLocaleResponse, error) {
+		r, e := e.client.DeleteLocaleWithResponse(
+			ctx,
+			state.SpaceID.ValueString(),
+			state.Environment.ValueString(),
+			state.ID.ValueString(),
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusNoContent)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting locale",
 			"Could not delete locale: "+err.Error(),
@@ -238,13 +251,16 @@ func (e *localeResource) ImportState(ctx context.Context, request resource.Impor
 
 	localeID, environment, spaceID := idParts[0], idParts[1], idParts[2]
 
-	resp, err := e.client.GetLocaleWithResponse(
-		ctx,
-		spaceID,
-		environment,
-		localeID,
-	)
-	if err := utils.CheckClientResponse(resp, err, 200); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetLocaleResponse, error) {
+		r, e := e.client.GetLocaleWithResponse(
+			ctx,
+			spaceID,
+			environment,
+			localeID,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error importing locale",
 			"Could not import locale: "+err.Error(),
