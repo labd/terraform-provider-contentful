@@ -1,9 +1,8 @@
 name: Run Tests
 
-on: [ push ]
+on: [push]
 
 jobs:
-
   test:
     runs-on: ubuntu-latest
 
@@ -13,7 +12,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
 
       - name: golangci-lint
         continue-on-error: true
@@ -52,4 +54,4 @@ jobs:
         uses: labd/changie-release-action@cabe11e8578d5867ea0695351fd37e85ecb32aa6 # v0.3.2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          release-workflow: 'release.yaml'
+          release-workflow: "release.yaml"
