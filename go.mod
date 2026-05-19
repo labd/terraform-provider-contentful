@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/terraform-plugin-log v0.10.0
 	github.com/hashicorp/terraform-plugin-testing v1.12.0
 	github.com/iancoleman/orderedmap v0.3.0
-	github.com/oapi-codegen/oapi-codegen/v2 v2.6.0
+	github.com/oapi-codegen/oapi-codegen/v2 v2.7.0
 	github.com/oapi-codegen/runtime v1.3.1
 	github.com/stretchr/testify v1.11.1
 )
@@ -34,7 +34,7 @@ require (
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/dprotaso/go-yit v0.0.0-20260209000607-dfb86291624d // indirect
-	github.com/getkin/kin-openapi v0.134.0 // indirect
+	github.com/getkin/kin-openapi v0.135.0 // indirect
 	github.com/go-openapi/jsonpointer v0.22.5 // indirect
 	github.com/go-openapi/swag/jsonname v0.25.5 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -47,14 +47,14 @@ require (
 	github.com/mailru/easyjson v0.9.2 // indirect
 	github.com/mattn/go-runewidth v0.0.22 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
-	github.com/oasdiff/yaml v0.0.7 // indirect
-	github.com/oasdiff/yaml3 v0.0.6 // indirect
+	github.com/oasdiff/yaml v0.0.9 // indirect
+	github.com/oasdiff/yaml3 v0.0.9 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/speakeasy-api/jsonpath v0.6.0 // indirect
-	github.com/speakeasy-api/openapi-overlay v0.10.3 // indirect
+	github.com/speakeasy-api/jsonpath v0.6.3 // indirect
+	github.com/speakeasy-api/openapi v1.19.2 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
@@ -63,7 +63,7 @@ require (
 	github.com/yuin/goldmark v1.8.2 // indirect
 	github.com/yuin/goldmark-meta v1.1.0 // indirect
 	go.abhg.dev/goldmark/frontmatter v0.3.0 // indirect
-	go.yaml.in/yaml/v4 v4.0.0-rc.4 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/tools v0.43.0 // indirect
@@ -115,3 +115,5 @@ require (
 )
 
 tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
+
+replace github.com/dprotaso/go-yit => github.com/dprotaso/go-yit v0.0.0-20250513224043-18a80f8f6df4

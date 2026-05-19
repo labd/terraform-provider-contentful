@@ -23,6 +23,7 @@ import (
 	"github.com/labd/terraform-provider-contentful/internal/resources/environment"
 	"github.com/labd/terraform-provider-contentful/internal/resources/environment_alias"
 	"github.com/labd/terraform-provider-contentful/internal/resources/locale"
+	"github.com/labd/terraform-provider-contentful/internal/resources/oauth_application"
 	"github.com/labd/terraform-provider-contentful/internal/resources/preview_environment"
 	"github.com/labd/terraform-provider-contentful/internal/resources/role"
 	"github.com/labd/terraform-provider-contentful/internal/resources/space"
@@ -163,6 +164,7 @@ func (c contentfulProvider) Resources(_ context.Context) []func() resource.Resou
 		environment.NewEnvironmentResource,
 		environment_alias.NewEnvironmentAliasResource,
 		locale.NewLocaleResource,
+		oauth_application.NewOAuthApplicationResource,
 		preview_environment.NewPreviewEnvironmentResource,
 		role.NewRoleResource,
 		space.NewSpaceResource,
