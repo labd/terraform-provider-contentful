@@ -3,12 +3,12 @@
 page_title: "contentful_oauth_application Resource - terraform-provider-contentful"
 subcategory: ""
 description: |-
-  Manages an OAuth application at the organization level. The OAuth application's client_secret is only returned by Contentful at creation time and cannot be retrieved later. The provider stores it in Terraform state; if the state is lost or the resource is imported, the secret cannot be recovered and the application must be replaced.
+  Manages a Contentful OAuth application. OAuth applications are owned by the user whose management token is used by the provider (Contentful's API only exposes OAuth apps on the /users/me endpoint, even though the UI groups them under an organization). The client_secret is only returned by Contentful at creation time and cannot be retrieved later. The provider stores it in Terraform state; if the state is lost or the resource is imported, the secret cannot be recovered and the application must be replaced.
 ---
 
 # contentful_oauth_application (Resource)
 
-Manages an OAuth application at the organization level. The OAuth application's `client_secret` is only returned by Contentful at creation time and cannot be retrieved later. The provider stores it in Terraform state; if the state is lost or the resource is imported, the secret cannot be recovered and the application must be replaced.
+Manages a Contentful OAuth application. OAuth applications are owned by the user whose management token is used by the provider (Contentful's API only exposes OAuth apps on the `/users/me` endpoint, even though the UI groups them under an organization). The `client_secret` is only returned by Contentful at creation time and cannot be retrieved later. The provider stores it in Terraform state; if the state is lost or the resource is imported, the secret cannot be recovered and the application must be replaced.
 
 ## Example Usage
 

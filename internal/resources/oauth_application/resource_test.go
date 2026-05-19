@@ -70,8 +70,7 @@ func testAccCheckOAuthApplicationExists(n string, app *sdk.OAuthApplication) res
 		}
 
 		client := acctest.GetClient()
-		orgID := os.Getenv("CONTENTFUL_ORGANIZATION_ID")
-		resp, err := client.GetOAuthApplicationWithResponse(context.Background(), orgID, rs.Primary.ID)
+		resp, err := client.GetOAuthApplicationWithResponse(context.Background(), rs.Primary.ID)
 		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 			return fmt.Errorf("error getting OAuth application: %w", err)
 		}
@@ -84,13 +83,12 @@ func testAccCheckOAuthApplicationExists(n string, app *sdk.OAuthApplication) res
 func testAccCheckOAuthApplicationDestroy(s *terraform.State) error {
 	client := acctest.GetClient()
 	ctx := context.Background()
-	orgID := os.Getenv("CONTENTFUL_ORGANIZATION_ID")
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "contentful_oauth_application" {
 			continue
 		}
-		resp, err := client.GetOAuthApplicationWithResponse(ctx, orgID, rs.Primary.ID)
+		resp, err := client.GetOAuthApplicationWithResponse(ctx, rs.Primary.ID)
 		if err := utils.CheckClientResponse(resp, err, http.StatusNotFound); err != nil {
 			return fmt.Errorf("OAuth application still exists: %w", err)
 		}

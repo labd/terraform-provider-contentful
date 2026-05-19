@@ -2221,15 +2221,6 @@ type UpdateAppDefinitionParams struct {
 	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
 }
 
-// GetAllOAuthApplicationsParams defines parameters for GetAllOAuthApplications.
-type GetAllOAuthApplicationsParams struct {
-	// Limit Maximum number of items to return
-	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
-
-	// Skip Number of items to skip
-	Skip *Skip `form:"skip,omitempty" json:"skip,omitempty"`
-}
-
 // GetAllSpacesParams defines parameters for GetAllSpaces.
 type GetAllSpacesParams struct {
 	// Limit Maximum number of items to return
@@ -2559,6 +2550,15 @@ type UpdateWebhookParams struct {
 	XContentfulVersion ResourceVersion `json:"X-Contentful-Version"`
 }
 
+// GetAllOAuthApplicationsParams defines parameters for GetAllOAuthApplications.
+type GetAllOAuthApplicationsParams struct {
+	// Limit Maximum number of items to return
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Skip Number of items to skip
+	Skip *Skip `form:"skip,omitempty" json:"skip,omitempty"`
+}
+
 // CreateAppDefinitionJSONRequestBody defines body for CreateAppDefinition for application/json ContentType.
 type CreateAppDefinitionJSONRequestBody = AppDefinitionDraft
 
@@ -2570,12 +2570,6 @@ type CreateAppBundleJSONRequestBody = AppBundleDraft
 
 // UpdateAppEventSubscriptionJSONRequestBody defines body for UpdateAppEventSubscription for application/json ContentType.
 type UpdateAppEventSubscriptionJSONRequestBody = AppEventSubscriptionDraft
-
-// CreateOAuthApplicationJSONRequestBody defines body for CreateOAuthApplication for application/json ContentType.
-type CreateOAuthApplicationJSONRequestBody = OAuthApplicationDraft
-
-// UpdateOAuthApplicationJSONRequestBody defines body for UpdateOAuthApplication for application/json ContentType.
-type UpdateOAuthApplicationJSONRequestBody = OAuthApplicationDraft
 
 // CreateSpaceJSONRequestBody defines body for CreateSpace for application/json ContentType.
 type CreateSpaceJSONRequestBody = SpaceCreate
@@ -2645,6 +2639,12 @@ type CreateWebhookJSONRequestBody = WebhookCreate
 
 // UpdateWebhookJSONRequestBody defines body for UpdateWebhook for application/json ContentType.
 type UpdateWebhookJSONRequestBody = WebhookUpdate
+
+// CreateOAuthApplicationJSONRequestBody defines body for CreateOAuthApplication for application/json ContentType.
+type CreateOAuthApplicationJSONRequestBody = OAuthApplicationDraft
+
+// UpdateOAuthApplicationJSONRequestBody defines body for UpdateOAuthApplication for application/json ContentType.
+type UpdateOAuthApplicationJSONRequestBody = OAuthApplicationDraft
 
 // Getter for additional properties for EditorInterfaceSettings. Returns the specified
 // element and whether it was found
@@ -3019,25 +3019,6 @@ type ClientInterface interface {
 	// UploadAppWithBody request with any body
 	UploadAppWithBody(ctx context.Context, organizationId OrganizationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetAllOAuthApplications request
-	GetAllOAuthApplications(ctx context.Context, organizationId OrganizationId, params *GetAllOAuthApplicationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// CreateOAuthApplicationWithBody request with any body
-	CreateOAuthApplicationWithBody(ctx context.Context, organizationId OrganizationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	CreateOAuthApplication(ctx context.Context, organizationId OrganizationId, body CreateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeleteOAuthApplication request
-	DeleteOAuthApplication(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetOAuthApplication request
-	GetOAuthApplication(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UpdateOAuthApplicationWithBody request with any body
-	UpdateOAuthApplicationWithBody(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	UpdateOAuthApplication(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, body UpdateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// GetAllSpaces request
 	GetAllSpaces(ctx context.Context, params *GetAllSpacesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -3299,6 +3280,25 @@ type ClientInterface interface {
 	UpdateWebhookWithBody(ctx context.Context, spaceId SpaceId, webhookId WebhookId, params *UpdateWebhookParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateWebhook(ctx context.Context, spaceId SpaceId, webhookId WebhookId, params *UpdateWebhookParams, body UpdateWebhookJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAllOAuthApplications request
+	GetAllOAuthApplications(ctx context.Context, params *GetAllOAuthApplicationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateOAuthApplicationWithBody request with any body
+	CreateOAuthApplicationWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateOAuthApplication(ctx context.Context, body CreateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteOAuthApplication request
+	DeleteOAuthApplication(ctx context.Context, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetOAuthApplication request
+	GetOAuthApplication(ctx context.Context, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateOAuthApplicationWithBody request with any body
+	UpdateOAuthApplicationWithBody(ctx context.Context, resourceId ResourceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateOAuthApplication(ctx context.Context, resourceId ResourceId, body UpdateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetAllAppDefinitions(ctx context.Context, organizationId OrganizationId, params *GetAllAppDefinitionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -3459,90 +3459,6 @@ func (c *Client) UpdateAppEventSubscription(ctx context.Context, organizationId 
 
 func (c *Client) UploadAppWithBody(ctx context.Context, organizationId OrganizationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUploadAppRequestWithBody(c.Server, organizationId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetAllOAuthApplications(ctx context.Context, organizationId OrganizationId, params *GetAllOAuthApplicationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetAllOAuthApplicationsRequest(c.Server, organizationId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreateOAuthApplicationWithBody(ctx context.Context, organizationId OrganizationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateOAuthApplicationRequestWithBody(c.Server, organizationId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreateOAuthApplication(ctx context.Context, organizationId OrganizationId, body CreateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateOAuthApplicationRequest(c.Server, organizationId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DeleteOAuthApplication(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteOAuthApplicationRequest(c.Server, organizationId, resourceId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetOAuthApplication(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetOAuthApplicationRequest(c.Server, organizationId, resourceId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdateOAuthApplicationWithBody(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateOAuthApplicationRequestWithBody(c.Server, organizationId, resourceId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdateOAuthApplication(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, body UpdateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateOAuthApplicationRequest(c.Server, organizationId, resourceId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4693,6 +4609,90 @@ func (c *Client) UpdateWebhook(ctx context.Context, spaceId SpaceId, webhookId W
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetAllOAuthApplications(ctx context.Context, params *GetAllOAuthApplicationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAllOAuthApplicationsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateOAuthApplicationWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateOAuthApplicationRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateOAuthApplication(ctx context.Context, body CreateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateOAuthApplicationRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteOAuthApplication(ctx context.Context, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteOAuthApplicationRequest(c.Server, resourceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetOAuthApplication(ctx context.Context, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetOAuthApplicationRequest(c.Server, resourceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateOAuthApplicationWithBody(ctx context.Context, resourceId ResourceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateOAuthApplicationRequestWithBody(c.Server, resourceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateOAuthApplication(ctx context.Context, resourceId ResourceId, body UpdateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateOAuthApplicationRequest(c.Server, resourceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // NewGetAllAppDefinitionsRequest generates requests for GetAllAppDefinitions
 func NewGetAllAppDefinitionsRequest(server string, organizationId OrganizationId, params *GetAllAppDefinitionsParams) (*http.Request, error) {
 	var err error
@@ -5192,262 +5192,6 @@ func NewUploadAppRequestWithBody(server string, organizationId OrganizationId, c
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetAllOAuthApplicationsRequest generates requests for GetAllOAuthApplications
-func NewGetAllOAuthApplicationsRequest(server string, organizationId OrganizationId, params *GetAllOAuthApplicationsParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "organizationId", organizationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/organizations/%s/oauth_applications", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		// queryValues collects non-styled parameters (passthrough, JSON)
-		// that are safe to round-trip through url.Values.Encode().
-		queryValues := queryURL.Query()
-		// rawQueryFragments collects pre-encoded query fragments from
-		// styled parameters, preserving literal commas as delimiters
-		// per the OpenAPI spec (e.g. "color=blue,black,brown").
-		var rawQueryFragments []string
-
-		if params.Limit != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if params.Skip != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "skip", *params.Skip, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if encoded := queryValues.Encode(); encoded != "" {
-			rawQueryFragments = append(rawQueryFragments, encoded)
-		}
-		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
-	}
-
-	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewCreateOAuthApplicationRequest calls the generic CreateOAuthApplication builder with application/json body
-func NewCreateOAuthApplicationRequest(server string, organizationId OrganizationId, body CreateOAuthApplicationJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewCreateOAuthApplicationRequestWithBody(server, organizationId, "application/json", bodyReader)
-}
-
-// NewCreateOAuthApplicationRequestWithBody generates requests for CreateOAuthApplication with any type of body
-func NewCreateOAuthApplicationRequestWithBody(server string, organizationId OrganizationId, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "organizationId", organizationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/organizations/%s/oauth_applications", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewDeleteOAuthApplicationRequest generates requests for DeleteOAuthApplication
-func NewDeleteOAuthApplicationRequest(server string, organizationId OrganizationId, resourceId ResourceId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "organizationId", organizationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "resourceId", resourceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/organizations/%s/oauth_applications/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetOAuthApplicationRequest generates requests for GetOAuthApplication
-func NewGetOAuthApplicationRequest(server string, organizationId OrganizationId, resourceId ResourceId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "organizationId", organizationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "resourceId", resourceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/organizations/%s/oauth_applications/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewUpdateOAuthApplicationRequest calls the generic UpdateOAuthApplication builder with application/json body
-func NewUpdateOAuthApplicationRequest(server string, organizationId OrganizationId, resourceId ResourceId, body UpdateOAuthApplicationJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewUpdateOAuthApplicationRequestWithBody(server, organizationId, resourceId, "application/json", bodyReader)
-}
-
-// NewUpdateOAuthApplicationRequestWithBody generates requests for UpdateOAuthApplication with any type of body
-func NewUpdateOAuthApplicationRequestWithBody(server string, organizationId OrganizationId, resourceId ResourceId, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "organizationId", organizationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "resourceId", resourceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/organizations/%s/oauth_applications/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -9744,6 +9488,227 @@ func NewUpdateWebhookRequestWithBody(server string, spaceId SpaceId, webhookId W
 	return req, nil
 }
 
+// NewGetAllOAuthApplicationsRequest generates requests for GetAllOAuthApplications
+func NewGetAllOAuthApplicationsRequest(server string, params *GetAllOAuthApplicationsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/me/oauth_applications")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Skip != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "skip", *params.Skip, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateOAuthApplicationRequest calls the generic CreateOAuthApplication builder with application/json body
+func NewCreateOAuthApplicationRequest(server string, body CreateOAuthApplicationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateOAuthApplicationRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateOAuthApplicationRequestWithBody generates requests for CreateOAuthApplication with any type of body
+func NewCreateOAuthApplicationRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/me/oauth_applications")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteOAuthApplicationRequest generates requests for DeleteOAuthApplication
+func NewDeleteOAuthApplicationRequest(server string, resourceId ResourceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "resourceId", resourceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/me/oauth_applications/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetOAuthApplicationRequest generates requests for GetOAuthApplication
+func NewGetOAuthApplicationRequest(server string, resourceId ResourceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "resourceId", resourceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/me/oauth_applications/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateOAuthApplicationRequest calls the generic UpdateOAuthApplication builder with application/json body
+func NewUpdateOAuthApplicationRequest(server string, resourceId ResourceId, body UpdateOAuthApplicationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateOAuthApplicationRequestWithBody(server, resourceId, "application/json", bodyReader)
+}
+
+// NewUpdateOAuthApplicationRequestWithBody generates requests for UpdateOAuthApplication with any type of body
+func NewUpdateOAuthApplicationRequestWithBody(server string, resourceId ResourceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "resourceId", resourceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/me/oauth_applications/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -9824,25 +9789,6 @@ type ClientWithResponsesInterface interface {
 
 	// UploadAppWithBodyWithResponse request with any body
 	UploadAppWithBodyWithResponse(ctx context.Context, organizationId OrganizationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadAppResponse, error)
-
-	// GetAllOAuthApplicationsWithResponse request
-	GetAllOAuthApplicationsWithResponse(ctx context.Context, organizationId OrganizationId, params *GetAllOAuthApplicationsParams, reqEditors ...RequestEditorFn) (*GetAllOAuthApplicationsResponse, error)
-
-	// CreateOAuthApplicationWithBodyWithResponse request with any body
-	CreateOAuthApplicationWithBodyWithResponse(ctx context.Context, organizationId OrganizationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateOAuthApplicationResponse, error)
-
-	CreateOAuthApplicationWithResponse(ctx context.Context, organizationId OrganizationId, body CreateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateOAuthApplicationResponse, error)
-
-	// DeleteOAuthApplicationWithResponse request
-	DeleteOAuthApplicationWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*DeleteOAuthApplicationResponse, error)
-
-	// GetOAuthApplicationWithResponse request
-	GetOAuthApplicationWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetOAuthApplicationResponse, error)
-
-	// UpdateOAuthApplicationWithBodyWithResponse request with any body
-	UpdateOAuthApplicationWithBodyWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateOAuthApplicationResponse, error)
-
-	UpdateOAuthApplicationWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, body UpdateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateOAuthApplicationResponse, error)
 
 	// GetAllSpacesWithResponse request
 	GetAllSpacesWithResponse(ctx context.Context, params *GetAllSpacesParams, reqEditors ...RequestEditorFn) (*GetAllSpacesResponse, error)
@@ -10105,6 +10051,25 @@ type ClientWithResponsesInterface interface {
 	UpdateWebhookWithBodyWithResponse(ctx context.Context, spaceId SpaceId, webhookId WebhookId, params *UpdateWebhookParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateWebhookResponse, error)
 
 	UpdateWebhookWithResponse(ctx context.Context, spaceId SpaceId, webhookId WebhookId, params *UpdateWebhookParams, body UpdateWebhookJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateWebhookResponse, error)
+
+	// GetAllOAuthApplicationsWithResponse request
+	GetAllOAuthApplicationsWithResponse(ctx context.Context, params *GetAllOAuthApplicationsParams, reqEditors ...RequestEditorFn) (*GetAllOAuthApplicationsResponse, error)
+
+	// CreateOAuthApplicationWithBodyWithResponse request with any body
+	CreateOAuthApplicationWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateOAuthApplicationResponse, error)
+
+	CreateOAuthApplicationWithResponse(ctx context.Context, body CreateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateOAuthApplicationResponse, error)
+
+	// DeleteOAuthApplicationWithResponse request
+	DeleteOAuthApplicationWithResponse(ctx context.Context, resourceId ResourceId, reqEditors ...RequestEditorFn) (*DeleteOAuthApplicationResponse, error)
+
+	// GetOAuthApplicationWithResponse request
+	GetOAuthApplicationWithResponse(ctx context.Context, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetOAuthApplicationResponse, error)
+
+	// UpdateOAuthApplicationWithBodyWithResponse request with any body
+	UpdateOAuthApplicationWithBodyWithResponse(ctx context.Context, resourceId ResourceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateOAuthApplicationResponse, error)
+
+	UpdateOAuthApplicationWithResponse(ctx context.Context, resourceId ResourceId, body UpdateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateOAuthApplicationResponse, error)
 }
 
 type GetAllAppDefinitionsResponse struct {
@@ -10404,155 +10369,6 @@ func (r UploadAppResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UploadAppResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type GetAllOAuthApplicationsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *OAuthApplicationCollection
-}
-
-// Status returns HTTPResponse.Status
-func (r GetAllOAuthApplicationsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetAllOAuthApplicationsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r GetAllOAuthApplicationsResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type CreateOAuthApplicationResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON201      *OAuthApplication
-}
-
-// Status returns HTTPResponse.Status
-func (r CreateOAuthApplicationResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r CreateOAuthApplicationResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r CreateOAuthApplicationResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type DeleteOAuthApplicationResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r DeleteOAuthApplicationResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DeleteOAuthApplicationResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r DeleteOAuthApplicationResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type GetOAuthApplicationResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *OAuthApplication
-}
-
-// Status returns HTTPResponse.Status
-func (r GetOAuthApplicationResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetOAuthApplicationResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r GetOAuthApplicationResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type UpdateOAuthApplicationResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *OAuthApplication
-}
-
-// Status returns HTTPResponse.Status
-func (r UpdateOAuthApplicationResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UpdateOAuthApplicationResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r UpdateOAuthApplicationResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -12711,6 +12527,155 @@ func (r UpdateWebhookResponse) ContentType() string {
 	return ""
 }
 
+type GetAllOAuthApplicationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *OAuthApplicationCollection
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAllOAuthApplicationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAllOAuthApplicationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAllOAuthApplicationsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateOAuthApplicationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *OAuthApplication
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateOAuthApplicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateOAuthApplicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateOAuthApplicationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteOAuthApplicationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteOAuthApplicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteOAuthApplicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteOAuthApplicationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetOAuthApplicationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *OAuthApplication
+}
+
+// Status returns HTTPResponse.Status
+func (r GetOAuthApplicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetOAuthApplicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetOAuthApplicationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateOAuthApplicationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *OAuthApplication
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateOAuthApplicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateOAuthApplicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateOAuthApplicationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetAllAppDefinitionsWithResponse request returning *GetAllAppDefinitionsResponse
 func (c *ClientWithResponses) GetAllAppDefinitionsWithResponse(ctx context.Context, organizationId OrganizationId, params *GetAllAppDefinitionsParams, reqEditors ...RequestEditorFn) (*GetAllAppDefinitionsResponse, error) {
 	rsp, err := c.GetAllAppDefinitions(ctx, organizationId, params, reqEditors...)
@@ -12831,67 +12796,6 @@ func (c *ClientWithResponses) UploadAppWithBodyWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseUploadAppResponse(rsp)
-}
-
-// GetAllOAuthApplicationsWithResponse request returning *GetAllOAuthApplicationsResponse
-func (c *ClientWithResponses) GetAllOAuthApplicationsWithResponse(ctx context.Context, organizationId OrganizationId, params *GetAllOAuthApplicationsParams, reqEditors ...RequestEditorFn) (*GetAllOAuthApplicationsResponse, error) {
-	rsp, err := c.GetAllOAuthApplications(ctx, organizationId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetAllOAuthApplicationsResponse(rsp)
-}
-
-// CreateOAuthApplicationWithBodyWithResponse request with arbitrary body returning *CreateOAuthApplicationResponse
-func (c *ClientWithResponses) CreateOAuthApplicationWithBodyWithResponse(ctx context.Context, organizationId OrganizationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateOAuthApplicationResponse, error) {
-	rsp, err := c.CreateOAuthApplicationWithBody(ctx, organizationId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreateOAuthApplicationResponse(rsp)
-}
-
-func (c *ClientWithResponses) CreateOAuthApplicationWithResponse(ctx context.Context, organizationId OrganizationId, body CreateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateOAuthApplicationResponse, error) {
-	rsp, err := c.CreateOAuthApplication(ctx, organizationId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreateOAuthApplicationResponse(rsp)
-}
-
-// DeleteOAuthApplicationWithResponse request returning *DeleteOAuthApplicationResponse
-func (c *ClientWithResponses) DeleteOAuthApplicationWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*DeleteOAuthApplicationResponse, error) {
-	rsp, err := c.DeleteOAuthApplication(ctx, organizationId, resourceId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDeleteOAuthApplicationResponse(rsp)
-}
-
-// GetOAuthApplicationWithResponse request returning *GetOAuthApplicationResponse
-func (c *ClientWithResponses) GetOAuthApplicationWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetOAuthApplicationResponse, error) {
-	rsp, err := c.GetOAuthApplication(ctx, organizationId, resourceId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetOAuthApplicationResponse(rsp)
-}
-
-// UpdateOAuthApplicationWithBodyWithResponse request with arbitrary body returning *UpdateOAuthApplicationResponse
-func (c *ClientWithResponses) UpdateOAuthApplicationWithBodyWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateOAuthApplicationResponse, error) {
-	rsp, err := c.UpdateOAuthApplicationWithBody(ctx, organizationId, resourceId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdateOAuthApplicationResponse(rsp)
-}
-
-func (c *ClientWithResponses) UpdateOAuthApplicationWithResponse(ctx context.Context, organizationId OrganizationId, resourceId ResourceId, body UpdateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateOAuthApplicationResponse, error) {
-	rsp, err := c.UpdateOAuthApplication(ctx, organizationId, resourceId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdateOAuthApplicationResponse(rsp)
 }
 
 // GetAllSpacesWithResponse request returning *GetAllSpacesResponse
@@ -13726,6 +13630,67 @@ func (c *ClientWithResponses) UpdateWebhookWithResponse(ctx context.Context, spa
 	return ParseUpdateWebhookResponse(rsp)
 }
 
+// GetAllOAuthApplicationsWithResponse request returning *GetAllOAuthApplicationsResponse
+func (c *ClientWithResponses) GetAllOAuthApplicationsWithResponse(ctx context.Context, params *GetAllOAuthApplicationsParams, reqEditors ...RequestEditorFn) (*GetAllOAuthApplicationsResponse, error) {
+	rsp, err := c.GetAllOAuthApplications(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAllOAuthApplicationsResponse(rsp)
+}
+
+// CreateOAuthApplicationWithBodyWithResponse request with arbitrary body returning *CreateOAuthApplicationResponse
+func (c *ClientWithResponses) CreateOAuthApplicationWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateOAuthApplicationResponse, error) {
+	rsp, err := c.CreateOAuthApplicationWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateOAuthApplicationResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateOAuthApplicationWithResponse(ctx context.Context, body CreateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateOAuthApplicationResponse, error) {
+	rsp, err := c.CreateOAuthApplication(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateOAuthApplicationResponse(rsp)
+}
+
+// DeleteOAuthApplicationWithResponse request returning *DeleteOAuthApplicationResponse
+func (c *ClientWithResponses) DeleteOAuthApplicationWithResponse(ctx context.Context, resourceId ResourceId, reqEditors ...RequestEditorFn) (*DeleteOAuthApplicationResponse, error) {
+	rsp, err := c.DeleteOAuthApplication(ctx, resourceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteOAuthApplicationResponse(rsp)
+}
+
+// GetOAuthApplicationWithResponse request returning *GetOAuthApplicationResponse
+func (c *ClientWithResponses) GetOAuthApplicationWithResponse(ctx context.Context, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetOAuthApplicationResponse, error) {
+	rsp, err := c.GetOAuthApplication(ctx, resourceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetOAuthApplicationResponse(rsp)
+}
+
+// UpdateOAuthApplicationWithBodyWithResponse request with arbitrary body returning *UpdateOAuthApplicationResponse
+func (c *ClientWithResponses) UpdateOAuthApplicationWithBodyWithResponse(ctx context.Context, resourceId ResourceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateOAuthApplicationResponse, error) {
+	rsp, err := c.UpdateOAuthApplicationWithBody(ctx, resourceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateOAuthApplicationResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateOAuthApplicationWithResponse(ctx context.Context, resourceId ResourceId, body UpdateOAuthApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateOAuthApplicationResponse, error) {
+	rsp, err := c.UpdateOAuthApplication(ctx, resourceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateOAuthApplicationResponse(rsp)
+}
+
 // ParseGetAllAppDefinitionsResponse parses an HTTP response from a GetAllAppDefinitionsWithResponse call
 func ParseGetAllAppDefinitionsResponse(rsp *http.Response) (*GetAllAppDefinitionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -13971,126 +13936,6 @@ func ParseUploadAppResponse(rsp *http.Response) (*UploadAppResponse, error) {
 			return nil, err
 		}
 		response.JSON201 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetAllOAuthApplicationsResponse parses an HTTP response from a GetAllOAuthApplicationsWithResponse call
-func ParseGetAllOAuthApplicationsResponse(rsp *http.Response) (*GetAllOAuthApplicationsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetAllOAuthApplicationsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest OAuthApplicationCollection
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseCreateOAuthApplicationResponse parses an HTTP response from a CreateOAuthApplicationWithResponse call
-func ParseCreateOAuthApplicationResponse(rsp *http.Response) (*CreateOAuthApplicationResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &CreateOAuthApplicationResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest OAuthApplication
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON201 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDeleteOAuthApplicationResponse parses an HTTP response from a DeleteOAuthApplicationWithResponse call
-func ParseDeleteOAuthApplicationResponse(rsp *http.Response) (*DeleteOAuthApplicationResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DeleteOAuthApplicationResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetOAuthApplicationResponse parses an HTTP response from a GetOAuthApplicationWithResponse call
-func ParseGetOAuthApplicationResponse(rsp *http.Response) (*GetOAuthApplicationResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetOAuthApplicationResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest OAuthApplication
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseUpdateOAuthApplicationResponse parses an HTTP response from a UpdateOAuthApplicationWithResponse call
-func ParseUpdateOAuthApplicationResponse(rsp *http.Response) (*UpdateOAuthApplicationResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UpdateOAuthApplicationResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest OAuthApplication
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
 
 	}
 
@@ -15864,6 +15709,126 @@ func ParseUpdateWebhookResponse(rsp *http.Response) (*UpdateWebhookResponse, err
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Webhook
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetAllOAuthApplicationsResponse parses an HTTP response from a GetAllOAuthApplicationsWithResponse call
+func ParseGetAllOAuthApplicationsResponse(rsp *http.Response) (*GetAllOAuthApplicationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAllOAuthApplicationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest OAuthApplicationCollection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateOAuthApplicationResponse parses an HTTP response from a CreateOAuthApplicationWithResponse call
+func ParseCreateOAuthApplicationResponse(rsp *http.Response) (*CreateOAuthApplicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateOAuthApplicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest OAuthApplication
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteOAuthApplicationResponse parses an HTTP response from a DeleteOAuthApplicationWithResponse call
+func ParseDeleteOAuthApplicationResponse(rsp *http.Response) (*DeleteOAuthApplicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteOAuthApplicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetOAuthApplicationResponse parses an HTTP response from a GetOAuthApplicationWithResponse call
+func ParseGetOAuthApplicationResponse(rsp *http.Response) (*GetOAuthApplicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetOAuthApplicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest OAuthApplication
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateOAuthApplicationResponse parses an HTTP response from a UpdateOAuthApplicationWithResponse call
+func ParseUpdateOAuthApplicationResponse(rsp *http.Response) (*UpdateOAuthApplicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateOAuthApplicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest OAuthApplication
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

@@ -33,8 +33,7 @@ func NewOAuthApplicationResource() resource.Resource {
 }
 
 type oauthApplicationResource struct {
-	client         *sdk.ClientWithResponses
-	organizationId string
+	client *sdk.ClientWithResponses
 }
 
 func (e *oauthApplicationResource) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -43,10 +42,13 @@ func (e *oauthApplicationResource) Metadata(_ context.Context, request resource.
 
 func (e *oauthApplicationResource) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		Description: "Manages an OAuth application at the organization level. The OAuth application's " +
-			"`client_secret` is only returned by Contentful at creation time and cannot be retrieved " +
-			"later. The provider stores it in Terraform state; if the state is lost or the resource " +
-			"is imported, the secret cannot be recovered and the application must be replaced.",
+		Description: "Manages a Contentful OAuth application. OAuth applications are owned by the " +
+			"user whose management token is used by the provider (Contentful's API only exposes " +
+			"OAuth apps on the `/users/me` endpoint, even though the UI groups them under an " +
+			"organization). The `client_secret` is only returned by Contentful at creation time " +
+			"and cannot be retrieved later. The provider stores it in Terraform state; if the " +
+			"state is lost or the resource is imported, the secret cannot be recovered and the " +
+			"application must be replaced.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -117,7 +119,6 @@ func (e *oauthApplicationResource) Configure(_ context.Context, request resource
 
 	data := request.ProviderData.(utils.ProviderData)
 	e.client = data.Client
-	e.organizationId = data.OrganizationId
 }
 
 func (e *oauthApplicationResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
@@ -129,7 +130,7 @@ func (e *oauthApplicationResource) Create(ctx context.Context, request resource.
 
 	draft := plan.Draft()
 
-	resp, err := e.client.CreateOAuthApplicationWithResponse(ctx, e.organizationId, *draft)
+	resp, err := e.client.CreateOAuthApplicationWithResponse(ctx, *draft)
 	if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
 		response.Diagnostics.AddError(
 			"Error creating OAuth application",
@@ -179,7 +180,7 @@ func (e *oauthApplicationResource) Update(ctx context.Context, request resource.
 
 	draft := plan.Draft()
 
-	resp, err := e.client.UpdateOAuthApplicationWithResponse(ctx, e.organizationId, state.ID.ValueString(), *draft)
+	resp, err := e.client.UpdateOAuthApplicationWithResponse(ctx, state.ID.ValueString(), *draft)
 	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 		response.Diagnostics.AddError(
 			"Error updating OAuth application",
@@ -202,7 +203,7 @@ func (e *oauthApplicationResource) Delete(ctx context.Context, request resource.
 		return
 	}
 
-	resp, err := e.client.DeleteOAuthApplicationWithResponse(ctx, e.organizationId, state.ID.ValueString())
+	resp, err := e.client.DeleteOAuthApplicationWithResponse(ctx, state.ID.ValueString())
 	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting OAuth application",
@@ -233,7 +234,7 @@ func (e *oauthApplicationResource) ImportState(ctx context.Context, request reso
 }
 
 func (e *oauthApplicationResource) doRead(ctx context.Context, app *OAuthApplication, state *tfsdk.State, d *diag.Diagnostics) {
-	resp, err := e.client.GetOAuthApplicationWithResponse(ctx, e.organizationId, app.ID.ValueString())
+	resp, err := e.client.GetOAuthApplicationWithResponse(ctx, app.ID.ValueString())
 	if err != nil {
 		d.AddError(
 			"Error reading OAuth application",
