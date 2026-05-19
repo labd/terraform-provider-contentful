@@ -1,0 +1,3 @@
+kind: Added
+body: Add contentful_oauth_application resource for managing organization-level OAuth applications
+time: 2026-05-19T13:33:59.505927+02:00

@@ -1411,6 +1411,84 @@ paths:
         "204":
           description: No Content
 
+  /users/me/oauth_applications:
+    get:
+      summary: Get all OAuth applications
+      description: |
+        Retrieves all OAuth applications owned by the authenticated user.
+        Contentful's CMA scopes OAuth applications to users, not organizations,
+        even though the UI groups them under the organization the user belongs to.
+      operationId: getAllOAuthApplications
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthApplicationCollection"
+    post:
+      summary: Create an OAuth application
+      description: |
+        Creates a new OAuth application owned by the authenticated user.
+        The response (and only this response) includes the generated `clientSecret`,
+        which cannot be retrieved later — store it immediately.
+      operationId: createOAuthApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OAuthApplicationDraft"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthApplication"
+
+  /users/me/oauth_applications/{resourceId}:
+    parameters:
+      - $ref: "#/components/parameters/resourceId"
+    get:
+      summary: Get an OAuth application
+      description: Retrieves a specific OAuth application by ID. `clientSecret` is never included in this response.
+      operationId: getOAuthApplication
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthApplication"
+    put:
+      summary: Update an OAuth application
+      description: Updates an OAuth application.
+      operationId: updateOAuthApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OAuthApplicationDraft"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthApplication"
+    delete:
+      summary: Delete an OAuth application
+      description: Deletes an OAuth application
+      operationId: deleteOAuthApplication
+      responses:
+        "204":
+          description: No Content
+
 components:
   parameters:
     spaceId:
@@ -3582,6 +3660,125 @@ components:
       required:
         - name
         - configurations
+
+    OAuthApplicationScope:
+      type: string
+      description: |
+        OAuth scope granted to access tokens issued for this application.
+          * `content_management_manage` — full Content Management API access.
+          * `content_management_read` — read-only Content Management API access.
+      enum:
+        - content_management_manage
+        - content_management_read
+
+    SystemPropertiesOAuthApplication:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/SystemPropertiesBase'
+        - properties:
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+            organization:
+              type: object
+              properties:
+                sys:
+                  $ref: '#/components/schemas/SystemPropertiesLink'
+              required:
+                - sys
+
+    OAuthApplication:
+      type: object
+      properties:
+        sys:
+          $ref: "#/components/schemas/SystemPropertiesOAuthApplication"
+        name:
+          type: string
+          description: Human-readable name of the OAuth application
+        description:
+          type: string
+          description: Description of the OAuth application
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/OAuthApplicationScope"
+          description: Scopes granted to access tokens issued for this application
+        redirectUri:
+          type: string
+          description: Redirect URI used in the OAuth authorization code flow
+        confidential:
+          type: boolean
+          description: |
+            Whether the client is confidential (server-side, can keep the
+            `clientSecret`) or public (e.g. SPA/mobile/CLI).
+        clientId:
+          type: string
+          description: Public identifier of the OAuth application
+        clientSecret:
+          type: string
+          description: |
+            Client secret. Only returned in the response to the create endpoint
+            and cannot be retrieved later — store it immediately.
+      required:
+        - sys
+        - name
+        - description
+        - scopes
+        - redirectUri
+        - confidential
+        - clientId
+
+    OAuthApplicationDraft:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Human-readable name of the OAuth application
+        description:
+          type: string
+          description: Description of the OAuth application
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/OAuthApplicationScope"
+          description: Scopes granted to access tokens issued for this application
+        redirectUri:
+          type: string
+          description: Redirect URI used in the OAuth authorization code flow
+        confidential:
+          type: boolean
+          description: |
+            Whether the client is confidential (server-side, can keep the
+            `clientSecret`) or public (e.g. SPA/mobile/CLI).
+      required:
+        - name
+        - description
+        - scopes
+        - redirectUri
+        - confidential
+
+    OAuthApplicationCollection:
+      type: object
+      properties:
+        sys:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [ Array ]
+        total:
+          type: integer
+        skip:
+          type: integer
+        limit:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OAuthApplication"
 
     Error:
       type: object
