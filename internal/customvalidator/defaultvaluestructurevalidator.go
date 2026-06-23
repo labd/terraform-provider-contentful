@@ -29,7 +29,7 @@ func (v DefaultValueStructureValidator) ValidateObject(ctx context.Context, requ
 
 	attributes := request.ConfigValue.Attributes()
 
-	// Check if both string and bool are null/empty
+	// Check if string, bool and array are null/empty
 	stringAttr, hasString := attributes["string"]
 	boolAttr, hasBool := attributes["bool"]
 	arrayAttr, hasArray := attributes["array"]
@@ -49,16 +49,26 @@ func (v DefaultValueStructureValidator) ValidateObject(ctx context.Context, requ
 				"Invalid default_value structure",
 				fmt.Sprintf("Found unexpected attribute '%s' in default_value. "+
 					"The correct syntax is: default_value = { string = { \"%s\" = \"value\" } } "+
-					"or default_value = { bool = { \"%s\" = true } }", firstKey, firstKey, firstKey),
+					"or default_value = { bool = { \"%s\" = true } }"+
+					"or default_value = { array = { \"%s\" = [\"value1\", \"value2\"] } }", firstKey, firstKey, firstKey, firstKey),
 			)
 			return
 		}
 		response.Diagnostics.AddAttributeError(
 			request.Path,
 			"Invalid default_value structure",
-			"default_value must contain either 'string' or 'bool' attribute. "+
-				"Example: default_value = { string = { \"en-US\" = \"green\" } }",
+			"default_value must contain either 'string', 'bool' or 'array' attribute. "+
+				"Example: default_value = { string = { \"en-US\" = \"green\" } }"+
+				"or default_value = { bool = { \"en-US\" = true } }"+
+				"or default_value = { array = { \"en-US\" = [\"value1\", \"value2\"] } }",
 		)
+		return
+	}
+
+	// If any attribute is unknown (e.g. a variable is used as a map key),
+	// we cannot validate the content at this stage. Skip validation and let
+	// Terraform resolve the values first.
+	if (hasString && stringAttr.IsUnknown()) || (hasBool && boolAttr.IsUnknown()) || (hasArray && arrayAttr.IsUnknown()) {
 		return
 	}
 
@@ -85,13 +95,15 @@ func (v DefaultValueStructureValidator) ValidateObject(ctx context.Context, requ
 		}
 	}
 
-	// If we have string/bool attributes but they're both empty, that's an error
+	// If we have string/bool/array/int attributes but they're all empty, that's an error
 	if !stringHasContent && !boolHasContent && !arrayHasContent && (hasString || hasBool || hasArray) {
 		response.Diagnostics.AddAttributeError(
 			request.Path,
 			"Empty default_value",
 			"default_value must contain actual values. "+
-				"Example: default_value = { string = { \"en-US\" = \"green\" } }",
+				"Example: default_value = { string = { \"en-US\" = \"green\" } }"+
+				"or default_value = { bool = { \"en-US\" = true } }"+
+				"or default_value = { array = { \"en-US\" = [\"value1\", \"value2\"] } }",
 		)
 	}
 }
