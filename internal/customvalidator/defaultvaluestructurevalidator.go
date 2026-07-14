@@ -13,7 +13,7 @@ type DefaultValueStructureValidator struct{}
 
 // Description returns a description of the validator.
 func (v DefaultValueStructureValidator) Description(_ context.Context) string {
-	return "Validates that default_value has the correct structure with 'string' or 'bool' keys"
+	return "Validates that default_value has the correct structure with 'string', 'bool' or 'array' keys"
 }
 
 // MarkdownDescription returns a markdown description of the validator.
@@ -29,7 +29,7 @@ func (v DefaultValueStructureValidator) ValidateObject(ctx context.Context, requ
 
 	attributes := request.ConfigValue.Attributes()
 
-	// Check if both string and bool are null/empty
+	// Check if string, bool and array are null/empty
 	stringAttr, hasString := attributes["string"]
 	boolAttr, hasBool := attributes["bool"]
 	arrayAttr, hasArray := attributes["array"]
@@ -49,16 +49,26 @@ func (v DefaultValueStructureValidator) ValidateObject(ctx context.Context, requ
 				"Invalid default_value structure",
 				fmt.Sprintf("Found unexpected attribute '%s' in default_value. "+
 					"The correct syntax is: default_value = { string = { \"%s\" = \"value\" } } "+
-					"or default_value = { bool = { \"%s\" = true } }", firstKey, firstKey, firstKey),
+					"or default_value = { bool = { \"%s\" = true } } "+
+					"or default_value = { array = { \"%s\" = [\"value1\", \"value2\"] } }", firstKey, firstKey, firstKey, firstKey),
 			)
 			return
 		}
 		response.Diagnostics.AddAttributeError(
 			request.Path,
 			"Invalid default_value structure",
-			"default_value must contain either 'string' or 'bool' attribute. "+
-				"Example: default_value = { string = { \"en-US\" = \"green\" } }",
+			"default_value must contain either 'string', 'bool' or 'array' attribute. "+
+				"Example: default_value = { string = { \"en-US\" = \"green\" } } "+
+				"or default_value = { bool = { \"en-US\" = true } } "+
+				"or default_value = { array = { \"en-US\" = [\"value1\", \"value2\"] } }",
 		)
+		return
+	}
+
+	// If any attribute is unknown (e.g. a variable is used as a map key),
+	// we cannot validate the content at this stage. Skip validation and let
+	// Terraform resolve the values first.
+	if (hasString && stringAttr.IsUnknown()) || (hasBool && boolAttr.IsUnknown()) || (hasArray && arrayAttr.IsUnknown()) {
 		return
 	}
 
@@ -67,31 +77,33 @@ func (v DefaultValueStructureValidator) ValidateObject(ctx context.Context, requ
 	boolHasContent := false
 	arrayHasContent := false
 
-	if hasString && !stringAttr.IsNull() && !stringAttr.IsUnknown() {
+	if hasString && !stringAttr.IsNull() {
 		if stringMap, ok := stringAttr.(types.Map); ok && len(stringMap.Elements()) > 0 {
 			stringHasContent = true
 		}
 	}
 
-	if hasBool && !boolAttr.IsNull() && !boolAttr.IsUnknown() {
+	if hasBool && !boolAttr.IsNull() {
 		if boolMap, ok := boolAttr.(types.Map); ok && len(boolMap.Elements()) > 0 {
 			boolHasContent = true
 		}
 	}
 
-	if hasArray && !arrayAttr.IsNull() && !arrayAttr.IsUnknown() {
+	if hasArray && !arrayAttr.IsNull() {
 		if arrayMap, ok := arrayAttr.(types.Map); ok && len(arrayMap.Elements()) > 0 {
 			arrayHasContent = true
 		}
 	}
 
-	// If we have string/bool attributes but they're both empty, that's an error
+	// If we have string/bool/array attributes but they're all empty, that's an error
 	if !stringHasContent && !boolHasContent && !arrayHasContent && (hasString || hasBool || hasArray) {
 		response.Diagnostics.AddAttributeError(
 			request.Path,
 			"Empty default_value",
 			"default_value must contain actual values. "+
-				"Example: default_value = { string = { \"en-US\" = \"green\" } }",
+				"Example: default_value = { string = { \"en-US\" = \"green\" } } "+
+				"or default_value = { bool = { \"en-US\" = true } } "+
+				"or default_value = { array = { \"en-US\" = [\"value1\", \"value2\"] } }",
 		)
 	}
 }
