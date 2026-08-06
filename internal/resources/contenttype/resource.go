@@ -497,7 +497,14 @@ func (e *contentTypeResource) Read(ctx context.Context, request resource.ReadReq
 		return
 	}
 
-	state.Import(resp.JSON200)
+	err = state.Import(resp.JSON200)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error importing contenttype to state",
+			"Could not import contenttype to state, unexpected error: "+err.Error(),
+		)
+		return
+	}
 
 	// Set refreshed state
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
@@ -570,7 +577,6 @@ func (e *contentTypeResource) Update(ctx context.Context, request resource.Updat
 	}).Result
 
 	draft, err := plan.Update()
-
 	if err != nil {
 		response.Diagnostics.AddError("Error updating contenttype", err.Error())
 		return
@@ -584,7 +590,12 @@ func (e *contentTypeResource) Update(ctx context.Context, request resource.Updat
 	// Omit the removed fields and publish the new version of the content type,
 	// followed by the field removal and final publish.
 
-	if !plan.Equal(contentfulContentType) {
+	pEq, err := plan.Equal(contentfulContentType)
+	if err != nil {
+		response.Diagnostics.AddError("Error comparing contenttype", err.Error())
+		return
+	}
+	if !pEq {
 		contentType, err := e.doUpdate(ctx, plan, draft)
 		if err != nil {
 			response.Diagnostics.AddError(
@@ -747,7 +758,26 @@ func (e *contentTypeResource) doUpdate(ctx context.Context, plan *ContentType, d
 
 	contentType := resp.JSON200
 
-	return e.activateContentType(ctx, spaceId, environment, id, contentType.Sys.Version)
+	contentType, err = e.activateContentType(ctx, spaceId, environment, id, contentType.Sys.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	// We need to coerce empty validations to null, as Contentful API returns an empty slice instead of null even if
+	//we update with null
+	for i, f := range contentType.Fields {
+		pf := plan.Fields.FindByName(f.Name)
+		if pf == nil {
+			return nil, fmt.Errorf("field %q not found", f.Name)
+		}
+
+		if pf.Validations == nil && f.Validations != nil && len(*f.Validations) == 0 {
+			f.Validations = nil
+			contentType.Fields[i] = f
+		}
+	}
+
+	return contentType, nil
 }
 
 func (e *contentTypeResource) getContentType(ctx context.Context, editor *ContentType) (*sdk.ContentType, error) {
