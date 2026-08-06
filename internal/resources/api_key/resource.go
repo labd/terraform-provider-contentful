@@ -115,8 +115,11 @@ func (e *apiKeyResource) Create(ctx context.Context, request resource.CreateRequ
 
 	draft := plan.Draft()
 
-	resp, err := e.client.CreateApiKeyWithResponse(ctx, plan.SpaceId.ValueString(), *draft)
-	if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.CreateApiKeyResponse, error) {
+		r, e := e.client.CreateApiKeyWithResponse(ctx, plan.SpaceId.ValueString(), *draft)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error creating api key",
 			"Could not create api key, unexpected error: "+err.Error(),
@@ -177,8 +180,11 @@ func (e *apiKeyResource) Update(ctx context.Context, request resource.UpdateRequ
 		XContentfulVersion: state.Version.ValueInt64(),
 	}
 
-	resp, err := e.client.UpdateApiKeyWithResponse(ctx, state.SpaceId.ValueString(), state.ID.ValueString(), params, *draft)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateApiKeyResponse, error) {
+		r, e := e.client.UpdateApiKeyWithResponse(ctx, state.SpaceId.ValueString(), state.ID.ValueString(), params, *draft)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error updating api key",
 			"Could not update api key, unexpected error: "+err.Error(),
@@ -212,8 +218,11 @@ func (e *apiKeyResource) Delete(ctx context.Context, request resource.DeleteRequ
 		XContentfulVersion: state.Version.ValueInt64(),
 	}
 
-	resp, err := e.client.DeleteApiKeyWithResponse(ctx, state.SpaceId.ValueString(), state.ID.ValueString(), params)
-	if err := utils.CheckClientResponse(resp, err, http.StatusNoContent); err != nil {
+	_, err := utils.WithRetry(ctx, func() (*sdk.DeleteApiKeyResponse, error) {
+		r, e := e.client.DeleteApiKeyWithResponse(ctx, state.SpaceId.ValueString(), state.ID.ValueString(), params)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusNoContent)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting api key",
 			"Could not delete api key, unexpected error: "+err.Error(),
@@ -267,8 +276,11 @@ func (e *apiKeyResource) doRead(ctx context.Context, apiKey *ApiKey, state *tfsd
 }
 
 func (e *apiKeyResource) getApiKey(ctx context.Context, apiKey *ApiKey) (*sdk.ApiKey, error) {
-	resp, err := e.client.GetApiKeyWithResponse(ctx, apiKey.SpaceId.ValueString(), apiKey.ID.ValueString())
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetApiKeyResponse, error) {
+		r, e := e.client.GetApiKeyWithResponse(ctx, apiKey.SpaceId.ValueString(), apiKey.ID.ValueString())
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		return nil, fmt.Errorf("Could not retrieve api key, unexpected error: %s", err.Error())
 	}
 
@@ -276,8 +288,11 @@ func (e *apiKeyResource) getApiKey(ctx context.Context, apiKey *ApiKey) (*sdk.Ap
 }
 
 func (e *apiKeyResource) getPreviewApiKey(ctx context.Context, apiKey *ApiKey) (*sdk.PreviewApiKey, error) {
-	resp, err := e.client.GetPreviewApiKeyWithResponse(ctx, apiKey.SpaceId.ValueString(), apiKey.PreviewID.ValueString())
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetPreviewApiKeyResponse, error) {
+		r, e := e.client.GetPreviewApiKeyWithResponse(ctx, apiKey.SpaceId.ValueString(), apiKey.PreviewID.ValueString())
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		return nil, fmt.Errorf("Could not retrieve preview api key, unexpected status code: %s", err.Error())
 	}
 

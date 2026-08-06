@@ -141,8 +141,11 @@ func (e *webhookResource) Create(ctx context.Context, request resource.CreateReq
 		return
 	}
 
-	resp, err := e.client.CreateWebhookWithResponse(ctx, plan.SpaceId.ValueString(), draft)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.CreateWebhookResponse, error) {
+		r, e := e.client.CreateWebhookWithResponse(ctx, plan.SpaceId.ValueString(), draft)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error creating webhook",
 			"Could not create webhook: "+err.Error(),
@@ -185,13 +188,17 @@ func (e *webhookResource) Read(ctx context.Context, request resource.ReadRequest
 		return
 	}
 
-	resp, err := e.client.GetWebhookWithResponse(ctx, state.SpaceId.ValueString(), state.ID.ValueString())
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-		if resp.StatusCode() == 404 {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetWebhookResponse, error) {
+		r, e := e.client.GetWebhookWithResponse(ctx, state.SpaceId.ValueString(), state.ID.ValueString())
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
+		if resp != nil && resp.StatusCode() == 404 {
 			response.State.RemoveResource(ctx)
 			return
 		}
 		response.Diagnostics.AddError("Error reading webhook", err.Error())
+		return
 	}
 
 	err = state.MapFromSDK(resp.JSON200)
@@ -244,14 +251,17 @@ func (e *webhookResource) Update(ctx context.Context, request resource.UpdateReq
 		return
 	}
 
-	resp, err := e.client.UpdateWebhookWithResponse(
-		ctx,
-		plan.SpaceId.ValueString(),
-		state.ID.ValueString(),
-		params,
-		draft,
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateWebhookResponse, error) {
+		r, e := e.client.UpdateWebhookWithResponse(
+			ctx,
+			plan.SpaceId.ValueString(),
+			state.ID.ValueString(),
+			params,
+			draft,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error updating webhook",
 			"Could not update webhook: "+err.Error(),
@@ -295,13 +305,16 @@ func (e *webhookResource) Delete(ctx context.Context, request resource.DeleteReq
 	}
 
 	// Delete the webhook
-	resp, err := e.client.DeleteWebhookWithResponse(
-		ctx,
-		state.SpaceId.ValueString(),
-		state.ID.ValueString(),
-		params,
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusNoContent); err != nil {
+	_, err := utils.WithRetry(ctx, func() (*sdk.DeleteWebhookResponse, error) {
+		r, e := e.client.DeleteWebhookWithResponse(
+			ctx,
+			state.SpaceId.ValueString(),
+			state.ID.ValueString(),
+			params,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusNoContent)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting webhook",
 			"Could not delete webhook: "+err.Error(),
@@ -324,8 +337,11 @@ func (e *webhookResource) ImportState(ctx context.Context, request resource.Impo
 	id := idParts[0]
 	spaceId := idParts[1]
 
-	resp, err := e.client.GetWebhookWithResponse(ctx, spaceId, id)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetWebhookResponse, error) {
+		r, e := e.client.GetWebhookWithResponse(ctx, spaceId, id)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error reading webhook",
 			"Could not read webhook: "+err.Error(),

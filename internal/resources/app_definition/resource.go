@@ -188,15 +188,21 @@ func (e *appDefinitionResource) Create(ctx context.Context, request resource.Cre
 
 	// The plan.ID is created in the setDefaultBundle() call if the use_bundle flag is set
 	if plan.ID.ValueString() == "" {
-		resp, err := e.client.CreateAppDefinitionWithResponse(ctx, e.organizationId, *draft)
-		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.CreateAppDefinitionResponse, error) {
+			r, e := e.client.CreateAppDefinitionWithResponse(ctx, e.organizationId, *draft)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+		})
+		if err != nil {
 			response.Diagnostics.AddError("Error creating app_definition", err.Error())
 			return
 		}
 		state.Import(resp.JSON201)
 	} else {
-		resp, err := e.client.UpdateAppDefinitionWithResponse(ctx, e.organizationId, plan.ID.ValueString(), nil, *draft)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateAppDefinitionResponse, error) {
+			r, e := e.client.UpdateAppDefinitionWithResponse(ctx, e.organizationId, plan.ID.ValueString(), nil, *draft)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+		})
+		if err != nil {
 			response.Diagnostics.AddError("Error updating app_definition", err.Error())
 			return
 		}
@@ -259,8 +265,11 @@ func (e *appDefinitionResource) Update(ctx context.Context, request resource.Upd
 			XContentfulVersion: appDefinition.Sys.Version,
 		}
 
-		resp, err := e.client.UpdateAppDefinitionWithResponse(ctx, e.organizationId, plan.ID.ValueString(), params, *draft)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateAppDefinitionResponse, error) {
+			r, e := e.client.UpdateAppDefinitionWithResponse(ctx, e.organizationId, plan.ID.ValueString(), params, *draft)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+		})
+		if err != nil {
 			response.Diagnostics.AddError("Error updating app_definition", err.Error())
 			return
 		}
@@ -288,8 +297,11 @@ func (e *appDefinitionResource) Delete(ctx context.Context, request resource.Del
 		XContentfulVersion: current.Sys.Version,
 	}
 
-	resp, err := e.client.DeleteAppDefinitionWithResponse(ctx, e.organizationId, state.ID.ValueString(), params)
-	if err := utils.CheckClientResponse(resp, err, http.StatusNoContent); err != nil {
+	_, err = utils.WithRetry(ctx, func() (*sdk.DeleteAppDefinitionResponse, error) {
+		r, e := e.client.DeleteAppDefinitionWithResponse(ctx, e.organizationId, state.ID.ValueString(), params)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusNoContent)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting app_definition",
 			"Could not delete app_definition, unexpected error: "+err.Error(),
@@ -326,8 +338,11 @@ func (e *appDefinitionResource) doRead(ctx context.Context, app *AppDefinition, 
 }
 
 func (e *appDefinitionResource) getApp(ctx context.Context, app *AppDefinition) (*sdk.AppDefinition, error) {
-	resp, err := e.client.GetAppDefinitionWithResponse(ctx, e.organizationId, app.ID.ValueString())
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetAppDefinitionResponse, error) {
+		r, e := e.client.GetAppDefinitionWithResponse(ctx, e.organizationId, app.ID.ValueString())
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		return nil, err
 	}
 	return resp.JSON200, nil
@@ -344,8 +359,11 @@ func (e *appDefinitionResource) setDefaultBundle(ctx context.Context, plan *AppD
 		var appDefinitionId string
 
 		if plan.ID.IsNull() || plan.ID.IsUnknown() {
-			resp, err := e.client.CreateAppDefinitionWithResponse(ctx, e.organizationId, *draft)
-			if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+			resp, err := utils.WithRetry(ctx, func() (*sdk.CreateAppDefinitionResponse, error) {
+				r, e := e.client.CreateAppDefinitionWithResponse(ctx, e.organizationId, *draft)
+				return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+			})
+			if err != nil {
 				diagnostics.AddError("Error creating temporary app_definition", err.Error())
 				return true
 			}
@@ -353,8 +371,11 @@ func (e *appDefinitionResource) setDefaultBundle(ctx context.Context, plan *AppD
 			appDefinitionId = resp.JSON201.Sys.Id
 		} else {
 			params := &sdk.UpdateAppDefinitionParams{}
-			resp, err := e.client.UpdateAppDefinitionWithResponse(ctx, e.organizationId, plan.ID.ValueString(), params, *draft)
-			if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+			resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateAppDefinitionResponse, error) {
+				r, e := e.client.UpdateAppDefinitionWithResponse(ctx, e.organizationId, plan.ID.ValueString(), params, *draft)
+				return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+			})
+			if err != nil {
 				diagnostics.AddError("Error creating temporary app_definition", err.Error())
 				return true
 			}
@@ -362,8 +383,11 @@ func (e *appDefinitionResource) setDefaultBundle(ctx context.Context, plan *AppD
 			appDefinitionId = resp.JSON200.Sys.Id
 		}
 
-		resp, err := e.clientUpload.UploadAppWithBodyWithResponse(ctx, e.organizationId, "application/octet-stream", bytes.NewReader(defaultDummyBundle))
-		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.UploadAppResponse, error) {
+			r, e := e.clientUpload.UploadAppWithBodyWithResponse(ctx, e.organizationId, "application/octet-stream", bytes.NewReader(defaultDummyBundle))
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+		})
+		if err != nil {
 			diagnostics.AddError("Error uploading default bundle", err.Error())
 			return true
 		}
@@ -381,9 +405,12 @@ func (e *appDefinitionResource) setDefaultBundle(ctx context.Context, plan *AppD
 			},
 		}
 
-		respBundle, err := e.client.CreateAppBundleWithResponse(
-			ctx, e.organizationId, appDefinitionId, appBody)
-		if err := utils.CheckClientResponse(respBundle, err, http.StatusCreated); err != nil {
+		respBundle, err := utils.WithRetry(ctx, func() (*sdk.CreateAppBundleResponse, error) {
+			r, e := e.client.CreateAppBundleWithResponse(
+				ctx, e.organizationId, appDefinitionId, appBody)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+		})
+		if err != nil {
 			diagnostics.AddError("Error creating app_bundle for app definition", err.Error())
 			return true
 		}

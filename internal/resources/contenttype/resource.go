@@ -435,8 +435,11 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 			response.Diagnostics.AddError("Error creating contenttype", err.Error())
 			return
 		}
-		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.ID.ValueString(), nil, *draft)
-		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateContentTypeResponse, error) {
+			r, e := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.ID.ValueString(), nil, *draft)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+		})
+		if err != nil {
 			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype with id "+plan.ID.ValueString()+", unexpected error: "+err.Error())
 			return
 		}
@@ -447,8 +450,11 @@ func (e *contentTypeResource) Create(ctx context.Context, request resource.Creat
 			response.Diagnostics.AddError("Error creating contenttype", err.Error())
 			return
 		}
-		resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.Name.ValueString(), nil, *draft)
-		if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateContentTypeResponse, error) {
+			r, e := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, plan.Name.ValueString(), nil, *draft)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+		})
+		if err != nil {
 			response.Diagnostics.AddError("Error creating contenttype", "Could not create contenttype with name, unexpected error: "+err.Error())
 			return
 		}
@@ -484,9 +490,12 @@ func (e *contentTypeResource) Read(ctx context.Context, request resource.ReadReq
 	environment := state.Environment.ValueString()
 	id := state.ID.ValueString()
 
-	resp, err := e.client.GetContentTypeWithResponse(ctx, spaceId, environment, id)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-		if resp.StatusCode() == http.StatusNotFound {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetContentTypeResponse, error) {
+		r, e := e.client.GetContentTypeWithResponse(ctx, spaceId, environment, id)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
+		if resp != nil && resp.StatusCode() == http.StatusNotFound {
 			response.State.RemoveResource(ctx)
 			return
 		}
@@ -629,7 +638,7 @@ func (e *contentTypeResource) Delete(ctx context.Context, request resource.Delet
 	environment := state.Environment.ValueString()
 	id := state.ID.ValueString()
 
-	contentType, err := backoff.Retry(ctx, func() (*sdk.ContentType, error) {
+	contentType, err := utils.WithRetry(ctx, func() (*sdk.ContentType, error) {
 		resp, err := e.client.DeactivateContentTypeWithResponse(
 			ctx,
 			spaceId,
@@ -639,14 +648,17 @@ func (e *contentTypeResource) Delete(ctx context.Context, request resource.Delet
 				XContentfulVersion: state.Version.ValueInt64(),
 			},
 		)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-
-			if resp.StatusCode() == http.StatusBadRequest {
-				return nil, backoff.RetryAfter(5)
-			}
+		if err != nil {
 			return nil, err
 		}
-		return resp.JSON200, nil
+		if resp.StatusCode() == http.StatusOK {
+			return resp.JSON200, nil
+		}
+		if resp.StatusCode() == http.StatusBadRequest {
+			// 400 during deactivation means the content type is not ready yet — retry
+			return nil, fmt.Errorf("content type not in ready state for deactivation")
+		}
+		return nil, utils.CheckClientResponseWithRetry(resp, nil, http.StatusOK)
 
 	}, backoff.WithMaxTries(3), backoff.WithMaxElapsedTime(60*time.Second), backoff.WithBackOff(backoff.NewExponentialBackOff()))
 
@@ -658,16 +670,19 @@ func (e *contentTypeResource) Delete(ctx context.Context, request resource.Delet
 		return
 	}
 
-	resp, err := e.client.DeleteContentTypeWithResponse(
-		ctx,
-		spaceId,
-		environment,
-		id,
-		&sdk.DeleteContentTypeParams{
-			XContentfulVersion: contentType.Sys.Version,
-		},
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusNoContent); err != nil {
+	_, err = utils.WithRetry(ctx, func() (*sdk.DeleteContentTypeResponse, error) {
+		r, e := e.client.DeleteContentTypeWithResponse(
+			ctx,
+			spaceId,
+			environment,
+			id,
+			&sdk.DeleteContentTypeParams{
+				XContentfulVersion: contentType.Sys.Version,
+			},
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusNoContent)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting contenttype",
 			"Could not delete contenttype, unexpected error: "+err.Error(),
@@ -691,8 +706,11 @@ func (e *contentTypeResource) ImportState(ctx context.Context, request resource.
 	spaceId := idParts[2]
 	environment := idParts[1]
 
-	resp, err := e.client.GetContentTypeWithResponse(ctx, spaceId, environment, id)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetContentTypeResponse, error) {
+		r, e := e.client.GetContentTypeWithResponse(ctx, spaceId, environment, id)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error reading contenttype",
 			"Could not retrieve contenttype, unexpected error: "+err.Error(),
@@ -740,8 +758,11 @@ func (e *contentTypeResource) doUpdate(ctx context.Context, plan *ContentType, d
 		XContentfulVersion: plan.Version.ValueInt64(),
 	}
 
-	resp, err := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, id, params, *draft)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateContentTypeResponse, error) {
+		r, e := e.client.UpdateContentTypeWithResponse(ctx, spaceId, environment, id, params, *draft)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		return nil, err
 	}
 

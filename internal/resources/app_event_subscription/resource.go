@@ -108,8 +108,11 @@ func (e *appEventSubscriptionResource) Create(ctx context.Context, request resou
 		return
 	}
 
-	resp, err := e.client.UpdateAppEventSubscriptionWithResponse(ctx, e.organizationId, plan.AppDefinitionID.ValueString(), *draft)
-	if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateAppEventSubscriptionResponse, error) {
+		r, e := e.client.UpdateAppEventSubscriptionWithResponse(ctx, e.organizationId, plan.AppDefinitionID.ValueString(), *draft)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+	})
+	if err != nil {
 		response.Diagnostics.AddError("Error creating app_event_subscription", err.Error())
 		return
 	}
@@ -155,11 +158,15 @@ func (e *appEventSubscriptionResource) Update(ctx context.Context, request resou
 
 	if !plan.Equal(state) {
 		draft := plan.Draft()
-		resp, err := e.client.UpdateAppEventSubscriptionWithResponse(ctx, e.organizationId, plan.AppDefinitionID.ValueString(), *draft)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateAppEventSubscriptionResponse, error) {
+			r, e := e.client.UpdateAppEventSubscriptionWithResponse(ctx, e.organizationId, plan.AppDefinitionID.ValueString(), *draft)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+		})
+		if err != nil {
 			response.Diagnostics.AddError("Error updating app_event_subscription", err.Error())
 			return
 		}
+		_ = resp
 
 		plan.ID = types.StringValue(createID(e.organizationId, state.AppDefinitionID.ValueString()))
 	}
@@ -171,8 +178,11 @@ func (e *appEventSubscriptionResource) Delete(ctx context.Context, request resou
 	var state *AppEventSubscription
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 
-	resp, err := e.client.DeleteAppEventSubscriptionWithResponse(ctx, e.organizationId, state.AppDefinitionID.ValueString())
-	if err := utils.CheckClientResponse(resp, err, http.StatusNoContent); err != nil {
+	_, err := utils.WithRetry(ctx, func() (*sdk.DeleteAppEventSubscriptionResponse, error) {
+		r, e := e.client.DeleteAppEventSubscriptionWithResponse(ctx, e.organizationId, state.AppDefinitionID.ValueString())
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusNoContent)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting app_event_subscription",
 			"Could not delete app_event_subscription, unexpected error: "+err.Error(),
@@ -190,8 +200,11 @@ func (e *appEventSubscriptionResource) ImportState(ctx context.Context, request 
 }
 
 func (e *appEventSubscriptionResource) doRead(ctx context.Context, app *AppEventSubscription, state *tfsdk.State, d *diag.Diagnostics) {
-	resp, err := e.client.GetAppEventSubscriptionWithResponse(ctx, e.organizationId, app.AppDefinitionID.ValueString())
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetAppEventSubscriptionResponse, error) {
+		r, e := e.client.GetAppEventSubscriptionWithResponse(ctx, e.organizationId, app.AppDefinitionID.ValueString())
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		d.AddError(
 			"Error reading app event subscription",
 			fmt.Sprintf("Could not retrieve app event subscription, unexpected error: %s", err.Error()),

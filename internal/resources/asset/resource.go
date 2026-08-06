@@ -184,15 +184,18 @@ func (e *assetResource) Create(ctx context.Context, request resource.CreateReque
 
 	// Create the asset
 	draft := plan.DraftForCreate()
-	resp, err := e.client.UpdateAssetWithResponse(
-		ctx,
-		plan.SpaceID.ValueString(),
-		plan.Environment.ValueString(),
-		plan.AssetID.ValueString(),
-		nil,
-		*draft,
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateAssetResponse, error) {
+		r, e := e.client.UpdateAssetWithResponse(
+			ctx,
+			plan.SpaceID.ValueString(),
+			plan.Environment.ValueString(),
+			plan.AssetID.ValueString(),
+			nil,
+			*draft,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error creating asset",
 			"Could not create asset with id: "+err.Error(),
@@ -258,15 +261,18 @@ func (e *assetResource) Update(ctx context.Context, request resource.UpdateReque
 
 	// Update the asset
 	draft := plan.DraftForCreate() // Reuse the create draft for updates
-	resp, err := e.client.UpdateAssetWithResponse(
-		ctx,
-		plan.SpaceID.ValueString(),
-		plan.Environment.ValueString(),
-		plan.AssetID.ValueString(),
-		params,
-		*draft,
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateAssetResponse, error) {
+		r, e := e.client.UpdateAssetWithResponse(
+			ctx,
+			plan.SpaceID.ValueString(),
+			plan.Environment.ValueString(),
+			plan.AssetID.ValueString(),
+			params,
+			*draft,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error updating asset",
 			"Could not update asset: "+err.Error(),
@@ -308,20 +314,23 @@ func (e *assetResource) Delete(ctx context.Context, request resource.DeleteReque
 	}
 
 	// Delete the asset
-	resp, err := e.client.DeleteAssetWithResponse(
-		ctx,
-		state.SpaceID.ValueString(),
-		state.Environment.ValueString(),
-		state.ID.ValueString(),
-		params,
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusNoContent); err != nil {
-		if resp.StatusCode() == 404 {
-			// Asset not found, no action needed
-			tflog.Warn(ctx, fmt.Sprintf("Asset %s not found, no action needed", state.ID.ValueString()))
-			return
+	_, err := utils.WithRetry(ctx, func() (*sdk.DeleteAssetResponse, error) {
+		r, e := e.client.DeleteAssetWithResponse(
+			ctx,
+			state.SpaceID.ValueString(),
+			state.Environment.ValueString(),
+			state.ID.ValueString(),
+			params,
+		)
+		if e != nil {
+			return r, e
 		}
-
+		if r.StatusCode() == 204 || r.StatusCode() == 404 {
+			return r, nil
+		}
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusNoContent)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error deleting asset",
 			"Could not delete asset: "+err.Error(),
@@ -345,13 +354,16 @@ func (e *assetResource) ImportState(ctx context.Context, request resource.Import
 	spaceID := idParts[1]
 	environment := idParts[2]
 
-	resp, err := e.client.GetAssetWithResponse(
-		ctx,
-		spaceID,
-		environment,
-		assetID,
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetAssetResponse, error) {
+		r, e := e.client.GetAssetWithResponse(
+			ctx,
+			spaceID,
+			environment,
+			assetID,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error importing asset",
 			fmt.Sprintf("Could not import asset with ID %s: %s", assetID, err.Error()),
@@ -367,14 +379,17 @@ func (e *assetResource) ImportState(ctx context.Context, request resource.Import
 func (e *assetResource) doRead(ctx context.Context, asset *Asset, state *tfsdk.State, d *diag.Diagnostics) {
 	oldState := *asset
 
-	resp, err := e.client.GetAssetWithResponse(
-		ctx,
-		asset.SpaceID.ValueString(),
-		asset.Environment.ValueString(),
-		asset.ID.ValueString(),
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-		if resp.StatusCode() == 404 {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetAssetResponse, error) {
+		r, e := e.client.GetAssetWithResponse(
+			ctx,
+			asset.SpaceID.ValueString(),
+			asset.Environment.ValueString(),
+			asset.ID.ValueString(),
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
+		if resp != nil && resp.StatusCode() == 404 {
 			tflog.Warn(ctx, fmt.Sprintf("Asset %s not found", asset.ID.ValueString()))
 			return
 		}
@@ -407,14 +422,17 @@ func (e *assetResource) processAsset(ctx context.Context, state *Asset) diag.Dia
 
 	// Process asset for each locale
 	for _, locale := range state.Fields.File {
-		resp, err := e.client.ProcessAssetWithResponse(
-			ctx,
-			state.SpaceID.ValueString(),
-			state.Environment.ValueString(),
-			state.ID.ValueString(),
-			locale.Locale.ValueString(),
-		)
-		if err := utils.CheckClientResponse(resp, err, http.StatusNoContent); err != nil {
+		_, err := utils.WithRetry(ctx, func() (*sdk.ProcessAssetResponse, error) {
+			r, e := e.client.ProcessAssetWithResponse(
+				ctx,
+				state.SpaceID.ValueString(),
+				state.Environment.ValueString(),
+				state.ID.ValueString(),
+				locale.Locale.ValueString(),
+			)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusNoContent)
+		})
+		if err != nil {
 			return diag.NewErrorDiagnostic(
 				"Error processing asset",
 				fmt.Sprintf("Could not process asset for locale %s: %s", locale.Locale.ValueString(), err.Error()),
@@ -425,13 +443,16 @@ func (e *assetResource) processAsset(ctx context.Context, state *Asset) diag.Dia
 	// We should just poll the asset to see if it is done processing
 	time.Sleep(2 * time.Second)
 
-	resp, err := e.client.GetAssetWithResponse(
-		ctx,
-		state.SpaceID.ValueString(),
-		state.Environment.ValueString(),
-		state.ID.ValueString(),
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetAssetResponse, error) {
+		r, e := e.client.GetAssetWithResponse(
+			ctx,
+			state.SpaceID.ValueString(),
+			state.Environment.ValueString(),
+			state.ID.ValueString(),
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
 		return diag.NewErrorDiagnostic(
 			"Error reading asset",
 			"Could not read asset: "+err.Error(),
@@ -457,14 +478,17 @@ func (e *assetResource) setAssetState(ctx context.Context, state *Asset, plan *A
 			XContentfulVersion: state.Version.ValueInt64(),
 		}
 
-		resp, err := e.client.PublishAssetWithResponse(
-			ctx,
-			state.SpaceID.ValueString(),
-			state.Environment.ValueString(),
-			state.ID.ValueString(),
-			publishParams,
-		)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.PublishAssetResponse, error) {
+			r, e := e.client.PublishAssetWithResponse(
+				ctx,
+				state.SpaceID.ValueString(),
+				state.Environment.ValueString(),
+				state.ID.ValueString(),
+				publishParams,
+			)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+		})
+		if err != nil {
 			return fmt.Errorf("failed to publish asset: %v", err)
 		}
 		state.Import(resp.JSON200)
@@ -474,14 +498,17 @@ func (e *assetResource) setAssetState(ctx context.Context, state *Asset, plan *A
 			XContentfulVersion: state.Version.ValueInt64(),
 		}
 
-		resp, err := e.client.UnpublishAssetWithResponse(
-			ctx,
-			state.SpaceID.ValueString(),
-			state.Environment.ValueString(),
-			state.ID.ValueString(),
-			unpublishParams,
-		)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.UnpublishAssetResponse, error) {
+			r, e := e.client.UnpublishAssetWithResponse(
+				ctx,
+				state.SpaceID.ValueString(),
+				state.Environment.ValueString(),
+				state.ID.ValueString(),
+				unpublishParams,
+			)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+		})
+		if err != nil {
 			return fmt.Errorf("failed to unpublish asset: %v", err)
 		}
 		state.Import(resp.JSON200)
@@ -496,14 +523,17 @@ func (e *assetResource) setAssetState(ctx context.Context, state *Asset, plan *A
 			XContentfulVersion: state.Version.ValueInt64(),
 		}
 
-		resp, err := e.client.ArchiveAssetWithResponse(
-			ctx,
-			state.SpaceID.ValueString(),
-			state.Environment.ValueString(),
-			state.ID.ValueString(),
-			archiveParams,
-		)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.ArchiveAssetResponse, error) {
+			r, e := e.client.ArchiveAssetWithResponse(
+				ctx,
+				state.SpaceID.ValueString(),
+				state.Environment.ValueString(),
+				state.ID.ValueString(),
+				archiveParams,
+			)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+		})
+		if err != nil {
 			return fmt.Errorf("failed to archive asset: %v", err)
 		}
 		state.Import(resp.JSON200)
@@ -512,14 +542,17 @@ func (e *assetResource) setAssetState(ctx context.Context, state *Asset, plan *A
 			XContentfulVersion: state.Version.ValueInt64(),
 		}
 
-		resp, err := e.client.UnarchiveAssetWithResponse(
-			ctx,
-			state.SpaceID.ValueString(),
-			state.Environment.ValueString(),
-			state.ID.ValueString(),
-			unarchiveParams,
-		)
-		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+		resp, err := utils.WithRetry(ctx, func() (*sdk.UnarchiveAssetResponse, error) {
+			r, e := e.client.UnarchiveAssetWithResponse(
+				ctx,
+				state.SpaceID.ValueString(),
+				state.Environment.ValueString(),
+				state.ID.ValueString(),
+				unarchiveParams,
+			)
+			return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+		})
+		if err != nil {
 			return fmt.Errorf("failed to unarchive asset: %v", err)
 		}
 		state.Import(resp.JSON200)

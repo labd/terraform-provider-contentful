@@ -149,8 +149,11 @@ func (e *roleResource) Create(ctx context.Context, request resource.CreateReques
 
 	draft := plan.DraftForCreate()
 
-	resp, err := e.client.CreateRoleWithResponse(ctx, plan.SpaceID.ValueString(), draft)
-	if err := utils.CheckClientResponse(resp, err, http.StatusCreated); err != nil {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.CreateRoleResponse, error) {
+		r, e := e.client.CreateRoleWithResponse(ctx, plan.SpaceID.ValueString(), draft)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusCreated)
+	})
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error creating role",
 			"Could not create role: "+err.Error(),
@@ -180,13 +183,17 @@ func (e *roleResource) Read(ctx context.Context, request resource.ReadRequest, r
 		return
 	}
 
-	resp, err := e.client.GetRoleWithResponse(ctx, state.SpaceID.ValueString(), state.ID.ValueString())
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-		if resp.StatusCode() == 404 {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetRoleResponse, error) {
+		r, e := e.client.GetRoleWithResponse(ctx, state.SpaceID.ValueString(), state.ID.ValueString())
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
+		if resp != nil && resp.StatusCode() == 404 {
 			response.State.RemoveResource(ctx)
 			return
 		}
 		response.Diagnostics.AddError("Error reading role", err.Error())
+		return
 	}
 
 	err = state.Import(resp.JSON200)
@@ -223,15 +230,18 @@ func (e *roleResource) Update(ctx context.Context, request resource.UpdateReques
 
 	// Update the role
 	draft := plan.DraftForUpdate()
-	resp, err := e.client.UpdateRoleWithResponse(
-		ctx,
-		plan.SpaceID.ValueString(),
-		plan.ID.ValueString(),
-		params,
-		draft,
-	)
+	resp, err := utils.WithRetry(ctx, func() (*sdk.UpdateRoleResponse, error) {
+		r, e := e.client.UpdateRoleWithResponse(
+			ctx,
+			plan.SpaceID.ValueString(),
+			plan.ID.ValueString(),
+			params,
+			draft,
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
 
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error updating role",
 			"Could not update role: "+err.Error(),
@@ -261,13 +271,16 @@ func (e *roleResource) Delete(ctx context.Context, request resource.DeleteReques
 	}
 
 	// Get latest version first to avoid conflicts
-	resp, err := e.client.GetRoleWithResponse(
-		ctx,
-		state.SpaceID.ValueString(),
-		state.ID.ValueString(),
-	)
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-		if resp.StatusCode() == 404 {
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetRoleResponse, error) {
+		r, e := e.client.GetRoleWithResponse(
+			ctx,
+			state.SpaceID.ValueString(),
+			state.ID.ValueString(),
+		)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
+	if err != nil {
+		if resp != nil && resp.StatusCode() == 404 {
 			// Role already deleted, nothing to do
 			return
 		}
@@ -332,9 +345,12 @@ func (e *roleResource) ImportState(ctx context.Context, request resource.ImportS
 	roleId := idParts[0]
 	spaceID := idParts[1]
 
-	resp, err := e.client.GetRoleWithResponse(ctx, spaceID, roleId)
+	resp, err := utils.WithRetry(ctx, func() (*sdk.GetRoleResponse, error) {
+		r, e := e.client.GetRoleWithResponse(ctx, spaceID, roleId)
+		return r, utils.CheckClientResponseWithRetry(r, e, http.StatusOK)
+	})
 
-	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
+	if err != nil {
 		response.Diagnostics.AddError(
 			"Error importing asset",
 			fmt.Sprintf("Could not import role with ID %s:%s", roleId, err.Error()),
