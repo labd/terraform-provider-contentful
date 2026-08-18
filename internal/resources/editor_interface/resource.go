@@ -307,7 +307,7 @@ func (e *editorInterfaceResource) Read(ctx context.Context, request resource.Rea
 		state.ContentType.ValueString(),
 	)
 	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-		if resp.StatusCode() == 404 {
+		if resp != nil && resp.StatusCode() == http.StatusNotFound {
 			request.State.RemoveResource(ctx)
 			return
 		}

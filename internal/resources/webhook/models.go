@@ -28,6 +28,10 @@ type Webhook struct {
 
 // MapFromSDK populates the Webhook struct from an SDK webhook object
 func (w *Webhook) MapFromSDK(webhook *sdk.Webhook) error {
+	if webhook == nil {
+		return errors.New("no webhook returned by the Contentful API")
+	}
+
 	w.ID = types.StringValue(*webhook.Sys.Id)
 	w.SpaceId = types.StringValue(webhook.Sys.Space.Sys.Id)
 	w.Version = types.Int64Value(int64(*webhook.Sys.Version))

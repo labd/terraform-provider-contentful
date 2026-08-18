@@ -1,0 +1,4 @@
+kind: Fixed
+body: Fix provider crash when reading a webhook or role fails with an unexpected API
+  error
+time: 2026-08-18T12:00:00.000000+02:00
