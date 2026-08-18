@@ -3,6 +3,7 @@ package locale
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -147,7 +148,7 @@ func (e *localeResource) Read(ctx context.Context, request resource.ReadRequest,
 	)
 
 	if err := utils.CheckClientResponse(resp, err, 200); err != nil {
-		if resp.StatusCode() == 404 {
+		if resp != nil && resp.StatusCode() == http.StatusNotFound {
 			response.State.RemoveResource(ctx)
 			return
 		}

@@ -187,11 +187,12 @@ func (e *webhookResource) Read(ctx context.Context, request resource.ReadRequest
 
 	resp, err := e.client.GetWebhookWithResponse(ctx, state.SpaceId.ValueString(), state.ID.ValueString())
 	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-		if resp.StatusCode() == 404 {
+		if resp != nil && resp.StatusCode() == http.StatusNotFound {
 			response.State.RemoveResource(ctx)
 			return
 		}
 		response.Diagnostics.AddError("Error reading webhook", err.Error())
+		return
 	}
 
 	err = state.MapFromSDK(resp.JSON200)

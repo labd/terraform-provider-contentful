@@ -486,7 +486,7 @@ func (e *contentTypeResource) Read(ctx context.Context, request resource.ReadReq
 
 	resp, err := e.client.GetContentTypeWithResponse(ctx, spaceId, environment, id)
 	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-		if resp.StatusCode() == http.StatusNotFound {
+		if resp != nil && resp.StatusCode() == http.StatusNotFound {
 			response.State.RemoveResource(ctx)
 			return
 		}

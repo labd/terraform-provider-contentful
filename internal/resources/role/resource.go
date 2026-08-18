@@ -182,11 +182,12 @@ func (e *roleResource) Read(ctx context.Context, request resource.ReadRequest, r
 
 	resp, err := e.client.GetRoleWithResponse(ctx, state.SpaceID.ValueString(), state.ID.ValueString())
 	if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
-		if resp.StatusCode() == 404 {
+		if resp != nil && resp.StatusCode() == http.StatusNotFound {
 			response.State.RemoveResource(ctx)
 			return
 		}
 		response.Diagnostics.AddError("Error reading role", err.Error())
+		return
 	}
 
 	err = state.Import(resp.JSON200)
