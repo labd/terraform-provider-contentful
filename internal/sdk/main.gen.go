@@ -1621,8 +1621,11 @@ type WebhookCreate struct {
 
 // WebhookHeader defines model for WebhookHeader.
 type WebhookHeader struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Key string `json:"key"`
+
+	// Secret Whether the header value is secret
+	Secret *bool  `json:"secret,omitempty"`
+	Value  string `json:"value"`
 }
 
 // WebhookUpdate defines model for WebhookUpdate.
@@ -1651,6 +1654,9 @@ type WebhookUpdate struct {
 	// Url URL to call when the webhook is triggered
 	Url string `json:"url"`
 }
+
+// AliasId defines model for aliasId.
+type AliasId = string
 
 // ApiKeyId defines model for apiKeyId.
 type ApiKeyId = string
@@ -2543,15 +2549,15 @@ type ClientInterface interface {
 	GetAllEnvironmentAliases(ctx context.Context, spaceId SpaceId, params *GetAllEnvironmentAliasesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteEnvironmentAlias request
-	DeleteEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId string, params *DeleteEnvironmentAliasParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId AliasId, params *DeleteEnvironmentAliasParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetEnvironmentAlias request
-	GetEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId AliasId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpsertEnvironmentAliasWithBody request with any body
-	UpsertEnvironmentAliasWithBody(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpsertEnvironmentAliasWithBody(ctx context.Context, spaceId SpaceId, aliasId AliasId, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpsertEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpsertEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId AliasId, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAllEnvironments request
 	GetAllEnvironments(ctx context.Context, spaceId SpaceId, params *GetAllEnvironmentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3112,7 +3118,7 @@ func (c *Client) GetAllEnvironmentAliases(ctx context.Context, spaceId SpaceId, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId string, params *DeleteEnvironmentAliasParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) DeleteEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId AliasId, params *DeleteEnvironmentAliasParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteEnvironmentAliasRequest(c.Server, spaceId, aliasId, params)
 	if err != nil {
 		return nil, err
@@ -3124,7 +3130,7 @@ func (c *Client) DeleteEnvironmentAlias(ctx context.Context, spaceId SpaceId, al
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId AliasId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetEnvironmentAliasRequest(c.Server, spaceId, aliasId)
 	if err != nil {
 		return nil, err
@@ -3136,7 +3142,7 @@ func (c *Client) GetEnvironmentAlias(ctx context.Context, spaceId SpaceId, alias
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpsertEnvironmentAliasWithBody(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpsertEnvironmentAliasWithBody(ctx context.Context, spaceId SpaceId, aliasId AliasId, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpsertEnvironmentAliasRequestWithBody(c.Server, spaceId, aliasId, params, contentType, body)
 	if err != nil {
 		return nil, err
@@ -3148,7 +3154,7 @@ func (c *Client) UpsertEnvironmentAliasWithBody(ctx context.Context, spaceId Spa
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpsertEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpsertEnvironmentAlias(ctx context.Context, spaceId SpaceId, aliasId AliasId, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpsertEnvironmentAliasRequest(c.Server, spaceId, aliasId, params, body)
 	if err != nil {
 		return nil, err
@@ -5192,7 +5198,7 @@ func NewGetAllEnvironmentAliasesRequest(server string, spaceId SpaceId, params *
 }
 
 // NewDeleteEnvironmentAliasRequest generates requests for DeleteEnvironmentAlias
-func NewDeleteEnvironmentAliasRequest(server string, spaceId SpaceId, aliasId string, params *DeleteEnvironmentAliasParams) (*http.Request, error) {
+func NewDeleteEnvironmentAliasRequest(server string, spaceId SpaceId, aliasId AliasId, params *DeleteEnvironmentAliasParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5246,7 +5252,7 @@ func NewDeleteEnvironmentAliasRequest(server string, spaceId SpaceId, aliasId st
 }
 
 // NewGetEnvironmentAliasRequest generates requests for GetEnvironmentAlias
-func NewGetEnvironmentAliasRequest(server string, spaceId SpaceId, aliasId string) (*http.Request, error) {
+func NewGetEnvironmentAliasRequest(server string, spaceId SpaceId, aliasId AliasId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5287,7 +5293,7 @@ func NewGetEnvironmentAliasRequest(server string, spaceId SpaceId, aliasId strin
 }
 
 // NewUpsertEnvironmentAliasRequest calls the generic UpsertEnvironmentAlias builder with application/json body
-func NewUpsertEnvironmentAliasRequest(server string, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody) (*http.Request, error) {
+func NewUpsertEnvironmentAliasRequest(server string, spaceId SpaceId, aliasId AliasId, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -5298,7 +5304,7 @@ func NewUpsertEnvironmentAliasRequest(server string, spaceId SpaceId, aliasId st
 }
 
 // NewUpsertEnvironmentAliasRequestWithBody generates requests for UpsertEnvironmentAlias with any type of body
-func NewUpsertEnvironmentAliasRequestWithBody(server string, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpsertEnvironmentAliasRequestWithBody(server string, spaceId SpaceId, aliasId AliasId, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8981,15 +8987,15 @@ type ClientWithResponsesInterface interface {
 	GetAllEnvironmentAliasesWithResponse(ctx context.Context, spaceId SpaceId, params *GetAllEnvironmentAliasesParams, reqEditors ...RequestEditorFn) (*GetAllEnvironmentAliasesResponse, error)
 
 	// DeleteEnvironmentAliasWithResponse request
-	DeleteEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, params *DeleteEnvironmentAliasParams, reqEditors ...RequestEditorFn) (*DeleteEnvironmentAliasResponse, error)
+	DeleteEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId AliasId, params *DeleteEnvironmentAliasParams, reqEditors ...RequestEditorFn) (*DeleteEnvironmentAliasResponse, error)
 
 	// GetEnvironmentAliasWithResponse request
-	GetEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, reqEditors ...RequestEditorFn) (*GetEnvironmentAliasResponse, error)
+	GetEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId AliasId, reqEditors ...RequestEditorFn) (*GetEnvironmentAliasResponse, error)
 
 	// UpsertEnvironmentAliasWithBodyWithResponse request with any body
-	UpsertEnvironmentAliasWithBodyWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertEnvironmentAliasResponse, error)
+	UpsertEnvironmentAliasWithBodyWithResponse(ctx context.Context, spaceId SpaceId, aliasId AliasId, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertEnvironmentAliasResponse, error)
 
-	UpsertEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertEnvironmentAliasResponse, error)
+	UpsertEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId AliasId, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertEnvironmentAliasResponse, error)
 
 	// GetAllEnvironmentsWithResponse request
 	GetAllEnvironmentsWithResponse(ctx context.Context, spaceId SpaceId, params *GetAllEnvironmentsParams, reqEditors ...RequestEditorFn) (*GetAllEnvironmentsResponse, error)
@@ -11255,7 +11261,7 @@ func (c *ClientWithResponses) GetAllEnvironmentAliasesWithResponse(ctx context.C
 }
 
 // DeleteEnvironmentAliasWithResponse request returning *DeleteEnvironmentAliasResponse
-func (c *ClientWithResponses) DeleteEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, params *DeleteEnvironmentAliasParams, reqEditors ...RequestEditorFn) (*DeleteEnvironmentAliasResponse, error) {
+func (c *ClientWithResponses) DeleteEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId AliasId, params *DeleteEnvironmentAliasParams, reqEditors ...RequestEditorFn) (*DeleteEnvironmentAliasResponse, error) {
 	rsp, err := c.DeleteEnvironmentAlias(ctx, spaceId, aliasId, params, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -11264,7 +11270,7 @@ func (c *ClientWithResponses) DeleteEnvironmentAliasWithResponse(ctx context.Con
 }
 
 // GetEnvironmentAliasWithResponse request returning *GetEnvironmentAliasResponse
-func (c *ClientWithResponses) GetEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, reqEditors ...RequestEditorFn) (*GetEnvironmentAliasResponse, error) {
+func (c *ClientWithResponses) GetEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId AliasId, reqEditors ...RequestEditorFn) (*GetEnvironmentAliasResponse, error) {
 	rsp, err := c.GetEnvironmentAlias(ctx, spaceId, aliasId, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -11273,7 +11279,7 @@ func (c *ClientWithResponses) GetEnvironmentAliasWithResponse(ctx context.Contex
 }
 
 // UpsertEnvironmentAliasWithBodyWithResponse request with arbitrary body returning *UpsertEnvironmentAliasResponse
-func (c *ClientWithResponses) UpsertEnvironmentAliasWithBodyWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertEnvironmentAliasResponse, error) {
+func (c *ClientWithResponses) UpsertEnvironmentAliasWithBodyWithResponse(ctx context.Context, spaceId SpaceId, aliasId AliasId, params *UpsertEnvironmentAliasParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertEnvironmentAliasResponse, error) {
 	rsp, err := c.UpsertEnvironmentAliasWithBody(ctx, spaceId, aliasId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -11281,7 +11287,7 @@ func (c *ClientWithResponses) UpsertEnvironmentAliasWithBodyWithResponse(ctx con
 	return ParseUpsertEnvironmentAliasResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpsertEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId string, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertEnvironmentAliasResponse, error) {
+func (c *ClientWithResponses) UpsertEnvironmentAliasWithResponse(ctx context.Context, spaceId SpaceId, aliasId AliasId, params *UpsertEnvironmentAliasParams, body UpsertEnvironmentAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertEnvironmentAliasResponse, error) {
 	rsp, err := c.UpsertEnvironmentAlias(ctx, spaceId, aliasId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
