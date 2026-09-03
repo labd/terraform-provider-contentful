@@ -11,6 +11,10 @@ updates:
       go:
         patterns:
           - "*"
+    # oapi-codegen v2.8.0 still requires the yaml.v3-based go-yit revision.
+    # Newer revisions use yaml.v4, which yaml-jsonpath does not yet support.
+    ignore:
+      - dependency-name: "github.com/dprotaso/go-yit"
 
   - package-ecosystem: "github-actions"
     directory: "/"

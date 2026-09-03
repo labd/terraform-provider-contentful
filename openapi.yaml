@@ -920,6 +920,88 @@ paths:
         "204":
           description: No Content
 
+  /spaces/{spaceId}/environments/{environmentId}/tags:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+    get:
+      summary: Get all tags
+      description: Retrieves all tags in an environment
+      operationId: getAllTags
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/skip"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagCollection"
+
+  /spaces/{spaceId}/environments/{environmentId}/tags/{tagId}:
+    parameters:
+      - $ref: "#/components/parameters/spaceId"
+      - $ref: "#/components/parameters/environmentId"
+      - $ref: "#/components/parameters/tagId"
+    get:
+      summary: Get a tag
+      description: Retrieves a specific tag by ID
+      operationId: getTag
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+    put:
+      summary: Create or update a tag
+      description: Creates a new tag or updates an existing tag
+      operationId: upsertTag
+      parameters:
+        - name: X-Contentful-Tag-Visibility
+          in: header
+          required: false
+          description: Visibility of the tag; defaults to private when creating a tag
+          schema:
+            $ref: "#/components/schemas/TagVisibility"
+        - name: X-Contentful-Version
+          in: header
+          required: false
+          description: Version of the tag to update; omit when creating a tag
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagDraft"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+    delete:
+      summary: Delete a tag
+      description: Deletes a tag and removes it from entries and assets that reference it
+      operationId: deleteTag
+      parameters:
+        - $ref: "#/components/parameters/resourceVersion"
+      responses:
+        "204":
+          description: No Content
+
   /spaces/{spaceId}/environments/{environmentId}/content_types/{contentTypeId}/editor_interface:
     parameters:
       - $ref: "#/components/parameters/spaceId"
@@ -1481,6 +1563,13 @@ components:
       schema:
         type: string
       description: ID of the locale
+    tagId:
+      name: tagId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID of the tag
     roleId: 
       name: roleId
       in: path
@@ -2415,6 +2504,60 @@ components:
         - name
         - code
 
+    Tag:
+      type: object
+      properties:
+        name:
+          description: Human-readable unique name of the tag
+          type: string
+        sys:
+          $ref: '#/components/schemas/SystemPropertiesTag'
+      required:
+        - name
+        - sys
+
+    TagCollection:
+      type: object
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Tag'
+          type: array
+        limit:
+          description: Maximum number of tags returned
+          type: integer
+        skip:
+          description: Number of tags skipped
+          type: integer
+        sys:
+          properties:
+            type:
+              enum: [ Array ]
+              type: string
+          type: object
+        total:
+          description: Total number of tags
+          type: integer
+
+    TagDraft:
+      type: object
+      properties:
+        name:
+          description: Human-readable unique name of the tag
+          type: string
+      required:
+        - name
+
+    TagVisibility:
+      description: Determines whether the tag is available only through the CMA or through all Contentful APIs
+      type: string
+      enum:
+        - private
+        - public
+      x-enum-varnames:
+        - TagVisibilityPrivate
+        - TagVisibilityPublic
+
     Role:
       type: object
       properties:
@@ -2651,6 +2794,17 @@ components:
         - version
         - space
         - createdBy
+
+    SystemPropertiesTag:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/SystemPropertiesResource'
+        - properties:
+            visibility:
+              $ref: '#/components/schemas/TagVisibility'
+          required:
+            - visibility
+            - environment
 
     SystemPropertiesContent:
       type: object
