@@ -7,7 +7,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -42,12 +44,13 @@ jobs:
       pull-requests: write
       actions: write
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Prepare release
-        uses: labd/changie-release-action@cabe11e8578d5867ea0695351fd37e85ecb32aa6 # v0.3.2
+        uses: labd/changie-release-action@43112f435367957ee3fefc64b3b712c7e672be33 # v0.6.2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           release-workflow: "release.yaml"
