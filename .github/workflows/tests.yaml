@@ -25,17 +25,12 @@ jobs:
 
       - name: Run tests
         # Run sequentially to avoid conflicts with shared resources in Contentful.
-        run: go test -p 1 -race -coverprofile=coverage.out -covermode=atomic -coverpkg=./... -v ./...
+        run: go test -p 1 -race -v ./...
         env:
           TF_ACC: 1
           CONTENTFUL_MANAGEMENT_TOKEN: ${{secrets.CONTENTFUL_MANAGEMENT_TOKEN}}
           CONTENTFUL_ORGANIZATION_ID: ${{vars.CONTENTFUL_ORGANIZATION_ID}}
           CONTENTFUL_SPACE_ID: ${{vars.CONTENTFUL_SPACE_ID}}
-
-      - name: Upload to codecov
-        uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # v3.1.6
-        with:
-          verbose: true
 
   changie:
     runs-on: ubuntu-latest
