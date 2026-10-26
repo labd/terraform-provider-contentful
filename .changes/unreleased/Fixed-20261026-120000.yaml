@@ -1,3 +1,0 @@
-kind: Fixed
-body: "contentful_environment: wait until a newly created environment is ready, so later updates and deletes no longer fail with a 409 version mismatch"
-time: 2026-10-26T12:00:00.000000+01:00
