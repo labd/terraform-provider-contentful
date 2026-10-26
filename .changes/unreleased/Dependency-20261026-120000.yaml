@@ -1,3 +1,0 @@
-kind: Dependency
-body: Update dependencies (terraform-plugin-testing v1.16.0, terraform-plugin-log v0.11.0, terraform-plugin-docs v0.25.0, oapi-codegen runtime v1.8.0)
-time: 2026-10-26T12:00:00.000000+01:00
