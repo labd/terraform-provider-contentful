@@ -104,8 +104,22 @@ func (e *environmentResource) Create(ctx context.Context, request resource.Creat
 		return
 	}
 
+	// Wait until Contentful finished creating the environment, so the stored
+	// version is final and later updates or deletes don't conflict.
+	environment, err := waitForEnvironmentReady(ctx, e.client, plan.SpaceId.ValueString(), resp.JSON201.Sys.Id)
+	if err != nil {
+		// Store the created environment so it is not orphaned.
+		plan.Import(resp.JSON201)
+		response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+		response.Diagnostics.AddError(
+			"Error creating environment",
+			"Environment did not become ready: "+err.Error(),
+		)
+		return
+	}
+
 	// Map response to state
-	plan.Import(resp.JSON201)
+	plan.Import(environment)
 
 	// Set state
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
