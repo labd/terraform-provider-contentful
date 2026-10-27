@@ -1,6 +1,8 @@
 package locale
 
 import (
+	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
@@ -21,8 +23,14 @@ type Locale struct {
 	CMA          types.Bool   `tfsdk:"cma"`
 }
 
-// Import populates the Locale struct from an SDK locale object
-func (l *Locale) Import(locale *sdk.Locale) {
+// Import populates the Locale struct from an SDK locale object. It fails when
+// the API response has no environment link, since that would silently drop the
+// environment from state.
+func (l *Locale) Import(locale *sdk.Locale) error {
+	if locale.Sys.Environment == nil {
+		return fmt.Errorf("locale %s has no environment in its system properties", locale.Sys.Id)
+	}
+
 	l.ID = types.StringValue(locale.Sys.Id)
 	l.SpaceID = types.StringValue(locale.Sys.Space.Sys.Id)
 	l.Version = types.Int64Value(locale.Sys.Version)
@@ -40,6 +48,8 @@ func (l *Locale) Import(locale *sdk.Locale) {
 	l.Optional = types.BoolValue(locale.Optional)
 	l.CDA = types.BoolValue(locale.ContentDeliveryApi)
 	l.CMA = types.BoolValue(locale.ContentManagementApi)
+
+	return nil
 }
 
 // DraftForCreate creates a LocaleCreate object for creating a new locale

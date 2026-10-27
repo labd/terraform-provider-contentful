@@ -1,0 +1,4 @@
+kind: Fixed
+body: Fail with a clear error instead of writing an empty environment to state when
+  an API response omits its environment link.
+time: 2026-09-02T17:00:00.000000+02:00

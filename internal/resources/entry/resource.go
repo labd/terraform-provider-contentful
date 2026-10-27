@@ -168,7 +168,13 @@ func (e *entryResource) Create(ctx context.Context, request resource.CreateReque
 
 	// Map response to state
 	state := Entry{}
-	state.Import(entry)
+	if err := state.Import(entry); err != nil {
+		response.Diagnostics.AddError(
+			"Error creating entry",
+			"Could not read created entry: "+err.Error(),
+		)
+		return
+	}
 
 	// Set entry state (published/archived)
 	if err := e.setEntryState(ctx, &state, &plan); err != nil {
@@ -234,7 +240,13 @@ func (e *entryResource) Update(ctx context.Context, request resource.UpdateReque
 		return
 	}
 
-	state.Import(resp.JSON200)
+	if err := state.Import(resp.JSON200); err != nil {
+		response.Diagnostics.AddError(
+			"Error updating entry",
+			"Could not read updated entry: "+err.Error(),
+		)
+		return
+	}
 
 	// Set entry state (published/archived)
 	if err := e.setEntryState(ctx, &state, &plan); err != nil {
@@ -277,7 +289,13 @@ func (e *entryResource) Delete(ctx context.Context, request resource.DeleteReque
 		return
 	}
 
-	state.Import(resp.JSON200)
+	if err := state.Import(resp.JSON200); err != nil {
+		response.Diagnostics.AddError(
+			"Error deleting entry",
+			"Could not read latest entry: "+err.Error(),
+		)
+		return
+	}
 
 	if state.Published.ValueBool() {
 		resp, err := e.client.UnpublishEntryWithResponse(
@@ -296,7 +314,13 @@ func (e *entryResource) Delete(ctx context.Context, request resource.DeleteReque
 			)
 			return
 		}
-		state.Import(resp.JSON200)
+		if err := state.Import(resp.JSON200); err != nil {
+			response.Diagnostics.AddError(
+				"Error deleting entry",
+				"Could not read unpublished entry: "+err.Error(),
+			)
+			return
+		}
 	}
 
 	// Create delete parameters with latest version
@@ -395,7 +419,13 @@ func (e *entryResource) doRead(ctx context.Context, entry *Entry, state *tfsdk.S
 	}
 
 	// Map response to state
-	entry.Import(resp.JSON200)
+	if err := entry.Import(resp.JSON200); err != nil {
+		d.AddError(
+			"Error reading entry",
+			"Could not read entry: "+err.Error(),
+		)
+		return
+	}
 
 	// Set state
 	d.Append(state.Set(ctx, entry)...)
@@ -425,7 +455,9 @@ func (e *entryResource) setEntryState(ctx context.Context, state *Entry, plan *E
 		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 			return err
 		}
-		state.Import(resp.JSON200)
+		if err := state.Import(resp.JSON200); err != nil {
+			return err
+		}
 	} else if !shouldBePublished && isCurrentlyPublished {
 		resp, err := e.client.UnpublishEntryWithResponse(
 			ctx,
@@ -439,7 +471,9 @@ func (e *entryResource) setEntryState(ctx context.Context, state *Entry, plan *E
 		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 			return err
 		}
-		state.Import(resp.JSON200)
+		if err := state.Import(resp.JSON200); err != nil {
+			return err
+		}
 	}
 
 	if shouldBeArchived && !isCurrentlyArchived {
@@ -455,7 +489,9 @@ func (e *entryResource) setEntryState(ctx context.Context, state *Entry, plan *E
 		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 			return err
 		}
-		state.Import(resp.JSON200)
+		if err := state.Import(resp.JSON200); err != nil {
+			return err
+		}
 	} else if !shouldBeArchived && isCurrentlyArchived {
 		resp, err := e.client.UnarchiveEntryWithResponse(
 			ctx,
@@ -469,7 +505,9 @@ func (e *entryResource) setEntryState(ctx context.Context, state *Entry, plan *E
 		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 			return err
 		}
-		state.Import(resp.JSON200)
+		if err := state.Import(resp.JSON200); err != nil {
+			return err
+		}
 	}
 
 	return nil

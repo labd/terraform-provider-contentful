@@ -1,6 +1,8 @@
 package asset
 
 import (
+	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/labd/terraform-provider-contentful/internal/sdk"
@@ -41,7 +43,11 @@ type LocalizedFileItem struct {
 }
 
 // Import populates the Asset struct from an SDK asset object
-func (a *Asset) Import(asset *sdk.Asset) {
+func (a *Asset) Import(asset *sdk.Asset) error {
+	if asset.Sys.Environment == nil {
+		return fmt.Errorf("asset %s has no environment in its system properties", asset.Sys.Id)
+	}
+
 	a.ID = types.StringValue(asset.Sys.Id)
 	a.AssetID = types.StringValue(asset.Sys.Id)
 	a.Version = types.Int64Value(int64(asset.Sys.Version))
@@ -95,6 +101,8 @@ func (a *Asset) Import(asset *sdk.Asset) {
 		// Add to files collection
 		a.Fields.File = append(a.Fields.File, fileItem)
 	}
+
+	return nil
 }
 
 func (a *Asset) CopyInputValues(plan *Asset) {

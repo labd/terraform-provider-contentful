@@ -497,7 +497,14 @@ func (e *contentTypeResource) Read(ctx context.Context, request resource.ReadReq
 		return
 	}
 
-	state.Import(resp.JSON200)
+	err = state.Import(resp.JSON200)
+	if err != nil {
+		response.Diagnostics.AddError(
+			"Error importing contenttype to state",
+			"Could not import contenttype to state, unexpected error: "+err.Error(),
+		)
+		return
+	}
 
 	// Set refreshed state
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)

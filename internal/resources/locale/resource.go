@@ -128,7 +128,13 @@ func (e *localeResource) Create(ctx context.Context, request resource.CreateRequ
 	}
 
 	state := &Locale{}
-	state.Import(resp.JSON201)
+	if err := state.Import(resp.JSON201); err != nil {
+		response.Diagnostics.AddError(
+			"Error creating locale",
+			"Could not read created locale: "+err.Error(),
+		)
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 
@@ -159,7 +165,13 @@ func (e *localeResource) Read(ctx context.Context, request resource.ReadRequest,
 		return
 	}
 
-	state.Import(resp.JSON200)
+	if err := state.Import(resp.JSON200); err != nil {
+		response.Diagnostics.AddError(
+			"Error reading locale",
+			"Could not read locale: "+err.Error(),
+		)
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 
@@ -201,7 +213,13 @@ func (e *localeResource) Update(ctx context.Context, request resource.UpdateRequ
 		return
 	}
 
-	state.Import(resp.JSON200)
+	if err := state.Import(resp.JSON200); err != nil {
+		response.Diagnostics.AddError(
+			"Error updating locale",
+			"Could not read updated locale: "+err.Error(),
+		)
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 
@@ -254,6 +272,12 @@ func (e *localeResource) ImportState(ctx context.Context, request resource.Impor
 	}
 
 	state := &Locale{}
-	state.Import(resp.JSON200)
+	if err := state.Import(resp.JSON200); err != nil {
+		response.Diagnostics.AddError(
+			"Error importing locale",
+			"Could not import locale: "+err.Error(),
+		)
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }

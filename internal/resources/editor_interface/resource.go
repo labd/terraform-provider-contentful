@@ -286,7 +286,13 @@ func (e *editorInterfaceResource) Create(ctx context.Context, request resource.C
 	}
 
 	state := EditorInterface{}
-	state.Import(updateResp.JSON200)
+	if err := state.Import(updateResp.JSON200); err != nil {
+		response.Diagnostics.AddError(
+			"Error creating editor interface",
+			"Could not read created editor interface: "+err.Error(),
+		)
+		return
+	}
 
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
@@ -319,7 +325,13 @@ func (e *editorInterfaceResource) Read(ctx context.Context, request resource.Rea
 		return
 	}
 
-	state.Import(resp.JSON200)
+	if err := state.Import(resp.JSON200); err != nil {
+		response.Diagnostics.AddError(
+			"Error reading editor interface",
+			"Could not read editor interface: "+err.Error(),
+		)
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 
@@ -374,7 +386,13 @@ func (e *editorInterfaceResource) Update(ctx context.Context, request resource.U
 		return
 	}
 
-	state.Import(updateResp.JSON200)
+	if err := state.Import(updateResp.JSON200); err != nil {
+		response.Diagnostics.AddError(
+			"Error updating editor interface",
+			"Could not read updated editor interface: "+err.Error(),
+		)
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 
@@ -411,7 +429,13 @@ func (e *editorInterfaceResource) ImportState(ctx context.Context, request resou
 	}
 
 	state := EditorInterface{}
-	state.Import(resp.JSON200)
+	if err := state.Import(resp.JSON200); err != nil {
+		response.Diagnostics.AddError(
+			"Error importing editor interface",
+			"Could not import editor interface: "+err.Error(),
+		)
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 

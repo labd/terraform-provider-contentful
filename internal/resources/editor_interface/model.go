@@ -143,7 +143,11 @@ func (e *EditorInterface) ToUpdateBody() sdk.EditorInterfaceUpdate {
 }
 
 // Import populates the EditorInterface from an SDK response
-func (e *EditorInterface) Import(editorInterface *sdk.EditorInterface) {
+func (e *EditorInterface) Import(editorInterface *sdk.EditorInterface) error {
+	if editorInterface.Sys.Environment == nil {
+		return fmt.Errorf("editor interface for content type %s has no environment in its system properties", editorInterface.Sys.ContentType.Sys.Id)
+	}
+
 	e.SpaceID = types.StringValue(editorInterface.Sys.Space.Sys.Id)
 	e.Environment = types.StringValue(editorInterface.Sys.Environment.Sys.Id)
 	e.ContentType = types.StringValue(editorInterface.Sys.ContentType.Sys.Id)
@@ -217,6 +221,7 @@ func (e *EditorInterface) Import(editorInterface *sdk.EditorInterface) {
 		e.Editors = nil
 	}
 
+	return nil
 }
 
 func (s *Settings) Import(settings *sdk.EditorInterfaceSettings) {

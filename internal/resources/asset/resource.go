@@ -202,7 +202,13 @@ func (e *assetResource) Create(ctx context.Context, request resource.CreateReque
 	asset := resp.JSON201
 
 	state := plan
-	state.Import(asset)
+	if err := state.Import(asset); err != nil {
+		response.Diagnostics.AddError(
+			"Error creating asset",
+			"Could not read created asset: "+err.Error(),
+		)
+		return
+	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Asset created with ID: %s\n %v", state.ID.ValueString(), spew.Sdump(state)))
 
@@ -274,7 +280,13 @@ func (e *assetResource) Update(ctx context.Context, request resource.UpdateReque
 		return
 	}
 
-	state.Import(resp.JSON200)
+	if err := state.Import(resp.JSON200); err != nil {
+		response.Diagnostics.AddError(
+			"Error updating asset",
+			"Could not read updated asset: "+err.Error(),
+		)
+		return
+	}
 
 	if diag := e.processAsset(ctx, &state); diag != nil {
 		response.Diagnostics.Append(diag)
@@ -360,7 +372,13 @@ func (e *assetResource) ImportState(ctx context.Context, request resource.Import
 	}
 
 	state := &Asset{}
-	state.Import(resp.JSON200)
+	if err := state.Import(resp.JSON200); err != nil {
+		response.Diagnostics.AddError(
+			"Error importing asset",
+			"Could not import asset: "+err.Error(),
+		)
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 
@@ -386,7 +404,13 @@ func (e *assetResource) doRead(ctx context.Context, asset *Asset, state *tfsdk.S
 	}
 
 	// Map response to state
-	asset.Import(resp.JSON200)
+	if err := asset.Import(resp.JSON200); err != nil {
+		d.AddError(
+			"Error reading asset",
+			"Could not read asset: "+err.Error(),
+		)
+		return
+	}
 	asset.CopyInputValues(&oldState)
 
 	// Set state
@@ -438,7 +462,12 @@ func (e *assetResource) processAsset(ctx context.Context, state *Asset) diag.Dia
 		)
 	}
 
-	state.Import(resp.JSON200)
+	if err := state.Import(resp.JSON200); err != nil {
+		return diag.NewErrorDiagnostic(
+			"Error reading asset",
+			"Could not read asset: "+err.Error(),
+		)
+	}
 	state.CopyInputValues(&oldState)
 
 	return nil
@@ -467,7 +496,9 @@ func (e *assetResource) setAssetState(ctx context.Context, state *Asset, plan *A
 		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 			return fmt.Errorf("failed to publish asset: %v", err)
 		}
-		state.Import(resp.JSON200)
+		if err := state.Import(resp.JSON200); err != nil {
+			return err
+		}
 
 	} else if !shouldBePublished && isCurrentlyPublished {
 		unpublishParams := &sdk.UnpublishAssetParams{
@@ -484,7 +515,9 @@ func (e *assetResource) setAssetState(ctx context.Context, state *Asset, plan *A
 		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 			return fmt.Errorf("failed to unpublish asset: %v", err)
 		}
-		state.Import(resp.JSON200)
+		if err := state.Import(resp.JSON200); err != nil {
+			return err
+		}
 	}
 
 	// Handle archiving state
@@ -506,7 +539,9 @@ func (e *assetResource) setAssetState(ctx context.Context, state *Asset, plan *A
 		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 			return fmt.Errorf("failed to archive asset: %v", err)
 		}
-		state.Import(resp.JSON200)
+		if err := state.Import(resp.JSON200); err != nil {
+			return err
+		}
 	} else if !shouldBeArchived && isCurrentlyArchived {
 		unarchiveParams := &sdk.UnarchiveAssetParams{
 			XContentfulVersion: state.Version.ValueInt64(),
@@ -522,7 +557,9 @@ func (e *assetResource) setAssetState(ctx context.Context, state *Asset, plan *A
 		if err := utils.CheckClientResponse(resp, err, http.StatusOK); err != nil {
 			return fmt.Errorf("failed to unarchive asset: %v", err)
 		}
-		state.Import(resp.JSON200)
+		if err := state.Import(resp.JSON200); err != nil {
+			return err
+		}
 	}
 
 	state.CopyInputValues(&oldState)

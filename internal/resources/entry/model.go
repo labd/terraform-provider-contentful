@@ -31,8 +31,14 @@ type Field struct {
 	Locale  types.String `tfsdk:"locale"`
 }
 
-// Import populates the Entry struct from an SDK entry object
-func (e *Entry) Import(entry *sdk.Entry) {
+// Import populates the Entry struct from an SDK entry object. It fails when the
+// API response has no environment link, since that would silently drop the
+// environment from state.
+func (e *Entry) Import(entry *sdk.Entry) error {
+	if entry.Sys.Environment == nil {
+		return fmt.Errorf("entry %s has no environment in its system properties", entry.Sys.Id)
+	}
+
 	e.ID = types.StringValue(entry.Sys.Id)
 	e.EntryID = types.StringValue(entry.Sys.Id)
 	e.Version = types.Int64Value(entry.Sys.Version)
@@ -43,6 +49,8 @@ func (e *Entry) Import(entry *sdk.Entry) {
 	e.Archived = types.BoolValue(entry.Sys.ArchivedAt != nil)
 
 	e.BuildFieldsFromAPIResponse(entry)
+
+	return nil
 }
 
 // DraftForCreate creates an EntryCreate object for creating a new entry
