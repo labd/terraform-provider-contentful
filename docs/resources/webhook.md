@@ -24,15 +24,45 @@ resource "contentful_webhook" "example_webhook" {
     "Entry.create",
     "ContentType.create",
   ]
-  headers = {
-    header1 = "header1-value"
-    header2 = "header2-value"
-  }
+
+  # Use headers_v2 to support marking individual header values as secret.
+  headers_v2 = [
+    {
+      key   = "X-Custom-Header"
+      value = "header-value"
+    },
+    {
+      key    = "Authorization"
+      value  = "secret-token"
+      secret = true
+    },
+  ]
 
   filters = jsonencode([
     { in : [{ "doc" : "sys.environment.sys.id" }, ["testing", "staging"]] },
     { not : { equals : [{ "doc" : "sys.environment.sys.id" }, "master"] } },
   ])
+}
+
+# Using the deprecated headers attribute (plain key/value map, no secret support).
+# Migrate to headers_v2 to gain secret header support.
+resource "contentful_webhook" "example_webhook_legacy_headers" {
+  space_id = "space-id"
+
+  active = true
+
+  name = "webhook-name-legacy"
+  url  = "https://www.example.com/test"
+  topics = [
+    "Entry.create",
+    "ContentType.create",
+  ]
+
+  # Deprecated: use headers_v2 instead.
+  headers = {
+    header1 = "header1-value"
+    header2 = "header2-value"
+  }
 }
 ```
 
@@ -50,7 +80,8 @@ resource "contentful_webhook" "example_webhook" {
 
 - `active` (Boolean) Whether the webhook is active or not
 - `filters` (String) List of filters this webhook should match for before triggering. The filters should be provided as a JSON string. For example: {"sys":{"type":"Entry"}}
-- `headers` (Map of String) HTTP headers to send with the webhook request
+- `headers` (Map of String, Deprecated) HTTP headers to send with the webhook request
+- `headers_v2` (Attributes Set) HTTP headers to send with the webhook request. Supports marking individual header values as secret. (see [below for nested schema](#nestedatt--headers_v2))
 - `http_basic_auth_password` (String, Sensitive, Deprecated) HTTP basic auth password
 - `http_basic_auth_username` (String, Deprecated) HTTP basic auth username
 
@@ -58,3 +89,15 @@ resource "contentful_webhook" "example_webhook" {
 
 - `id` (String) Webhook ID
 - `version` (Number) The current version of the webhook
+
+<a id="nestedatt--headers_v2"></a>
+### Nested Schema for `headers_v2`
+
+Required:
+
+- `key` (String) Header name
+- `value` (String, Sensitive) Header value
+
+Optional:
+
+- `secret` (Boolean) Whether the header value is secret. Secret header values are not returned by the API.
